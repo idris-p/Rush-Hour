@@ -1,0 +1,62 @@
+export type LineId =
+  | "bakerloo"
+  | "central"
+  | "circle"
+  | "district"
+  | "hammersmith-city"
+  | "jubilee"
+  | "metropolitan"
+  | "northern"
+  | "piccadilly"
+  | "victoria"
+  | "waterloo-city"
+  | "elizabeth";
+
+export type ModeId = "tube" | "elizabeth";
+
+export type LineDefinition = {
+  id: LineId;
+  name: string;
+  color: string;
+  textColor: string;
+  mode: ModeId;
+};
+
+export type Station = {
+  id: string;
+  name: string;
+  x: number;
+  y: number;
+  lines: LineId[];
+};
+
+export type StationSeed = Omit<Station, "lines">;
+
+export type GridPoint = {
+  x: number;
+  y: number;
+};
+
+export type Connection = {
+  id: string;
+  from: string;
+  to: string;
+  line: LineId;
+  path: GridPoint[];
+};
+
+export type ConnectionSeed = Omit<Connection, "id" | "path"> & {
+  path?: GridPoint[];
+};
+
+export type NetworkData = {
+  stations: Station[];
+  connections: Connection[];
+  temporary: boolean;
+  notes: string[];
+};
+
+export type Point = {
+  x: number;
+  y: number;
+};
