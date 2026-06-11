@@ -41,6 +41,16 @@ const hud = new Hud(root, networkData, {
     hud.setSeed(pendingSeed);
     render();
   },
+  onZoomIn: () => {
+    renderer.zoomIn();
+    clearPointerIntent();
+    render();
+  },
+  onZoomOut: () => {
+    renderer.zoomOut();
+    clearPointerIntent();
+    render();
+  },
 });
 
 const renderer = new MapRenderer(hud.mapHost, networkData);
@@ -62,6 +72,11 @@ function render(): void {
     renderer.renderIdle();
   }
   hud.update(state, now);
+}
+
+function clearPointerIntent(): void {
+  pointerPoint = null;
+  mouseIntent = clearMouseIntentPosition(mouseIntent);
 }
 
 function tick(): void {

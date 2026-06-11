@@ -8,6 +8,8 @@ import { getStation } from "../game/movement";
 export type HudCallbacks = {
   onPlaySeed: (seed: string) => void;
   onRandomSeed: () => void;
+  onZoomIn: () => void;
+  onZoomOut: () => void;
 };
 
 export class Hud {
@@ -76,6 +78,12 @@ export class Hud {
 
     seedControls.append(this.seedInput, startButton, randomButton);
 
+    const zoomControls = document.createElement("div");
+    zoomControls.className = "zoom-controls";
+    const zoomInButton = zoomButton("+", "Zoom in", callbacks.onZoomIn);
+    const zoomOutButton = zoomButton("-", "Zoom out", callbacks.onZoomOut);
+    zoomControls.append(zoomInButton, zoomOutButton);
+
     this.temporaryBanner = document.createElement("div");
     this.temporaryBanner.className = "temporary-banner";
     this.temporaryBanner.textContent = "Temporary playable subset";
@@ -92,7 +100,15 @@ export class Hud {
     this.overlayButton.addEventListener("click", () => callbacks.onPlaySeed(this.seedInput.value));
     this.completionOverlay.append(this.completionTitle, this.completionMeta, this.overlayButton);
 
-    root.append(topLeft, this.lineIndicator, this.mapHost, seedControls, this.temporaryBanner, this.completionOverlay);
+    root.append(
+      topLeft,
+      this.lineIndicator,
+      this.mapHost,
+      seedControls,
+      zoomControls,
+      this.temporaryBanner,
+      this.completionOverlay,
+    );
   }
 
   setSeed(seed: string): void {
@@ -153,6 +169,16 @@ export class Hud {
       lineChip("D", preview.next, canSwitch ? "preview" : "disabled"),
     );
   }
+}
+
+function zoomButton(label: string, ariaLabel: string, callback: () => void): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = label;
+  button.ariaLabel = ariaLabel;
+  button.title = ariaLabel;
+  button.addEventListener("click", callback);
+  return button;
 }
 
 function lineChip(label: string, lineId: keyof typeof LINE_BY_ID, variant: "preview" | "current" | "disabled"): HTMLDivElement {

@@ -15,6 +15,9 @@ import { renderStationMarker } from "./stationRenderer";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const BASE_VIEWBOX_WIDTH = 760;
 const BASE_VIEWBOX_HEIGHT = 560;
+const MIN_ZOOM = 0.6;
+const MAX_ZOOM = 2.4;
+const ZOOM_STEP = 1.25;
 const STUB_INNER_RADIUS = 18;
 const STUB_OUTER_RADIUS = 30;
 
@@ -22,6 +25,8 @@ export class MapRenderer {
   readonly svg: SVGSVGElement;
 
   private readonly network: NetworkData;
+
+  private zoom = 1;
 
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
@@ -96,10 +101,24 @@ export class MapRenderer {
   renderIdle(): void {
     this.svg.classList.remove("tube-map-running");
     const viewBoxSize = this.getViewBoxSize();
-    const viewBox = { x: 0, y: 0, width: viewBoxSize.width, height: viewBoxSize.height };
+    const baseViewBoxSize = this.getBaseViewBoxSize();
+    const viewBox = {
+      x: (baseViewBoxSize.width - viewBoxSize.width) / 2,
+      y: (baseViewBoxSize.height - viewBoxSize.height) / 2,
+      width: viewBoxSize.width,
+      height: viewBoxSize.height,
+    };
     this.svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
     this.svg.replaceChildren();
     this.renderGrid(viewBox);
+  }
+
+  zoomIn(): void {
+    this.zoom = Math.min(MAX_ZOOM, this.zoom * ZOOM_STEP);
+  }
+
+  zoomOut(): void {
+    this.zoom = Math.max(MIN_ZOOM, this.zoom / ZOOM_STEP);
   }
 
   private renderGrid(viewBox: { x: number; y: number; width: number; height: number }): void {
@@ -163,6 +182,14 @@ export class MapRenderer {
   }
 
   private getViewBoxSize(): { width: number; height: number } {
+    const baseSize = this.getBaseViewBoxSize();
+    return {
+      width: baseSize.width / this.zoom,
+      height: baseSize.height / this.zoom,
+    };
+  }
+
+  private getBaseViewBoxSize(): { width: number; height: number } {
     const width = this.svg.clientWidth;
     const height = this.svg.clientHeight;
     if (width <= 0 || height <= 0) {
