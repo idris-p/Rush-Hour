@@ -2,8 +2,10 @@ import { LINE_BY_ID } from "../data/lines";
 import type { Connection, NetworkData } from "../data/types";
 import { gridPointToSvgPoint } from "./grid";
 import { getCanonicalPath, offsetPolylinePoints } from "./pathOffset";
+import { createRoundedPathData, simplifyPolylinePoints } from "./roundedPath";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
+const LINE_CORNER_RADIUS = 20;
 
 export function renderRevealedLine(
   layer: SVGGElement,
@@ -18,21 +20,20 @@ export function renderRevealedLine(
     return;
   }
 
-  const polyline = document.createElementNS(SVG_NS, "polyline");
-  polyline.setAttribute(
-    "points",
-    offsetPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint), offset)
-      .map((point) => `${point.x},${point.y}`)
-      .join(" "),
+  const path = document.createElementNS(SVG_NS, "path");
+  const points = offsetPolylinePoints(
+    simplifyPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint)),
+    offset,
   );
-  polyline.setAttribute("fill", "none");
-  polyline.setAttribute("stroke", LINE_BY_ID[connection.line].color);
-  polyline.setAttribute("stroke-width", "9");
-  polyline.setAttribute("stroke-linecap", "round");
-  polyline.setAttribute("stroke-linejoin", "round");
-  polyline.setAttribute("class", "map-line");
+  path.setAttribute("d", createRoundedPathData(points, LINE_CORNER_RADIUS));
+  path.setAttribute("fill", "none");
+  path.setAttribute("stroke", LINE_BY_ID[connection.line].color);
+  path.setAttribute("stroke-width", "9");
+  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linejoin", "round");
+  path.setAttribute("class", "map-line");
   if (connection.line === "walk") {
-    polyline.setAttribute("stroke-dasharray", "12 10");
+    path.setAttribute("stroke-dasharray", "12 10");
   }
-  layer.append(polyline);
+  layer.append(path);
 }

@@ -3,6 +3,7 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { connectionSeeds, stationSeeds } from "../src/data/network.generated.ts";
 import { riverThamesPath } from "../src/data/mapDecorations.generated.ts";
+import { createRoundedPathData } from "../src/rendering/roundedPath.ts";
 
 const COLORS = {
   bakerloo: "#B36305",
@@ -21,6 +22,7 @@ const COLORS = {
 };
 
 const SCALE = 5;
+const LINE_CORNER_RADIUS = (20 / 32) * SCALE;
 const PADDING = 30;
 const points = [...stationSeeds, ...riverThamesPath, ...connectionSeeds.flatMap((connection) => connection.path ?? [])];
 const minX = Math.min(...points.map((point) => point.x));
@@ -33,7 +35,11 @@ const project = (point) => `${(point.x - minX) * SCALE + PADDING},${(point.y - m
 
 const lines = connectionSeeds.map((connection) => {
   const dash = connection.line === "walk" ? ' stroke-dasharray="7 6"' : "";
-  return `<polyline points="${connection.path.map(project).join(" ")}" fill="none" stroke="${COLORS[connection.line]}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"${dash}/>`;
+  const path = connection.path.map((point) => {
+    const [x, y] = project(point).split(",").map(Number);
+    return { x, y };
+  });
+  return `<path d="${createRoundedPathData(path, LINE_CORNER_RADIUS)}" fill="none" stroke="${COLORS[connection.line]}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"${dash}/>`;
 });
 const riverPoints = riverThamesPath.map(project).join(" ");
 const river = [
