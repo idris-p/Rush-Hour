@@ -29,7 +29,7 @@ export function renderRevealedLine(
   path.setAttribute("fill", "none");
   path.setAttribute("stroke", LINE_BY_ID[connection.line].color);
   path.setAttribute("stroke-width", "9");
-  path.setAttribute("stroke-linecap", "round");
+  path.setAttribute("stroke-linecap", "butt");
   path.setAttribute("stroke-linejoin", "round");
   path.setAttribute("class", "map-line");
   if (connection.line === "walk") {

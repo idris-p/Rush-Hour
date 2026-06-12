@@ -39,7 +39,7 @@ const lines = connectionSeeds.map((connection) => {
     const [x, y] = project(point).split(",").map(Number);
     return { x, y };
   });
-  return `<path d="${createRoundedPathData(path, LINE_CORNER_RADIUS)}" fill="none" stroke="${COLORS[connection.line]}" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"${dash}/>`;
+  return `<path d="${createRoundedPathData(path, LINE_CORNER_RADIUS)}" fill="none" stroke="${COLORS[connection.line]}" stroke-width="4" stroke-linecap="butt" stroke-linejoin="round"${dash}/>`;
 });
 const riverPoints = riverThamesPath.map(project).join(" ");
 const river = [

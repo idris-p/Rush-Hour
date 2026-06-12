@@ -16,11 +16,10 @@ import { renderStationMarker } from "./stationRenderer";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const BASE_VIEWBOX_WIDTH = 760;
 const BASE_VIEWBOX_HEIGHT = 560;
-const MIN_ZOOM = 0.6;
+const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.4;
 const ZOOM_STEP = 1.25;
-const STUB_INNER_RADIUS = 18;
-const STUB_OUTER_RADIUS = 30;
+const STUB_LENGTH = 26;
 
 export class MapRenderer {
   readonly svg: SVGSVGElement;
@@ -83,7 +82,7 @@ export class MapRenderer {
     const stubLayer = document.createElementNS(SVG_NS, "g");
     stubLayer.setAttribute("class", "direction-stubs");
     this.svg.append(stubLayer);
-    this.renderDirectionStubs(stubLayer, state.currentStationId, currentPoint);
+    this.renderDirectionStubs(stubLayer, state.currentStationId, currentPoint, state.revealedConnections);
 
     const pointerLayer = document.createElementNS(SVG_NS, "g");
     pointerLayer.setAttribute("class", "pointer-layer");
@@ -96,7 +95,14 @@ export class MapRenderer {
 
     for (const stationId of visibleStationIds) {
       const station = getStation(this.network, stationId);
-      renderStationMarker(stationLayer, station, state.selectedLineId, station.id === state.currentStationId);
+      renderStationMarker(
+        stationLayer,
+        station,
+        this.network,
+        state.selectedLineId,
+        station.id === state.currentStationId,
+        1 / this.zoom,
+      );
     }
   }
 
@@ -214,8 +220,16 @@ export class MapRenderer {
     };
   }
 
-  private renderDirectionStubs(layer: SVGGElement, stationId: string, currentPoint: Point): void {
+  private renderDirectionStubs(
+    layer: SVGGElement,
+    stationId: string,
+    currentPoint: Point,
+    revealedConnectionIds: Set<string>,
+  ): void {
     const stubs = this.network.connections.flatMap((connection) => {
+      if (revealedConnectionIds.has(connection.id)) {
+        return [];
+      }
       if (connection.from !== stationId && connection.to !== stationId) {
         return [];
       }
@@ -257,12 +271,12 @@ export class MapRenderer {
       group.forEach((stub, index) => {
         const offset = getCenteredOffset(index, group.length, PARALLEL_STUB_SPACING);
         const start = {
-          x: currentPoint.x + stub.unit.x * STUB_INNER_RADIUS + stub.normal.x * offset,
-          y: currentPoint.y + stub.unit.y * STUB_INNER_RADIUS + stub.normal.y * offset,
+          x: currentPoint.x + stub.normal.x * offset,
+          y: currentPoint.y + stub.normal.y * offset,
         };
         const end = {
-          x: currentPoint.x + stub.unit.x * STUB_OUTER_RADIUS + stub.normal.x * offset,
-          y: currentPoint.y + stub.unit.y * STUB_OUTER_RADIUS + stub.normal.y * offset,
+          x: currentPoint.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
+          y: currentPoint.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
         };
         const line = document.createElementNS(SVG_NS, "line");
         line.setAttribute("x1", String(start.x));
