@@ -57,6 +57,10 @@ const MERGED_STATION_NAMES = new Set([
 ]);
 
 const WALK_LINKED_STATION_FAMILIES = new Set(["Hammersmith", "Canary Wharf"]);
+const WALK_LINKED_STATION_PAIRS = [
+  ["euston", "euston-square"],
+  ["kenton", "northwick-park"],
+];
 const STATION_NAME_BY_NODE = new Map([
   ["44.5,-7.5", "Moorgate"],
 ]);
@@ -250,6 +254,12 @@ for (const name of WALK_LINKED_STATION_FAMILIES) {
   }
 }
 
+for (const [fromId, toId] of WALK_LINKED_STATION_PAIRS) {
+  const fromStation = [...stationByGroup.values()].find((station) => station.id === fromId);
+  const toStation = [...stationByGroup.values()].find((station) => station.id === toId);
+  addWalkConnection(connectionById, fromStation, toStation);
+}
+
 const stationLines = new Map();
 for (const connection of connectionById.values()) {
   addToMapSet(stationLines, connection.from, connection.line);
@@ -406,8 +416,8 @@ function chooseStationIdentity(root, node, names, labelledNodesByName) {
 
   if (names.length === 1 && names[0] === "Paddington" && node === "5.5,-12.5") {
     return {
-      name: "Paddington (Hammersmith & City)",
-      groupKey: `split:${root}:paddington-hammersmith-city`,
+      name: "Paddington (Bakerloo)",
+      groupKey: `split:${root}:paddington-bakerloo`,
     };
   }
 

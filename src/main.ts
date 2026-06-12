@@ -11,10 +11,11 @@ import {
   createMouseIntentState,
   updateMouseIntent,
 } from "./input/mouseIntent";
-import { getSvgPoint } from "./input/mouse";
 import { MapRenderer } from "./rendering/mapRenderer";
 import { Hud } from "./ui/hud";
 import type { Point } from "./data/types";
+
+const REJECTED_MOVE_FLASH_MS = 180;
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) {
@@ -43,12 +44,10 @@ const hud = new Hud(root, networkData, {
   },
   onZoomIn: () => {
     renderer.zoomIn();
-    clearPointerIntent();
     render();
   },
   onZoomOut: () => {
     renderer.zoomOut();
-    clearPointerIntent();
     render();
   },
 });
@@ -74,11 +73,6 @@ function render(): void {
   hud.update(state, now);
 }
 
-function clearPointerIntent(): void {
-  pointerPoint = null;
-  mouseIntent = clearMouseIntentPosition(mouseIntent);
-}
-
 function tick(): void {
   if (state) {
     hud.update(state, performance.now());
@@ -100,10 +94,9 @@ renderer.svg.addEventListener("pointermove", (event) => {
     return;
   }
 
-  const nextPointerPoint = getSvgPoint(renderer.svg, event.clientX, event.clientY);
   const currentMousePosition = { x: event.clientX, y: event.clientY };
   mouseIntent = updateMouseIntent(mouseIntent, currentMousePosition, performance.now());
-  pointerPoint = nextPointerPoint;
+  pointerPoint = currentMousePosition;
   render();
 });
 
@@ -113,16 +106,26 @@ renderer.svg.addEventListener("pointerleave", () => {
   render();
 });
 
-renderer.svg.addEventListener("click", (event) => {
+renderer.svg.addEventListener("click", () => {
   if (!state) {
     return;
   }
 
-  const clickPoint = getSvgPoint(renderer.svg, event.clientX, event.clientY);
   const result = attemptMoveInDirection(state, networkData, mouseIntent.direction, performance.now());
   state = result.state;
-  pointerPoint = clickPoint;
-  mouseIntent = updateMouseIntent(mouseIntent, { x: event.clientX, y: event.clientY }, performance.now());
+
+  if (!result.moved && state.rejectedMoveAt !== null) {
+    const rejectedMoveAt = state.rejectedMoveAt;
+    window.setTimeout(() => {
+      if (!state || state.rejectedMoveAt !== rejectedMoveAt) {
+        return;
+      }
+
+      state = { ...state, rejectedMoveAt: null };
+      render();
+    }, REJECTED_MOVE_FLASH_MS);
+  }
+
   render();
 });
 

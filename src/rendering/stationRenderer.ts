@@ -13,6 +13,12 @@ const CURRENT_HIGHLIGHT_RADIUS =
   INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH / 2;
 const NORTHERN_BRANCH_INTERCHANGES = new Set(["Camden Town", "Kennington"]);
 
+export type CurrentStationLabelPlacement = {
+  x: number;
+  y: number;
+  textAnchor: "start" | "middle" | "end";
+};
+
 export function renderStationMarker(
   layer: SVGGElement,
   station: Station,
@@ -20,7 +26,8 @@ export function renderStationMarker(
   selectedLineId: LineId,
   isCurrent: boolean,
   currentLabelScale = 1,
-): void {
+  currentLabelPlacement: CurrentStationLabelPlacement = { x: 28, y: -24, textAnchor: "start" },
+): SVGTextElement | null {
   const point = gridPointToSvgPoint(station);
   const group = document.createElementNS(SVG_NS, "g");
   group.setAttribute("class", isCurrent ? "station station-current" : "station station-revealed");
@@ -28,7 +35,7 @@ export function renderStationMarker(
 
   const isInterchange = isInterchangeStation(station);
   if (isCurrent && isInterchange) {
-    group.append(createCurrentHighlight(LINE_BY_ID[selectedLineId].color));
+    group.append(createCurrentHighlight(selectedLineId));
   }
 
   if (isInterchange) {
@@ -38,17 +45,21 @@ export function renderStationMarker(
     group.append(createBarMarker(getStationLineDirection(network, station.id, markerLineId), LINE_BY_ID[markerLineId].color));
   }
 
+  let currentLabel: SVGTextElement | null = null;
   if (isCurrent) {
     const label = document.createElementNS(SVG_NS, "text");
     label.textContent = station.name;
-    label.setAttribute("x", "20");
-    label.setAttribute("y", "-18");
+    label.setAttribute("x", String(currentLabelPlacement.x));
+    label.setAttribute("y", String(currentLabelPlacement.y));
+    label.setAttribute("text-anchor", currentLabelPlacement.textAnchor);
     label.setAttribute("transform", `scale(${currentLabelScale})`);
     label.setAttribute("class", "current-station-label");
     group.append(label);
+    currentLabel = label;
   }
 
   layer.append(group);
+  return currentLabel;
 }
 
 export function isInterchangeStation(station: Station): boolean {
@@ -87,12 +98,16 @@ export function getStationLineDirection(network: NetworkData, stationId: string,
   );
 }
 
-function createCurrentHighlight(color: string): SVGCircleElement {
+function createCurrentHighlight(lineId: LineId): SVGCircleElement {
   const highlight = document.createElementNS(SVG_NS, "circle");
   highlight.setAttribute("r", String(CURRENT_HIGHLIGHT_RADIUS));
   highlight.setAttribute("fill", "none");
-  highlight.setAttribute("stroke", color);
+  highlight.setAttribute("stroke", LINE_BY_ID[lineId].color);
   highlight.setAttribute("stroke-width", String(CURRENT_HIGHLIGHT_WIDTH));
+  if (lineId === "walk") {
+    highlight.setAttribute("stroke-dasharray", "8 6");
+    highlight.setAttribute("stroke-linecap", "butt");
+  }
   highlight.setAttribute("class", "current-station-highlight");
   return highlight;
 }

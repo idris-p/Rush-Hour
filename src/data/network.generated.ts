@@ -1163,8 +1163,8 @@ export const stationSeeds: StationSeed[] = [
     "y": -18
   },
   {
-    "id": "paddington-hammersmith-and-city",
-    "name": "Paddington (Hammersmith & City)",
+    "id": "paddington-bakerloo",
+    "name": "Paddington (Bakerloo)",
     "x": 12,
     "y": -24
   },
@@ -1977,7 +1977,7 @@ export const connectionSeeds: ConnectionSeed[] = [
   },
   {
     "from": "edgware-road-bakerloo",
-    "to": "paddington-hammersmith-and-city",
+    "to": "paddington-bakerloo",
     "line": "bakerloo",
     "path": [
       {
@@ -2407,7 +2407,7 @@ export const connectionSeeds: ConnectionSeed[] = [
     ]
   },
   {
-    "from": "paddington-hammersmith-and-city",
+    "from": "paddington-bakerloo",
     "to": "warwick-avenue",
     "line": "bakerloo",
     "path": [
@@ -18771,6 +18771,49 @@ export const connectionSeeds: ConnectionSeed[] = [
     ]
   },
   {
+    "from": "euston",
+    "to": "euston-square",
+    "line": "walk",
+    "path": [
+      {
+        "x": 66,
+        "y": -28
+      },
+      {
+        "x": 65,
+        "y": -27
+      },
+      {
+        "x": 64,
+        "y": -26
+      },
+      {
+        "x": 63,
+        "y": -25
+      },
+      {
+        "x": 62,
+        "y": -24
+      },
+      {
+        "x": 61,
+        "y": -23
+      },
+      {
+        "x": 60,
+        "y": -22
+      },
+      {
+        "x": 59,
+        "y": -22
+      },
+      {
+        "x": 58,
+        "y": -22
+      }
+    ]
+  },
+  {
     "from": "hammersmith-circle-and-hammersmith-and-city",
     "to": "hammersmith-district-and-piccadilly",
     "line": "walk",
@@ -18794,6 +18837,33 @@ export const connectionSeeds: ConnectionSeed[] = [
       {
         "x": -2,
         "y": 14
+      }
+    ]
+  },
+  {
+    "from": "kenton",
+    "to": "northwick-park",
+    "line": "walk",
+    "path": [
+      {
+        "x": -2,
+        "y": -58
+      },
+      {
+        "x": -3,
+        "y": -57
+      },
+      {
+        "x": -4,
+        "y": -56
+      },
+      {
+        "x": -5,
+        "y": -55
+      },
+      {
+        "x": -6,
+        "y": -54
       }
     ]
   },
@@ -18825,7 +18895,7 @@ export const connectionSeeds: ConnectionSeed[] = [
     ]
   },
   {
-    "from": "paddington-hammersmith-and-city",
+    "from": "paddington-bakerloo",
     "to": "paddington",
     "line": "walk",
     "path": [

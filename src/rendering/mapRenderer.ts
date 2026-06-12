@@ -7,11 +7,16 @@ import {
   type MovementDirection,
 } from "../game/movement";
 import type { Connection, NetworkData, Point } from "../data/types";
+import { getSvgPoint } from "../input/mouse";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { renderRevealedLine } from "./lineRenderer";
 import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
 import { renderRiverThames } from "./riverRenderer";
-import { renderStationMarker } from "./stationRenderer";
+import {
+  isInterchangeStation,
+  renderStationMarker,
+  type CurrentStationLabelPlacement,
+} from "./stationRenderer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const BASE_VIEWBOX_WIDTH = 760;
@@ -19,7 +24,28 @@ const BASE_VIEWBOX_HEIGHT = 560;
 const MIN_ZOOM = 0.3;
 const MAX_ZOOM = 2.4;
 const ZOOM_STEP = 1.25;
-const STUB_LENGTH = 26;
+const STUB_LENGTH = 40;
+const STUB_ARROW_LENGTH = 11;
+const STUB_ARROW_HALF_WIDTH = 8;
+const LABEL_RADII = [26, 32, 40, 50, 62, 76, 92, 112];
+const LABEL_SAMPLE_COLUMNS = 5;
+const LABEL_SAMPLE_ROWS = 3;
+const LABEL_COLLISION_PADDING = 3;
+const LABEL_OBSTACLE_SELECTOR = [
+  ".map-line",
+  ".direction-stub",
+  ".direction-stub-arrow",
+  ".interchange-marker",
+  ".station-bar-marker",
+  ".current-station-highlight",
+  ".river-thames-outline",
+  ".river-thames-fill",
+  ".hud-panel",
+  ".line-indicator",
+  ".seed-controls",
+  ".zoom-controls",
+  ".completion-overlay:not([hidden])",
+].join(",");
 
 export class MapRenderer {
   readonly svg: SVGSVGElement;
@@ -27,6 +53,8 @@ export class MapRenderer {
   private readonly network: NetworkData;
 
   private zoom = 1;
+
+  private labelPlacementCache: { key: string; placement: CurrentStationLabelPlacement } | null = null;
 
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
@@ -56,7 +84,7 @@ export class MapRenderer {
     this.svg.replaceChildren();
 
     this.renderGrid(viewBox);
-    renderRiverThames(this.svg);
+    renderRiverThames(this.svg, viewBox);
 
     const revealedLayer = document.createElementNS(SVG_NS, "g");
     revealedLayer.setAttribute("class", "revealed-lines");
@@ -82,20 +110,22 @@ export class MapRenderer {
     const stubLayer = document.createElementNS(SVG_NS, "g");
     stubLayer.setAttribute("class", "direction-stubs");
     this.svg.append(stubLayer);
-    this.renderDirectionStubs(stubLayer, state.currentStationId, currentPoint, state.revealedConnections);
-
-    const pointerLayer = document.createElementNS(SVG_NS, "g");
-    pointerLayer.setAttribute("class", "pointer-layer");
-    this.svg.append(pointerLayer);
-    this.renderPointer(pointerLayer, pointerPoint, pointerDirection, state.rejectedMoveAt !== null);
+    const directionStubs = this.getDirectionStubs(state.currentStationId, state.revealedConnections);
+    this.renderDirectionStubs(
+      stubLayer,
+      currentPoint,
+      directionStubs,
+      !isInterchangeStation(currentStation),
+    );
 
     const stationLayer = document.createElementNS(SVG_NS, "g");
     stationLayer.setAttribute("class", "stations");
     this.svg.append(stationLayer);
 
+    let currentLabel: SVGTextElement | null = null;
     for (const stationId of visibleStationIds) {
       const station = getStation(this.network, stationId);
-      renderStationMarker(
+      const label = renderStationMarker(
         stationLayer,
         station,
         this.network,
@@ -103,7 +133,14 @@ export class MapRenderer {
         station.id === state.currentStationId,
         1 / this.zoom,
       );
+      if (label) currentLabel = label;
     }
+    if (currentLabel) this.positionCurrentStationLabel(currentLabel, state);
+
+    const pointerLayer = document.createElementNS(SVG_NS, "g");
+    pointerLayer.setAttribute("class", "pointer-layer");
+    this.svg.append(pointerLayer);
+    this.renderPointer(pointerLayer, pointerPoint, pointerDirection, state.rejectedMoveAt !== null);
   }
 
   renderIdle(): void {
@@ -119,7 +156,7 @@ export class MapRenderer {
     this.svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
     this.svg.replaceChildren();
     this.renderGrid(viewBox);
-    renderRiverThames(this.svg);
+    renderRiverThames(this.svg, viewBox);
   }
 
   zoomIn(): void {
@@ -167,22 +204,21 @@ export class MapRenderer {
       return;
     }
 
+    const svgPoint = getSvgPoint(this.svg, pointerPoint.x, pointerPoint.y);
     const arrow = document.createElementNS(SVG_NS, "g");
     arrow.setAttribute(
       "transform",
-      `translate(${pointerPoint.x} ${pointerPoint.y}) rotate(${getDirectionAngle(pointerDirection)})`,
+      `translate(${svgPoint.x} ${svgPoint.y}) scale(${1 / this.zoom}) rotate(${getDirectionAngle(pointerDirection)})`,
     );
     arrow.setAttribute("class", rejected ? "cursor-arrow cursor-arrow-rejected" : "cursor-arrow");
 
-    const shaft = document.createElementNS(SVG_NS, "path");
-    shaft.setAttribute("d", "M -14 0 L 12 0");
-    shaft.setAttribute("class", "cursor-arrow-shaft");
-    arrow.append(shaft);
-
-    const head = document.createElementNS(SVG_NS, "path");
-    head.setAttribute("d", "M 16 0 L 2 -9 L 5 0 L 2 9 Z");
-    head.setAttribute("class", "cursor-arrow-head");
-    arrow.append(head);
+    const shape = document.createElementNS(SVG_NS, "path");
+    shape.setAttribute(
+      "d",
+      "M -15 -3 L 4 -3 L 4 -9 L 17 0 L 4 9 L 4 3 L -15 3 Z",
+    );
+    shape.setAttribute("class", "cursor-arrow-shape");
+    arrow.append(shape);
     layer.append(arrow);
   }
 
@@ -220,13 +256,8 @@ export class MapRenderer {
     };
   }
 
-  private renderDirectionStubs(
-    layer: SVGGElement,
-    stationId: string,
-    currentPoint: Point,
-    revealedConnectionIds: Set<string>,
-  ): void {
-    const stubs = this.network.connections.flatMap((connection) => {
+  private getDirectionStubs(stationId: string, revealedConnectionIds: Set<string>) {
+    return this.network.connections.flatMap((connection) => {
       if (revealedConnectionIds.has(connection.id)) {
         return [];
       }
@@ -258,6 +289,14 @@ export class MapRenderer {
         },
       ];
     });
+  }
+
+  private renderDirectionStubs(
+    layer: SVGGElement,
+    currentPoint: Point,
+    stubs: ReturnType<MapRenderer["getDirectionStubs"]>,
+    showArrowHeads: boolean,
+  ): void {
 
     const groups = new Map<string, typeof stubs>();
     for (const stub of stubs) {
@@ -274,24 +313,151 @@ export class MapRenderer {
           x: currentPoint.x + stub.normal.x * offset,
           y: currentPoint.y + stub.normal.y * offset,
         };
-        const end = {
+        const arrowTip = {
           x: currentPoint.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
           y: currentPoint.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
         };
+        const lineEnd = showArrowHeads
+          ? {
+              x: arrowTip.x - stub.unit.x * STUB_ARROW_LENGTH,
+              y: arrowTip.y - stub.unit.y * STUB_ARROW_LENGTH,
+            }
+          : arrowTip;
         const line = document.createElementNS(SVG_NS, "line");
         line.setAttribute("x1", String(start.x));
         line.setAttribute("y1", String(start.y));
-        line.setAttribute("x2", String(end.x));
-        line.setAttribute("y2", String(end.y));
+        line.setAttribute("x2", String(lineEnd.x));
+        line.setAttribute("y2", String(lineEnd.y));
         line.setAttribute("stroke", LINE_BY_ID[stub.connection.line].color);
         line.setAttribute("class", "direction-stub");
         if (stub.connection.line === "walk") {
           line.setAttribute("stroke-dasharray", "8 6");
         }
         layer.append(line);
+
+        if (showArrowHeads) {
+          const arrow = document.createElementNS(SVG_NS, "polygon");
+          arrow.setAttribute(
+            "points",
+            getStubArrowHeadPoints(arrowTip, stub.unit, stub.normal)
+              .map((point) => `${point.x},${point.y}`)
+              .join(" "),
+          );
+          arrow.setAttribute("fill", LINE_BY_ID[stub.connection.line].color);
+          arrow.setAttribute("class", "direction-stub-arrow");
+          layer.append(arrow);
+        }
       });
     }
   }
+
+  private positionCurrentStationLabel(label: SVGTextElement, state: GameState): void {
+    const cacheKey = [
+      state.currentStationId,
+      this.zoom,
+      this.svg.clientWidth,
+      this.svg.clientHeight,
+      [...state.revealedConnections].sort().join(","),
+    ].join("|");
+    if (this.labelPlacementCache?.key === cacheKey) {
+      applyCurrentStationLabelPlacement(label, this.labelPlacementCache.placement);
+      return;
+    }
+
+    let best = getCurrentStationLabelPlacements()[0];
+    let bestCollisionCount = Number.POSITIVE_INFINITY;
+    for (const placement of getCurrentStationLabelPlacements()) {
+      applyCurrentStationLabelPlacement(label, placement);
+      const collisionCount = countLabelCollisions(label);
+      if (collisionCount < bestCollisionCount) {
+        best = placement;
+        bestCollisionCount = collisionCount;
+      }
+      if (collisionCount === 0) break;
+    }
+
+    applyCurrentStationLabelPlacement(label, best);
+    this.labelPlacementCache = { key: cacheKey, placement: best };
+  }
+}
+
+export function getStubArrowHeadPoints(end: Point, unit: Point, normal: Point): Point[] {
+  const base = {
+    x: end.x - unit.x * STUB_ARROW_LENGTH,
+    y: end.y - unit.y * STUB_ARROW_LENGTH,
+  };
+  return [
+    end,
+    {
+      x: base.x + normal.x * STUB_ARROW_HALF_WIDTH,
+      y: base.y + normal.y * STUB_ARROW_HALF_WIDTH,
+    },
+    {
+      x: base.x - normal.x * STUB_ARROW_HALF_WIDTH,
+      y: base.y - normal.y * STUB_ARROW_HALF_WIDTH,
+    },
+  ];
+}
+
+export function getCurrentStationLabelPlacements(): CurrentStationLabelPlacement[] {
+  const directions = [
+    { x: 1, y: 0 },
+    diagonal(1, -1),
+    { x: 0, y: -1 },
+    diagonal(-1, -1),
+    { x: -1, y: 0 },
+    diagonal(-1, 1),
+    { x: 0, y: 1 },
+    diagonal(1, 1),
+  ];
+  return LABEL_RADII.flatMap((radius) =>
+    directions.map((direction) => ({
+      x: direction.x * radius,
+      y: direction.y * radius + getLabelBaselineAdjustment(direction.y),
+      textAnchor: direction.x > 0.35 ? "start" : direction.x < -0.35 ? "end" : "middle",
+    })),
+  );
+}
+
+function getLabelBaselineAdjustment(verticalDirection: number): number {
+  if (verticalDirection > 0.35) return 12;
+  if (verticalDirection < -0.35) return 0;
+  return 5;
+}
+
+function diagonal(x: number, y: number): Point {
+  const length = Math.SQRT2;
+  return { x: x / length, y: y / length };
+}
+
+function applyCurrentStationLabelPlacement(
+  label: SVGTextElement,
+  placement: CurrentStationLabelPlacement,
+): void {
+  label.setAttribute("x", String(placement.x));
+  label.setAttribute("y", String(placement.y));
+  label.setAttribute("text-anchor", placement.textAnchor);
+}
+
+function countLabelCollisions(label: SVGTextElement): number {
+  const rect = label.getBoundingClientRect();
+  if (rect.width === 0 || rect.height === 0) return 0;
+
+  const left = rect.left - LABEL_COLLISION_PADDING;
+  const right = rect.right + LABEL_COLLISION_PADDING;
+  const top = rect.top - LABEL_COLLISION_PADDING;
+  const bottom = rect.bottom + LABEL_COLLISION_PADDING;
+  const collisions = new Set<Element>();
+  for (let row = 0; row < LABEL_SAMPLE_ROWS; row += 1) {
+    const y = top + ((bottom - top) * row) / (LABEL_SAMPLE_ROWS - 1);
+    for (let column = 0; column < LABEL_SAMPLE_COLUMNS; column += 1) {
+      const x = left + ((right - left) * column) / (LABEL_SAMPLE_COLUMNS - 1);
+      for (const element of document.elementsFromPoint(x, y)) {
+        if (element !== label && element.matches(LABEL_OBSTACLE_SELECTOR)) collisions.add(element);
+      }
+    }
+  }
+  return collisions.size;
 }
 
 function isMajorGridLine(value: number): boolean {

@@ -87,30 +87,25 @@ svg text {
   stroke: #ffffff;
   stroke-width: 4px;
   paint-order: stroke;
+  pointer-events: none;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .cursor-arrow {
   pointer-events: none;
 }
 
-.cursor-arrow-shaft {
-  stroke: #111111;
-  stroke-width: 4;
-  stroke-linecap: round;
-  opacity: 0.8;
-}
-
-.cursor-arrow-head {
+.cursor-arrow-shape {
   fill: #111111;
-  opacity: 0.8;
+  stroke: #ffffff;
+  stroke-width: 4;
+  stroke-linejoin: round;
+  paint-order: stroke fill;
 }
 
-.cursor-arrow-rejected .cursor-arrow-shaft {
-  stroke: #d4351c;
-}
-
-.cursor-arrow-rejected .cursor-arrow-head {
-  fill: #d4351c;
+.cursor-arrow-rejected .cursor-arrow-shape {
+  fill: #d71920;
 }
 
 .hud-panel,

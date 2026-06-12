@@ -8,7 +8,7 @@ describe("network data validation", () => {
     expect(validateNetworkData(networkData)).toEqual([]);
     expect(networkData.temporary).toBe(false);
     expect(networkData.stations).toHaveLength(302);
-    expect(networkData.connections).toHaveLength(421);
+    expect(networkData.connections).toHaveLength(423);
   });
 
   it("excludes London Trams", () => {
@@ -55,7 +55,7 @@ describe("network data validation", () => {
       northern: 53,
       piccadilly: 53,
       victoria: 15,
-      walk: 5,
+      walk: 7,
       "waterloo-city": 1,
     });
 
@@ -95,6 +95,22 @@ describe("network data validation", () => {
     ]) {
       expect(stationNames.has(excluded), `Unexpected unsupported station ${excluded}`).toBe(false);
     }
+  });
+
+  it("includes the requested out-of-station walk interchanges", () => {
+    const walkPairs = new Set(
+      networkData.connections
+        .filter((connection) => connection.line === "walk")
+        .map((connection) => [connection.from, connection.to].sort().join(":")),
+    );
+
+    expect(walkPairs).toContain("euston:euston-square");
+    expect(walkPairs).toContain("kenton:northwick-park");
+  });
+
+  it("labels the separate Bakerloo-side Paddington station correctly", () => {
+    expect(networkData.stations.find((station) => station.id === "paddington-bakerloo")?.name)
+      .toBe("Paddington (Bakerloo)");
   });
 
   it("keeps every playable station in one connected network", () => {
