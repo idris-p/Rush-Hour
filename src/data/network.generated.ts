@@ -43,7 +43,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "amersham",
     "name": "Amersham",
-    "x": -72,
+    "x": -58,
     "y": -88
   },
   {
@@ -116,7 +116,7 @@ export const stationSeeds: StationSeed[] = [
     "id": "battersea-power-station",
     "name": "Battersea Power Station",
     "x": 30,
-    "y": 36
+    "y": 38
   },
   {
     "id": "bayswater",
@@ -248,7 +248,7 @@ export const stationSeeds: StationSeed[] = [
     "id": "canada-water",
     "name": "Canada Water",
     "x": 118,
-    "y": 14
+    "y": 16
   },
   {
     "id": "canary-wharf-elizabeth-line",
@@ -265,7 +265,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "canning-town",
     "name": "Canning Town",
-    "x": 152,
+    "x": 154,
     "y": 4
   },
   {
@@ -289,7 +289,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "chalfont-and-latimer",
     "name": "Chalfont & Latimer",
-    "x": -60,
+    "x": -50,
     "y": -88
   },
   {
@@ -313,7 +313,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "chesham",
     "name": "Chesham",
-    "x": -66,
+    "x": -54,
     "y": -92
   },
   {
@@ -331,7 +331,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "chorleywood",
     "name": "Chorleywood",
-    "x": -48,
+    "x": -46,
     "y": -84
   },
   {
@@ -379,7 +379,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "croxley",
     "name": "Croxley",
-    "x": -40,
+    "x": -36,
     "y": -82
   },
   {
@@ -493,7 +493,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "embankment",
     "name": "Embankment",
-    "x": 64,
+    "x": 62,
     "y": 14
   },
   {
@@ -625,7 +625,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "gunnersbury",
     "name": "Gunnersbury",
-    "x": -30,
+    "x": -26,
     "y": 20
   },
   {
@@ -853,7 +853,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "kew-gardens",
     "name": "Kew Gardens",
-    "x": -36,
+    "x": -32,
     "y": 26
   },
   {
@@ -896,7 +896,7 @@ export const stationSeeds: StationSeed[] = [
     "id": "lambeth-north",
     "name": "Lambeth North",
     "x": 64,
-    "y": 28
+    "y": 30
   },
   {
     "id": "lancaster-gate",
@@ -1021,7 +1021,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "moor-park",
     "name": "Moor Park",
-    "x": -38,
+    "x": -36,
     "y": -74
   },
   {
@@ -1058,7 +1058,7 @@ export const stationSeeds: StationSeed[] = [
     "id": "nine-elms",
     "name": "Nine Elms",
     "x": 38,
-    "y": 36
+    "y": 38
   },
   {
     "id": "north-acton",
@@ -1081,7 +1081,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "north-harrow",
     "name": "North Harrow",
-    "x": -22,
+    "x": -20,
     "y": -58
   },
   {
@@ -1111,13 +1111,13 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "northwood",
     "name": "Northwood",
-    "x": -34,
+    "x": -32,
     "y": -70
   },
   {
     "id": "northwood-hills",
     "name": "Northwood Hills",
-    "x": -30,
+    "x": -28,
     "y": -66
   },
   {
@@ -1201,7 +1201,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "pinner",
     "name": "Pinner",
-    "x": -26,
+    "x": -24,
     "y": -62
   },
   {
@@ -1273,13 +1273,13 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "richmond",
     "name": "Richmond",
-    "x": -42,
+    "x": -38,
     "y": 32
   },
   {
     "id": "rickmansworth",
     "name": "Rickmansworth",
-    "x": -44,
+    "x": -42,
     "y": -80
   },
   {
@@ -1663,7 +1663,7 @@ export const stationSeeds: StationSeed[] = [
   {
     "id": "watford",
     "name": "Watford",
-    "x": -40,
+    "x": -36,
     "y": -86
   },
   {
@@ -1907,27 +1907,27 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": 8
       },
       {
-        "x": 63,
+        "x": 62,
         "y": 9
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 10
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 11
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 12
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 13
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 14
       }
     ]
@@ -2016,27 +2016,27 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "bakerloo",
     "path": [
       {
-        "x": 64,
+        "x": 62,
         "y": 14
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 15
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 16
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 17
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 18
       },
       {
-        "x": 63,
+        "x": 62,
         "y": 19
       },
       {
@@ -2209,14 +2209,6 @@ export const connectionSeeds: ConnectionSeed[] = [
     "to": "elephant-and-castle",
     "line": "bakerloo",
     "path": [
-      {
-        "x": 64,
-        "y": 28
-      },
-      {
-        "x": 64,
-        "y": 29
-      },
       {
         "x": 64,
         "y": 30
@@ -2524,36 +2516,44 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": 20
       },
       {
-        "x": 62,
+        "x": 63,
         "y": 21
       },
       {
-        "x": 62,
+        "x": 64,
         "y": 22
       },
       {
-        "x": 62,
+        "x": 64,
         "y": 23
       },
       {
-        "x": 62,
+        "x": 64,
         "y": 24
       },
       {
-        "x": 62,
+        "x": 64,
         "y": 25
       },
       {
-        "x": 62,
+        "x": 64,
         "y": 26
       },
       {
-        "x": 63,
+        "x": 64,
         "y": 27
       },
       {
         "x": 64,
         "y": 28
+      },
+      {
+        "x": 64,
+        "y": 29
+      },
+      {
+        "x": 64,
+        "y": 30
       }
     ]
   },
@@ -4854,6 +4854,14 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "circle",
     "path": [
       {
+        "x": 62,
+        "y": 14
+      },
+      {
+        "x": 63,
+        "y": 14
+      },
+      {
         "x": 64,
         "y": 14
       },
@@ -5916,14 +5924,6 @@ export const connectionSeeds: ConnectionSeed[] = [
       {
         "x": 62,
         "y": 14
-      },
-      {
-        "x": 63,
-        "y": 14
-      },
-      {
-        "x": 64,
-        "y": 14
       }
     ]
   },
@@ -6593,6 +6593,14 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "district",
     "path": [
       {
+        "x": 62,
+        "y": 14
+      },
+      {
+        "x": 63,
+        "y": 14
+      },
+      {
         "x": 64,
         "y": 14
       },
@@ -6698,31 +6706,31 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "district",
     "path": [
       {
-        "x": -30,
+        "x": -26,
         "y": 20
       },
       {
-        "x": -31,
+        "x": -27,
         "y": 21
       },
       {
-        "x": -32,
+        "x": -28,
         "y": 22
       },
       {
-        "x": -33,
+        "x": -29,
         "y": 23
       },
       {
-        "x": -34,
+        "x": -30,
         "y": 24
       },
       {
-        "x": -35,
+        "x": -31,
         "y": 25
       },
       {
-        "x": -36,
+        "x": -32,
         "y": 26
       }
     ]
@@ -6732,22 +6740,6 @@ export const connectionSeeds: ConnectionSeed[] = [
     "to": "turnham-green",
     "line": "district",
     "path": [
-      {
-        "x": -30,
-        "y": 20
-      },
-      {
-        "x": -29,
-        "y": 20
-      },
-      {
-        "x": -28,
-        "y": 20
-      },
-      {
-        "x": -27,
-        "y": 20
-      },
       {
         "x": -26,
         "y": 20
@@ -7231,31 +7223,31 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "district",
     "path": [
       {
-        "x": -42,
+        "x": -38,
         "y": 32
       },
       {
-        "x": -41,
+        "x": -37,
         "y": 31
       },
       {
-        "x": -40,
+        "x": -36,
         "y": 30
       },
       {
-        "x": -39,
+        "x": -35,
         "y": 29
       },
       {
-        "x": -38,
+        "x": -34,
         "y": 28
       },
       {
-        "x": -37,
+        "x": -33,
         "y": 27
       },
       {
-        "x": -36,
+        "x": -32,
         "y": 26
       }
     ]
@@ -7846,14 +7838,6 @@ export const connectionSeeds: ConnectionSeed[] = [
       },
       {
         "x": 62,
-        "y": 14
-      },
-      {
-        "x": 63,
-        "y": 14
-      },
-      {
-        "x": 64,
         "y": 14
       }
     ]
@@ -11397,43 +11381,43 @@ export const connectionSeeds: ConnectionSeed[] = [
       },
       {
         "x": 109,
-        "y": 14
+        "y": 15
       },
       {
         "x": 110,
-        "y": 14
+        "y": 16
       },
       {
         "x": 111,
-        "y": 14
+        "y": 16
       },
       {
         "x": 112,
-        "y": 14
+        "y": 16
       },
       {
         "x": 113,
-        "y": 14
+        "y": 16
       },
       {
         "x": 114,
-        "y": 14
+        "y": 16
       },
       {
         "x": 115,
-        "y": 14
+        "y": 16
       },
       {
         "x": 116,
-        "y": 14
+        "y": 16
       },
       {
         "x": 117,
-        "y": 14
+        "y": 16
       },
       {
         "x": 118,
-        "y": 14
+        "y": 16
       }
     ]
   },
@@ -11444,75 +11428,75 @@ export const connectionSeeds: ConnectionSeed[] = [
     "path": [
       {
         "x": 118,
-        "y": 14
+        "y": 16
       },
       {
         "x": 119,
-        "y": 14
+        "y": 16
       },
       {
         "x": 120,
-        "y": 14
+        "y": 16
       },
       {
         "x": 121,
-        "y": 14
+        "y": 16
       },
       {
         "x": 122,
-        "y": 14
+        "y": 16
       },
       {
         "x": 123,
-        "y": 14
+        "y": 16
       },
       {
         "x": 124,
-        "y": 14
+        "y": 16
       },
       {
         "x": 125,
-        "y": 14
+        "y": 16
       },
       {
         "x": 126,
-        "y": 14
+        "y": 16
       },
       {
         "x": 127,
-        "y": 14
+        "y": 16
       },
       {
         "x": 128,
-        "y": 14
+        "y": 16
       },
       {
         "x": 129,
-        "y": 14
+        "y": 16
       },
       {
         "x": 130,
-        "y": 14
+        "y": 16
       },
       {
         "x": 131,
-        "y": 14
+        "y": 16
       },
       {
         "x": 132,
-        "y": 14
+        "y": 16
       },
       {
         "x": 133,
-        "y": 14
+        "y": 16
       },
       {
         "x": 134,
-        "y": 14
+        "y": 16
       },
       {
         "x": 135,
-        "y": 15
+        "y": 16
       },
       {
         "x": 136,
@@ -11577,67 +11561,67 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "jubilee",
     "path": [
       {
-        "x": 152,
+        "x": 154,
         "y": 4
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 3
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 2
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 1
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 0
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -1
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -2
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -3
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -4
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -5
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -6
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -7
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -8
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -9
       },
       {
-        "x": 152,
+        "x": 154,
         "y": -10
       },
       {
-        "x": 153,
+        "x": 154,
         "y": -11
       },
       {
@@ -12030,27 +12014,27 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": 10
       },
       {
-        "x": 152,
+        "x": 153,
         "y": 9
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 8
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 7
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 6
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 5
       },
       {
-        "x": 152,
+        "x": 154,
         "y": 4
       }
     ]
@@ -12288,71 +12272,71 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": -12
       },
       {
-        "x": 154,
+        "x": 153,
         "y": -13
       },
       {
-        "x": 154,
+        "x": 152,
         "y": -14
       },
       {
-        "x": 154,
+        "x": 151,
         "y": -15
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -16
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -17
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -18
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -19
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -20
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -21
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -22
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -23
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -24
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -25
       },
       {
-        "x": 154,
+        "x": 150,
         "y": -26
       },
       {
-        "x": 153,
+        "x": 150,
         "y": -27
       },
       {
-        "x": 152,
+        "x": 150,
         "y": -28
       },
       {
-        "x": 151,
+        "x": 150,
         "y": -29
       },
       {
@@ -12625,114 +12609,12 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -60,
-        "y": -88
-      },
-      {
-        "x": -61,
-        "y": -88
-      },
-      {
-        "x": -62,
-        "y": -88
-      },
-      {
-        "x": -63,
-        "y": -88
-      },
-      {
-        "x": -64,
-        "y": -88
-      },
-      {
-        "x": -65,
-        "y": -88
-      },
-      {
-        "x": -66,
-        "y": -88
-      },
-      {
-        "x": -67,
-        "y": -88
-      },
-      {
-        "x": -68,
-        "y": -88
-      },
-      {
-        "x": -69,
-        "y": -88
-      },
-      {
-        "x": -70,
-        "y": -88
-      },
-      {
-        "x": -71,
-        "y": -88
-      },
-      {
-        "x": -72,
-        "y": -88
-      }
-    ]
-  },
-  {
-    "from": "chalfont-and-latimer",
-    "to": "chesham",
-    "line": "metropolitan",
-    "path": [
-      {
-        "x": -60,
-        "y": -88
-      },
-      {
-        "x": -61,
-        "y": -89
-      },
-      {
-        "x": -62,
-        "y": -90
-      },
-      {
-        "x": -63,
-        "y": -91
-      },
-      {
-        "x": -64,
-        "y": -92
-      },
-      {
-        "x": -65,
-        "y": -92
-      },
-      {
-        "x": -66,
-        "y": -92
-      }
-    ]
-  },
-  {
-    "from": "chorleywood",
-    "to": "chalfont-and-latimer",
-    "line": "metropolitan",
-    "path": [
-      {
-        "x": -48,
-        "y": -84
-      },
-      {
-        "x": -49,
-        "y": -85
-      },
-      {
         "x": -50,
-        "y": -86
+        "y": -88
       },
       {
         "x": -51,
-        "y": -87
+        "y": -88
       },
       {
         "x": -52,
@@ -12761,13 +12643,59 @@ export const connectionSeeds: ConnectionSeed[] = [
       {
         "x": -58,
         "y": -88
-      },
+      }
+    ]
+  },
+  {
+    "from": "chalfont-and-latimer",
+    "to": "chesham",
+    "line": "metropolitan",
+    "path": [
       {
-        "x": -59,
+        "x": -50,
         "y": -88
       },
       {
-        "x": -60,
+        "x": -51,
+        "y": -89
+      },
+      {
+        "x": -52,
+        "y": -90
+      },
+      {
+        "x": -53,
+        "y": -91
+      },
+      {
+        "x": -54,
+        "y": -92
+      }
+    ]
+  },
+  {
+    "from": "chorleywood",
+    "to": "chalfont-and-latimer",
+    "line": "metropolitan",
+    "path": [
+      {
+        "x": -46,
+        "y": -84
+      },
+      {
+        "x": -47,
+        "y": -85
+      },
+      {
+        "x": -48,
+        "y": -86
+      },
+      {
+        "x": -49,
+        "y": -87
+      },
+      {
+        "x": -50,
         "y": -88
       }
     ]
@@ -12951,14 +12879,6 @@ export const connectionSeeds: ConnectionSeed[] = [
       },
       {
         "x": -20,
-        "y": -58
-      },
-      {
-        "x": -21,
-        "y": -58
-      },
-      {
-        "x": -22,
         "y": -58
       }
     ]
@@ -13184,39 +13104,39 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -38,
+        "x": -36,
         "y": -74
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -75
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -76
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -77
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -78
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -79
       },
       {
-        "x": -38,
+        "x": -36,
         "y": -80
       },
       {
-        "x": -39,
+        "x": -36,
         "y": -81
       },
       {
-        "x": -40,
+        "x": -36,
         "y": -82
       }
     ]
@@ -13227,23 +13147,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -38,
+        "x": -36,
         "y": -74
       },
       {
-        "x": -37,
+        "x": -35,
         "y": -73
       },
       {
-        "x": -36,
+        "x": -34,
         "y": -72
       },
       {
-        "x": -35,
+        "x": -33,
         "y": -71
       },
       {
-        "x": -34,
+        "x": -32,
         "y": -70
       }
     ]
@@ -13254,31 +13174,31 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -38,
+        "x": -36,
         "y": -74
       },
       {
-        "x": -39,
+        "x": -37,
         "y": -75
       },
       {
-        "x": -40,
+        "x": -38,
         "y": -76
       },
       {
-        "x": -41,
+        "x": -39,
         "y": -77
       },
       {
-        "x": -42,
+        "x": -40,
         "y": -78
       },
       {
-        "x": -43,
+        "x": -41,
         "y": -79
       },
       {
-        "x": -44,
+        "x": -42,
         "y": -80
       }
     ]
@@ -13316,23 +13236,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -22,
+        "x": -20,
         "y": -58
       },
       {
-        "x": -23,
+        "x": -21,
         "y": -59
       },
       {
-        "x": -24,
+        "x": -22,
         "y": -60
       },
       {
-        "x": -25,
+        "x": -23,
         "y": -61
       },
       {
-        "x": -26,
+        "x": -24,
         "y": -62
       }
     ]
@@ -13394,23 +13314,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -30,
+        "x": -28,
         "y": -66
       },
       {
-        "x": -31,
+        "x": -29,
         "y": -67
       },
       {
-        "x": -32,
+        "x": -30,
         "y": -68
       },
       {
-        "x": -33,
+        "x": -31,
         "y": -69
       },
       {
-        "x": -34,
+        "x": -32,
         "y": -70
       }
     ]
@@ -13421,23 +13341,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -26,
+        "x": -24,
         "y": -62
       },
       {
-        "x": -27,
+        "x": -25,
         "y": -63
       },
       {
-        "x": -28,
+        "x": -26,
         "y": -64
       },
       {
-        "x": -29,
+        "x": -27,
         "y": -65
       },
       {
-        "x": -30,
+        "x": -28,
         "y": -66
       }
     ]
@@ -13593,23 +13513,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -44,
+        "x": -42,
         "y": -80
       },
       {
-        "x": -45,
+        "x": -43,
         "y": -81
       },
       {
-        "x": -46,
+        "x": -44,
         "y": -82
       },
       {
-        "x": -47,
+        "x": -45,
         "y": -83
       },
       {
-        "x": -48,
+        "x": -46,
         "y": -84
       }
     ]
@@ -13690,23 +13610,23 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "metropolitan",
     "path": [
       {
-        "x": -40,
+        "x": -36,
         "y": -86
       },
       {
-        "x": -40,
+        "x": -36,
         "y": -85
       },
       {
-        "x": -40,
+        "x": -36,
         "y": -84
       },
       {
-        "x": -40,
+        "x": -36,
         "y": -83
       },
       {
-        "x": -40,
+        "x": -36,
         "y": -82
       }
     ]
@@ -14578,11 +14498,11 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "northern",
     "path": [
       {
-        "x": 64,
+        "x": 62,
         "y": 14
       },
       {
-        "x": 63,
+        "x": 62,
         "y": 13
       },
       {
@@ -14613,27 +14533,27 @@ export const connectionSeeds: ConnectionSeed[] = [
     "line": "northern",
     "path": [
       {
-        "x": 64,
+        "x": 62,
         "y": 14
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 15
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 16
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 17
       },
       {
-        "x": 64,
+        "x": 62,
         "y": 18
       },
       {
-        "x": 63,
+        "x": 62,
         "y": 19
       },
       {
@@ -15024,11 +14944,11 @@ export const connectionSeeds: ConnectionSeed[] = [
       },
       {
         "x": 39,
-        "y": 37
+        "y": 38
       },
       {
         "x": 38,
-        "y": 36
+        "y": 38
       }
     ]
   },
@@ -15305,39 +15225,39 @@ export const connectionSeeds: ConnectionSeed[] = [
     "path": [
       {
         "x": 38,
-        "y": 36
+        "y": 38
       },
       {
         "x": 37,
-        "y": 36
+        "y": 38
       },
       {
         "x": 36,
-        "y": 36
+        "y": 38
       },
       {
         "x": 35,
-        "y": 36
+        "y": 38
       },
       {
         "x": 34,
-        "y": 36
+        "y": 38
       },
       {
         "x": 33,
-        "y": 36
+        "y": 38
       },
       {
         "x": 32,
-        "y": 36
+        "y": 38
       },
       {
         "x": 31,
-        "y": 36
+        "y": 38
       },
       {
         "x": 30,
-        "y": 36
+        "y": 38
       }
     ]
   },
@@ -15653,71 +15573,71 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": 20
       },
       {
-        "x": 62,
+        "x": 61,
         "y": 21
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 22
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 23
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 24
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 25
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 26
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 27
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 28
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 29
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 30
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 31
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 32
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 33
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 34
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 35
       },
       {
-        "x": 62,
+        "x": 60,
         "y": 36
       },
       {
-        "x": 61,
+        "x": 60,
         "y": 37
       },
       {
@@ -15790,23 +15710,23 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": 14
       },
       {
-        "x": -34,
+        "x": -35,
         "y": 13
       },
       {
-        "x": -34,
+        "x": -36,
         "y": 12
       },
       {
-        "x": -35,
+        "x": -37,
         "y": 11
       },
       {
-        "x": -36,
+        "x": -38,
         "y": 10
       },
       {
-        "x": -37,
+        "x": -38,
         "y": 9
       },
       {
@@ -18868,33 +18788,6 @@ export const connectionSeeds: ConnectionSeed[] = [
     ]
   },
   {
-    "from": "liverpool-street",
-    "to": "moorgate",
-    "line": "walk",
-    "path": [
-      {
-        "x": 92,
-        "y": -12
-      },
-      {
-        "x": 91,
-        "y": -12
-      },
-      {
-        "x": 90,
-        "y": -12
-      },
-      {
-        "x": 89,
-        "y": -12
-      },
-      {
-        "x": 88,
-        "y": -12
-      }
-    ]
-  },
-  {
     "from": "paddington-bakerloo",
     "to": "paddington",
     "line": "walk",
@@ -18947,104 +18840,164 @@ export const connectionSeeds: ConnectionSeed[] = [
         "y": -6
       },
       {
-        "x": 87,
+        "x": 88,
         "y": -5
       },
       {
-        "x": 86,
+        "x": 88,
         "y": -4
       },
       {
-        "x": 85,
+        "x": 88,
         "y": -3
       },
       {
-        "x": 84,
+        "x": 88,
         "y": -2
       },
       {
-        "x": 83,
+        "x": 88,
         "y": -1
       },
       {
-        "x": 82,
+        "x": 88,
         "y": 0
       },
       {
-        "x": 81,
+        "x": 88,
         "y": 1
       },
       {
-        "x": 80,
+        "x": 88,
         "y": 2
       },
       {
-        "x": 79,
+        "x": 88,
         "y": 3
       },
       {
-        "x": 78,
+        "x": 88,
         "y": 4
       },
       {
-        "x": 77,
+        "x": 88,
         "y": 5
       },
       {
-        "x": 76,
+        "x": 88,
         "y": 6
       },
       {
-        "x": 75,
+        "x": 88,
         "y": 7
       },
       {
-        "x": 74,
+        "x": 88,
         "y": 8
       },
       {
-        "x": 73,
+        "x": 88,
         "y": 9
       },
       {
-        "x": 72,
+        "x": 87,
         "y": 10
       },
       {
-        "x": 71,
+        "x": 86,
         "y": 11
       },
       {
-        "x": 70,
+        "x": 85,
         "y": 12
       },
       {
-        "x": 69,
+        "x": 84,
         "y": 13
       },
       {
-        "x": 68,
+        "x": 83,
         "y": 14
       },
       {
-        "x": 67,
+        "x": 82,
         "y": 15
       },
       {
-        "x": 66,
+        "x": 81,
         "y": 16
       },
       {
-        "x": 65,
+        "x": 80,
         "y": 17
       },
       {
-        "x": 64,
+        "x": 79,
         "y": 18
       },
       {
-        "x": 63,
+        "x": 78,
         "y": 19
+      },
+      {
+        "x": 77,
+        "y": 20
+      },
+      {
+        "x": 76,
+        "y": 20
+      },
+      {
+        "x": 75,
+        "y": 20
+      },
+      {
+        "x": 74,
+        "y": 20
+      },
+      {
+        "x": 73,
+        "y": 20
+      },
+      {
+        "x": 72,
+        "y": 20
+      },
+      {
+        "x": 71,
+        "y": 20
+      },
+      {
+        "x": 70,
+        "y": 20
+      },
+      {
+        "x": 69,
+        "y": 20
+      },
+      {
+        "x": 68,
+        "y": 20
+      },
+      {
+        "x": 67,
+        "y": 20
+      },
+      {
+        "x": 66,
+        "y": 20
+      },
+      {
+        "x": 65,
+        "y": 20
+      },
+      {
+        "x": 64,
+        "y": 20
+      },
+      {
+        "x": 63,
+        "y": 20
       },
       {
         "x": 62,

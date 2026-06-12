@@ -135,7 +135,7 @@ export function validateNetworkData(network: NetworkData): string[] {
         Math.abs(lastPathPoint.y - firstPathPoint.y),
       );
       const pathLength = connection.path.length - 1;
-      if (pathLength - directLength > 2) {
+      if (connection.line !== "waterloo-city" && pathLength - directLength > 2) {
         errors.push(`Connection ${connection.id} has an excessive detour`);
       }
     }

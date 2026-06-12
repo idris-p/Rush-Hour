@@ -31,6 +31,7 @@ const LABEL_RADII = [26, 32, 40, 50, 62, 76, 92, 112];
 const LABEL_SAMPLE_COLUMNS = 5;
 const LABEL_SAMPLE_ROWS = 3;
 const LABEL_COLLISION_PADDING = 3;
+const MAP_PAN_PADDING = GRID_CELL_SIZE * 3;
 const LABEL_OBSTACLE_SELECTOR = [
   ".map-line",
   ".direction-stub",
@@ -52,12 +53,17 @@ export class MapRenderer {
 
   private readonly network: NetworkData;
 
+  private readonly mapBounds: MapBounds;
+
   private zoom = 1;
+
+  private completedCameraCenter: Point | null = null;
 
   private labelPlacementCache: { key: string; placement: CurrentStationLabelPlacement } | null = null;
 
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
+    this.mapBounds = getNetworkBounds(network);
     this.svg = document.createElementNS(SVG_NS, "svg");
     this.svg.setAttribute("class", "tube-map");
     this.svg.setAttribute("role", "img");
@@ -67,13 +73,28 @@ export class MapRenderer {
   }
 
   render(state: GameState, pointerPoint: Point | null, pointerDirection: MovementDirection): void {
-    this.svg.classList.add("tube-map-running");
+    this.svg.classList.toggle("tube-map-running", !state.completed);
+    this.svg.classList.toggle("tube-map-completed", state.completed);
     const currentStation = getStation(this.network, state.currentStationId);
     const currentPoint = gridPointToSvgPoint(currentStation);
     const viewBoxSize = this.getViewBoxSize();
+    if (!state.completed) {
+      this.completedCameraCenter = null;
+    }
+    const cameraCenter = state.completed
+      ? clampViewCenter(
+          this.completedCameraCenter ?? currentPoint,
+          viewBoxSize,
+          this.mapBounds,
+          MAP_PAN_PADDING,
+        )
+      : currentPoint;
+    if (state.completed) {
+      this.completedCameraCenter = cameraCenter;
+    }
     const viewBox = {
-      x: currentPoint.x - viewBoxSize.width / 2,
-      y: currentPoint.y - viewBoxSize.height / 2,
+      x: cameraCenter.x - viewBoxSize.width / 2,
+      y: cameraCenter.y - viewBoxSize.height / 2,
       width: viewBoxSize.width,
       height: viewBoxSize.height,
     };
@@ -107,16 +128,18 @@ export class MapRenderer {
       visibleStationIds.add(connection.to);
     }
 
-    const stubLayer = document.createElementNS(SVG_NS, "g");
-    stubLayer.setAttribute("class", "direction-stubs");
-    this.svg.append(stubLayer);
-    const directionStubs = this.getDirectionStubs(state.currentStationId, state.revealedConnections);
-    this.renderDirectionStubs(
-      stubLayer,
-      currentPoint,
-      directionStubs,
-      !isInterchangeStation(currentStation),
-    );
+    if (!state.completed) {
+      const stubLayer = document.createElementNS(SVG_NS, "g");
+      stubLayer.setAttribute("class", "direction-stubs");
+      this.svg.append(stubLayer);
+      const directionStubs = this.getDirectionStubs(state.currentStationId, state.revealedConnections);
+      this.renderDirectionStubs(
+        stubLayer,
+        currentPoint,
+        directionStubs,
+        !isInterchangeStation(currentStation),
+      );
+    }
 
     const stationLayer = document.createElementNS(SVG_NS, "g");
     stationLayer.setAttribute("class", "stations");
@@ -137,14 +160,18 @@ export class MapRenderer {
     }
     if (currentLabel) this.positionCurrentStationLabel(currentLabel, state);
 
-    const pointerLayer = document.createElementNS(SVG_NS, "g");
-    pointerLayer.setAttribute("class", "pointer-layer");
-    this.svg.append(pointerLayer);
-    this.renderPointer(pointerLayer, pointerPoint, pointerDirection, state.rejectedMoveAt !== null);
+    if (!state.completed) {
+      const pointerLayer = document.createElementNS(SVG_NS, "g");
+      pointerLayer.setAttribute("class", "pointer-layer");
+      this.svg.append(pointerLayer);
+      this.renderPointer(pointerLayer, pointerPoint, pointerDirection, state.rejectedMoveAt !== null);
+    }
   }
 
   renderIdle(): void {
     this.svg.classList.remove("tube-map-running");
+    this.svg.classList.remove("tube-map-completed", "tube-map-panning");
+    this.completedCameraCenter = null;
     const viewBoxSize = this.getViewBoxSize();
     const baseViewBoxSize = this.getBaseViewBoxSize();
     const viewBox = {
@@ -165,6 +192,28 @@ export class MapRenderer {
 
   zoomOut(): void {
     this.zoom = Math.max(MIN_ZOOM, this.zoom / ZOOM_STEP);
+  }
+
+  zoomByWheel(deltaY: number): void {
+    const factor = Math.exp(-Math.max(-100, Math.min(100, deltaY)) * 0.0018);
+    this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoom * factor));
+  }
+
+  panByClientDelta(deltaX: number, deltaY: number): void {
+    if (!this.completedCameraCenter || this.svg.clientWidth <= 0 || this.svg.clientHeight <= 0) {
+      return;
+    }
+
+    const viewBoxSize = this.getViewBoxSize();
+    this.completedCameraCenter = clampViewCenter(
+      {
+        x: this.completedCameraCenter.x - deltaX * (viewBoxSize.width / this.svg.clientWidth),
+        y: this.completedCameraCenter.y - deltaY * (viewBoxSize.height / this.svg.clientHeight),
+      },
+      viewBoxSize,
+      this.mapBounds,
+      MAP_PAN_PADDING,
+    );
   }
 
   private renderGrid(viewBox: { x: number; y: number; width: number; height: number }): void {
@@ -381,6 +430,20 @@ export class MapRenderer {
   }
 }
 
+export type MapBounds = { minX: number; maxX: number; minY: number; maxY: number };
+
+export function clampViewCenter(
+  center: Point,
+  viewBoxSize: { width: number; height: number },
+  bounds: MapBounds,
+  padding = 0,
+): Point {
+  return {
+    x: clampAxis(center.x, viewBoxSize.width, bounds.minX - padding, bounds.maxX + padding),
+    y: clampAxis(center.y, viewBoxSize.height, bounds.minY - padding, bounds.maxY + padding),
+  };
+}
+
 export function getStubArrowHeadPoints(end: Point, unit: Point, normal: Point): Point[] {
   const base = {
     x: end.x - unit.x * STUB_ARROW_LENGTH,
@@ -458,6 +521,26 @@ function countLabelCollisions(label: SVGTextElement): number {
     }
   }
   return collisions.size;
+}
+
+function getNetworkBounds(network: NetworkData): MapBounds {
+  const points = [
+    ...network.stations.map(gridPointToSvgPoint),
+    ...network.connections.flatMap((connection) => connection.path.map(gridPointToSvgPoint)),
+  ];
+  return {
+    minX: Math.min(...points.map((point) => point.x)),
+    maxX: Math.max(...points.map((point) => point.x)),
+    minY: Math.min(...points.map((point) => point.y)),
+    maxY: Math.max(...points.map((point) => point.y)),
+  };
+}
+
+function clampAxis(value: number, viewportLength: number, minimum: number, maximum: number): number {
+  if (viewportLength >= maximum - minimum) {
+    return (minimum + maximum) / 2;
+  }
+  return Math.max(minimum + viewportLength / 2, Math.min(maximum - viewportLength / 2, value));
 }
 
 function isMajorGridLine(value: number): boolean {

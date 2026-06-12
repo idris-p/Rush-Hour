@@ -25,8 +25,13 @@ export class Hud {
   private readonly completionOverlay: HTMLDivElement;
   private readonly completionTitle: HTMLHeadingElement;
   private readonly completionMeta: HTMLParagraphElement;
+  private readonly completionTime: HTMLSpanElement;
+  private readonly completionMoves: HTMLSpanElement;
+  private readonly completionStats: HTMLDivElement;
+  private readonly completionCloseButton: HTMLButtonElement;
   private readonly temporaryBanner: HTMLDivElement;
   private readonly network: NetworkData;
+  private completionDismissed = false;
 
   constructor(root: HTMLElement, network: NetworkData, callbacks: HudCallbacks) {
     this.network = network;
@@ -94,11 +99,36 @@ export class Hud {
     this.completionOverlay.hidden = true;
     this.completionTitle = document.createElement("h1");
     this.completionMeta = document.createElement("p");
+    this.completionMeta.className = "completion-meta";
+    this.completionTime = document.createElement("span");
+    this.completionMoves = document.createElement("span");
+    this.completionStats = document.createElement("div");
+    this.completionStats.className = "completion-stats";
+    this.completionStats.append(
+      completionStat("Time", this.completionTime),
+      completionStat("Moves", this.completionMoves),
+    );
+    this.completionCloseButton = document.createElement("button");
+    this.completionCloseButton.type = "button";
+    this.completionCloseButton.className = "completion-close";
+    this.completionCloseButton.textContent = "×";
+    this.completionCloseButton.ariaLabel = "Close results";
+    this.completionCloseButton.addEventListener("click", () => {
+      this.completionDismissed = true;
+      this.completionOverlay.hidden = true;
+    });
     this.overlayButton = document.createElement("button");
     this.overlayButton.type = "button";
+    this.overlayButton.className = "completion-action";
     this.overlayButton.textContent = "Play";
     this.overlayButton.addEventListener("click", () => callbacks.onPlaySeed(this.seedInput.value));
-    this.completionOverlay.append(this.completionTitle, this.completionMeta, this.overlayButton);
+    this.completionOverlay.append(
+      this.completionCloseButton,
+      this.completionTitle,
+      this.completionStats,
+      this.completionMeta,
+      this.overlayButton,
+    );
 
     root.append(
       topLeft,
@@ -117,6 +147,7 @@ export class Hud {
 
   update(state: GameState | null, now: number): void {
     if (!state) {
+      this.completionDismissed = false;
       this.timerValue.textContent = formatMilliseconds(0);
       this.moveValue.textContent = "0";
       this.stationValue.textContent = "Ready";
@@ -127,6 +158,8 @@ export class Hud {
       this.completionOverlay.hidden = false;
       this.completionTitle.textContent = "Tube Speedrun";
       this.completionMeta.textContent = `Seed ${this.seedInput.value}`;
+      this.completionStats.hidden = true;
+      this.completionCloseButton.hidden = true;
       this.overlayButton.textContent = "Play";
       return;
     }
@@ -143,10 +176,17 @@ export class Hud {
 
     this.renderLineIndicator(state);
 
-    this.completionOverlay.hidden = !state.completed;
+    if (!state.completed) {
+      this.completionDismissed = false;
+    }
+    this.completionOverlay.hidden = !state.completed || this.completionDismissed;
     if (state.completed) {
       this.completionTitle.textContent = "Run complete";
-      this.completionMeta.textContent = `${formatMilliseconds(elapsed)} - ${state.moveCount} moves - ${state.seed}`;
+      this.completionTime.textContent = formatMilliseconds(elapsed);
+      this.completionMoves.textContent = String(state.moveCount);
+      this.completionMeta.textContent = `Seed ${state.seed}`;
+      this.completionStats.hidden = false;
+      this.completionCloseButton.hidden = false;
       this.overlayButton.textContent = "Play again";
     }
   }
@@ -209,6 +249,19 @@ function metric(label: string, valueElement: HTMLSpanElement): HTMLDivElement {
   labelElement.textContent = label;
 
   valueElement.className = "metric-value";
+  wrapper.append(labelElement, valueElement);
+  return wrapper;
+}
+
+function completionStat(label: string, valueElement: HTMLSpanElement): HTMLDivElement {
+  const wrapper = document.createElement("div");
+  wrapper.className = "completion-stat";
+
+  const labelElement = document.createElement("span");
+  labelElement.className = "completion-stat-label";
+  labelElement.textContent = label;
+
+  valueElement.className = "completion-stat-value";
   wrapper.append(labelElement, valueElement);
   return wrapper;
 }
