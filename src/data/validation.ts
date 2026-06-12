@@ -7,7 +7,10 @@ export function validateNetworkData(network: NetworkData): string[] {
   const occupiedCells = new Map<string, string>();
   const connectionIds = new Set<string>();
   const actualLinesByStation = new Map<string, Set<LineId>>();
-  const exitsByStationAndLine = new Map<string, Array<{ connectionId: string; direction: number }>>();
+  const exitsByStationAndLine = new Map<
+    string,
+    Array<{ connectionId: string; direction: number; overallDirection: number }>
+  >();
   const walkPairs = new Set(
     network.connections
       .filter((connection) => connection.line === "walk")
@@ -111,6 +114,32 @@ export function validateNetworkData(network: NetworkData): string[] {
       }
     }
 
+    const pathDirections = connection.path
+      .slice(1)
+      .map((point, index) => getGridDirectionIndex(connection.path[index], point))
+      .filter((direction): direction is number => direction !== null);
+    const directionRuns = pathDirections.filter(
+      (direction, index) => index === 0 || direction !== pathDirections[index - 1],
+    );
+    const directionRunLengths = getDirectionRunLengths(pathDirections);
+    if (hasHumpSignature(directionRuns)) {
+      errors.push(`Connection ${connection.id} contains an unnecessary hump`);
+    }
+    if (hasShortZigZag(directionRuns, directionRunLengths)) {
+      errors.push(`Connection ${connection.id} contains a short zig-zag`);
+    }
+
+    if (firstPathPoint && lastPathPoint) {
+      const directLength = Math.max(
+        Math.abs(lastPathPoint.x - firstPathPoint.x),
+        Math.abs(lastPathPoint.y - firstPathPoint.y),
+      );
+      const pathLength = connection.path.length - 1;
+      if (pathLength - directLength > 2) {
+        errors.push(`Connection ${connection.id} has an excessive detour`);
+      }
+    }
+
     for (const stationId of [connection.from, connection.to]) {
       const lines = actualLinesByStation.get(stationId) ?? new Set<LineId>();
       lines.add(connection.line);
@@ -122,7 +151,8 @@ export function validateNetworkData(network: NetworkData): string[] {
         if (direction !== null) {
           const key = `${stationId}:${connection.line}`;
           const exits = exitsByStationAndLine.get(key) ?? [];
-          exits.push({ connectionId: connection.id, direction });
+          const overallDirection = getNearestGridDirection(path[0], path[path.length - 1]);
+          exits.push({ connectionId: connection.id, direction, overallDirection });
           exitsByStationAndLine.set(key, exits);
         }
       }
@@ -148,6 +178,14 @@ export function validateNetworkData(network: NetworkData): string[] {
         errors.push(`Station/line ${key} makes a sharp through-station turn`);
       }
     }
+
+    if (!key.endsWith(":walk") && exits.length >= 3) {
+      for (const exit of exits) {
+        if (getDirectionTurnAmount(exit.direction, exit.overallDirection) > 1) {
+          errors.push(`Station/line ${key} has misleading branch exit for ${exit.connectionId}`);
+        }
+      }
+    }
   }
 
   for (const station of network.stations) {
@@ -164,6 +202,50 @@ export function validateNetworkData(network: NetworkData): string[] {
 
 function stationPairKey(a: string, b: string): string {
   return [a, b].sort().join(":");
+}
+
+function hasHumpSignature(directionRuns: number[]): boolean {
+  for (let index = 0; index + 4 < directionRuns.length; index += 1) {
+    const [a, b, c, d, e] = directionRuns.slice(index, index + 5);
+    if (
+      a === c &&
+      c === e &&
+      getDirectionTurnAmount(a, b) === 1 &&
+      getDirectionTurnAmount(a, d) === 1
+    ) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getDirectionRunLengths(pathDirections: number[]): number[] {
+  const lengths: number[] = [];
+  let previousDirection: number | undefined;
+  for (const direction of pathDirections) {
+    if (direction !== previousDirection) {
+      lengths.push(1);
+    } else {
+      lengths[lengths.length - 1] += 1;
+    }
+    previousDirection = direction;
+  }
+  return lengths;
+}
+
+function hasShortZigZag(directionRuns: number[], runLengths: number[]): boolean {
+  for (let index = 0; index + 2 < directionRuns.length; index += 1) {
+    const [a, b, c] = directionRuns.slice(index, index + 3);
+    if (a === c && getDirectionTurnAmount(a, b) === 1 && runLengths[index + 1] <= 2) {
+      return true;
+    }
+  }
+  return false;
+}
+
+function getNearestGridDirection(from: { x: number; y: number }, to: { x: number; y: number }): number {
+  const angle = Math.atan2(to.y - from.y, to.x - from.x);
+  return Math.round(((angle / Math.PI) * 4 + 8) % 8) % 8;
 }
 
 function getGridDirectionIndex(from: { x: number; y: number }, to: { x: number; y: number }): number | null {

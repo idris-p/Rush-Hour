@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "generate:network": "node scripts/generate-network.mjs",
+    "audit:network": "node scripts/audit-network.mjs",
     "preview:network": "node scripts/render-network-preview.mjs"
   },
   "devDependencies": {

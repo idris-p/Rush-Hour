@@ -155,6 +155,44 @@ describe("network data validation", () => {
     expect(validateNetworkData(network)).toContain("Connection central:a:b has sharp turn at path point 1");
   });
 
+  it("rejects a line that creates an unnecessary hump", () => {
+    const network = createPathValidationNetwork([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: -1 },
+      { x: 3, y: -1 },
+      { x: 4, y: 0 },
+      { x: 5, y: 0 },
+    ]);
+
+    expect(validateNetworkData(network)).toContain("Connection central:a:b contains an unnecessary hump");
+  });
+
+  it("rejects a short stair-step zig-zag", () => {
+    const network = createPathValidationNetwork([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 1 },
+      { x: 3, y: 1 },
+    ]);
+
+    expect(validateNetworkData(network)).toContain("Connection central:a:b contains a short zig-zag");
+  });
+
+  it("rejects an excessive avoidable detour", () => {
+    const network = createPathValidationNetwork([
+      { x: 0, y: 0 },
+      { x: 1, y: 0 },
+      { x: 2, y: 1 },
+      { x: 2, y: 2 },
+      { x: 1, y: 3 },
+      { x: 0, y: 3 },
+      { x: -1, y: 3 },
+    ]);
+
+    expect(validateNetworkData(network)).toContain("Connection central:a:b has an excessive detour");
+  });
+
   it("keeps named out-of-station interchanges as separate walk-linked nodes", () => {
     const stationByName = new Map(networkData.stations.map((station) => [station.name, station]));
     const bank = stationByName.get("Bank");
@@ -200,6 +238,41 @@ describe("network data validation", () => {
     );
   });
 
+  it("rejects a branch that initially points away from its destination", () => {
+    const network: NetworkData = {
+      stations: [
+        { id: "a", name: "A", x: 0, y: 0, lines: ["central"] },
+        { id: "b", name: "B", x: 3, y: 0, lines: ["central"] },
+        { id: "c", name: "C", x: 0, y: 3, lines: ["central"] },
+        { id: "d", name: "D", x: -3, y: 0, lines: ["central"] },
+      ],
+      connections: [
+        {
+          id: "central:a:b",
+          from: "a",
+          to: "b",
+          line: "central",
+          path: [
+            { x: 0, y: 0 },
+            { x: 0, y: -1 },
+            { x: 1, y: -2 },
+            { x: 2, y: -2 },
+            { x: 3, y: -1 },
+            { x: 3, y: 0 },
+          ],
+        },
+        { id: "central:a:c", from: "a", to: "c", line: "central", path: [{ x: 0, y: 0 }, { x: 0, y: 1 }, { x: 0, y: 2 }, { x: 0, y: 3 }] },
+        { id: "central:a:d", from: "a", to: "d", line: "central", path: [{ x: 0, y: 0 }, { x: -1, y: 0 }, { x: -2, y: 0 }, { x: -3, y: 0 }] },
+      ],
+      temporary: true,
+      notes: [],
+    };
+
+    expect(validateNetworkData(network)).toContain(
+      "Station/line a:central has misleading branch exit for central:a:b",
+    );
+  });
+
   it("keeps critical same-line branches directionally distinct", () => {
     for (const [stationName, line] of [
       ["Woodford", "central"],
@@ -215,6 +288,29 @@ describe("network data validation", () => {
       const directions = connections.map((connection) => firstStepKey(connection.path, connection.to === station?.id));
       expect(new Set(directions).size, `${stationName} ${line} branch exits`).toBe(connections.length);
     }
+  });
+
+  it("routes the Piccadilly line straight through skipped District stations", () => {
+    const earlCourt = stationByName("Earl's Court");
+    const baronsCourt = stationByName("Barons Court");
+    const westKensington = stationByName("West Kensington");
+    const connection = networkData.connections.find(
+      (candidate) =>
+        candidate.line === "piccadilly" &&
+        ((candidate.from === earlCourt.id && candidate.to === baronsCourt.id) ||
+          (candidate.from === baronsCourt.id && candidate.to === earlCourt.id)),
+    );
+
+    expect(connection?.path).toContainEqual({ x: westKensington.x, y: westKensington.y });
+  });
+
+  it("labels the separate Hammersmith stations by their actual services", () => {
+    expect(stationByName("Hammersmith (Circle and Hammersmith & City)").lines).toEqual(
+      expect.arrayContaining(["circle", "hammersmith-city", "walk"]),
+    );
+    expect(stationByName("Hammersmith (District and Piccadilly)").lines).toEqual(
+      expect.arrayContaining(["district", "piccadilly", "walk"]),
+    );
   });
 });
 
@@ -262,4 +358,10 @@ function hasConnection(fromName: string, toName: string, line: string): boolean 
 function firstStepKey(path: Array<{ x: number; y: number }>, reverse: boolean): string {
   const oriented = reverse ? [...path].reverse() : path;
   return `${Math.sign(oriented[1].x - oriented[0].x)},${Math.sign(oriented[1].y - oriented[0].y)}`;
+}
+
+function stationByName(name: string) {
+  const station = networkData.stations.find((candidate) => candidate.name === name);
+  if (!station) throw new Error(`Missing station ${name}`);
+  return station;
 }
