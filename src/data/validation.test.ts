@@ -7,8 +7,8 @@ describe("network data validation", () => {
   it("has internally consistent generated network data", () => {
     expect(validateNetworkData(networkData)).toEqual([]);
     expect(networkData.temporary).toBe(false);
-    expect(networkData.stations).toHaveLength(297);
-    expect(networkData.connections).toHaveLength(413);
+    expect(networkData.stations).toHaveLength(302);
+    expect(networkData.connections).toHaveLength(421);
   });
 
   it("excludes London Trams", () => {
@@ -16,7 +16,7 @@ describe("network data validation", () => {
     expect(networkData.stations.some((station) => station.name.toLowerCase().includes("tram"))).toBe(false);
   });
 
-  it("only includes London Underground and Elizabeth line services", () => {
+  it("only includes London Underground, Elizabeth line, and walk connections", () => {
     const allowedLines = new Set([
       "bakerloo",
       "central",
@@ -30,6 +30,7 @@ describe("network data validation", () => {
       "victoria",
       "waterloo-city",
       "elizabeth",
+      "walk",
     ]);
 
     expect(networkData.connections.every((connection) => allowedLines.has(connection.line))).toBe(true);
@@ -45,15 +46,16 @@ describe("network data validation", () => {
     expect(Object.fromEntries(connectionCounts)).toEqual({
       bakerloo: 24,
       central: 49,
-      circle: 34,
+      circle: 35,
       district: 59,
       elizabeth: 40,
-      "hammersmith-city": 27,
+      "hammersmith-city": 28,
       jubilee: 26,
-      metropolitan: 32,
+      metropolitan: 33,
       northern: 53,
       piccadilly: 53,
       victoria: 15,
+      walk: 5,
       "waterloo-city": 1,
     });
 
@@ -152,27 +154,112 @@ describe("network data validation", () => {
 
     expect(validateNetworkData(network)).toContain("Connection central:a:b has sharp turn at path point 1");
   });
+
+  it("keeps named out-of-station interchanges as separate walk-linked nodes", () => {
+    const stationByName = new Map(networkData.stations.map((station) => [station.name, station]));
+    const bank = stationByName.get("Bank");
+    const monument = stationByName.get("Monument");
+    const liverpoolStreet = stationByName.get("Liverpool Street");
+    const moorgate = stationByName.get("Moorgate");
+
+    expect(bank?.lines).not.toContain("circle");
+    expect(monument?.lines).toEqual(expect.arrayContaining(["circle", "district", "walk"]));
+    expect(liverpoolStreet?.lines).not.toContain("northern");
+    expect(moorgate?.lines).toEqual(expect.arrayContaining(["northern", "walk"]));
+    expect(hasConnection("Bank", "Monument", "walk")).toBe(true);
+    expect(hasConnection("Liverpool Street", "Moorgate", "walk")).toBe(true);
+  });
+
+  it("rejects stations in adjacent grid cells without a walk link", () => {
+    const network = createPathValidationNetwork([{ x: 0, y: 0 }, { x: 1, y: 1 }]);
+    expect(validateNetworkData(network)).toContain("Stations a and b are in adjacent grid cells");
+  });
+
+  it("allows adjacent stations when they are directly walk-linked", () => {
+    const network = createPathValidationNetwork([{ x: 0, y: 0 }, { x: 1, y: 1 }], "walk");
+    expect(validateNetworkData(network)).toEqual([]);
+  });
+
+  it("rejects duplicate first-step directions at a line branch", () => {
+    const network: NetworkData = {
+      stations: [
+        { id: "a", name: "A", x: 0, y: 0, lines: ["central"] },
+        { id: "b", name: "B", x: 3, y: 0, lines: ["central"] },
+        { id: "c", name: "C", x: 3, y: 2, lines: ["central"] },
+      ],
+      connections: [
+        { id: "central:a:b", from: "a", to: "b", line: "central", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }] },
+        { id: "central:a:c", from: "a", to: "c", line: "central", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 1 }, { x: 3, y: 2 }] },
+      ],
+      temporary: true,
+      notes: [],
+    };
+
+    expect(validateNetworkData(network)).toContain(
+      "Station/line a:central has duplicate exit direction for central:a:b and central:a:c",
+    );
+  });
+
+  it("keeps critical same-line branches directionally distinct", () => {
+    for (const [stationName, line] of [
+      ["Woodford", "central"],
+      ["Leytonstone", "central"],
+      ["Finchley Central", "northern"],
+      ["Chalfont & Latimer", "metropolitan"],
+    ] as const) {
+      const station = networkData.stations.find((candidate) => candidate.name === stationName);
+      const connections = networkData.connections.filter(
+        (connection) =>
+          connection.line === line && (connection.from === station?.id || connection.to === station?.id),
+      );
+      const directions = connections.map((connection) => firstStepKey(connection.path, connection.to === station?.id));
+      expect(new Set(directions).size, `${stationName} ${line} branch exits`).toBe(connections.length);
+    }
+  });
 });
 
-function createPathValidationNetwork(path: Array<{ x: number; y: number }>): NetworkData {
+function createPathValidationNetwork(
+  path: Array<{ x: number; y: number }>,
+  line: "central" | "walk" = "central",
+): NetworkData {
   const start = path[0];
   const end = path[path.length - 1];
 
   return {
     stations: [
-      { id: "a", name: "A", x: start.x, y: start.y, lines: ["central"] },
-      { id: "b", name: "B", x: end.x, y: end.y, lines: ["central"] },
+      { id: "a", name: "A", x: start.x, y: start.y, lines: [line] },
+      { id: "b", name: "B", x: end.x, y: end.y, lines: [line] },
     ],
     connections: [
       {
-        id: "central:a:b",
+        id: `${line}:a:b`,
         from: "a",
         to: "b",
-        line: "central",
+        line,
         path,
       },
     ],
     temporary: true,
     notes: [],
   };
+}
+
+function hasConnection(fromName: string, toName: string, line: string): boolean {
+  const from = networkData.stations.find((station) => station.name === fromName);
+  const to = networkData.stations.find((station) => station.name === toName);
+  return Boolean(
+    from &&
+      to &&
+      networkData.connections.some(
+        (connection) =>
+          connection.line === line &&
+          ((connection.from === from.id && connection.to === to.id) ||
+            (connection.from === to.id && connection.to === from.id)),
+      ),
+  );
+}
+
+function firstStepKey(path: Array<{ x: number; y: number }>, reverse: boolean): string {
+  const oriented = reverse ? [...path].reverse() : path;
+  return `${Math.sign(oriented[1].x - oriented[0].x)},${Math.sign(oriented[1].y - oriented[0].y)}`;
 }

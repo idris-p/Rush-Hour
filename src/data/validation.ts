@@ -7,6 +7,12 @@ export function validateNetworkData(network: NetworkData): string[] {
   const occupiedCells = new Map<string, string>();
   const connectionIds = new Set<string>();
   const actualLinesByStation = new Map<string, Set<LineId>>();
+  const exitsByStationAndLine = new Map<string, Array<{ connectionId: string; direction: number }>>();
+  const walkPairs = new Set(
+    network.connections
+      .filter((connection) => connection.line === "walk")
+      .map((connection) => stationPairKey(connection.from, connection.to)),
+  );
 
   for (const station of network.stations) {
     if (stationIds.has(station.id)) {
@@ -24,6 +30,19 @@ export function validateNetworkData(network: NetworkData): string[] {
       errors.push(`Stations ${occupiedBy} and ${station.id} share grid cell ${cellKey}`);
     }
     occupiedCells.set(cellKey, station.id);
+  }
+
+  for (let firstIndex = 0; firstIndex < network.stations.length; firstIndex += 1) {
+    const first = network.stations[firstIndex];
+    for (let secondIndex = firstIndex + 1; secondIndex < network.stations.length; secondIndex += 1) {
+      const second = network.stations[secondIndex];
+      const dx = Math.abs(first.x - second.x);
+      const dy = Math.abs(first.y - second.y);
+      if (dx > 1 || dy > 1 || walkPairs.has(stationPairKey(first.id, second.id))) {
+        continue;
+      }
+      errors.push(`Stations ${first.id} and ${second.id} are in adjacent grid cells`);
+    }
   }
 
   for (const connection of network.connections) {
@@ -96,6 +115,38 @@ export function validateNetworkData(network: NetworkData): string[] {
       const lines = actualLinesByStation.get(stationId) ?? new Set<LineId>();
       lines.add(connection.line);
       actualLinesByStation.set(stationId, lines);
+
+      const path = stationId === connection.from ? connection.path : [...connection.path].reverse();
+      if (path.length >= 2) {
+        const direction = getGridDirectionIndex(path[0], path[1]);
+        if (direction !== null) {
+          const key = `${stationId}:${connection.line}`;
+          const exits = exitsByStationAndLine.get(key) ?? [];
+          exits.push({ connectionId: connection.id, direction });
+          exitsByStationAndLine.set(key, exits);
+        }
+      }
+    }
+  }
+
+  for (const [key, exits] of exitsByStationAndLine) {
+    const directions = new Map<number, string>();
+    for (const exit of exits) {
+      const existingConnection = directions.get(exit.direction);
+      if (existingConnection) {
+        errors.push(
+          `Station/line ${key} has duplicate exit direction for ${existingConnection} and ${exit.connectionId}`,
+        );
+      } else {
+        directions.set(exit.direction, exit.connectionId);
+      }
+    }
+
+    if (!key.endsWith(":walk") && exits.length === 2) {
+      const separation = getDirectionTurnAmount(exits[0].direction, exits[1].direction);
+      if (separation < 3) {
+        errors.push(`Station/line ${key} makes a sharp through-station turn`);
+      }
     }
   }
 
@@ -109,6 +160,10 @@ export function validateNetworkData(network: NetworkData): string[] {
   }
 
   return errors;
+}
+
+function stationPairKey(a: string, b: string): string {
+  return [a, b].sort().join(":");
 }
 
 function getGridDirectionIndex(from: { x: number; y: number }, to: { x: number; y: number }): number | null {

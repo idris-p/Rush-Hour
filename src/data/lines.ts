@@ -19,6 +19,7 @@ export const LINES: LineDefinition[] = [
   { id: "victoria", name: "Victoria", color: "#0098D4", textColor: "#111111", mode: "tube" },
   { id: "waterloo-city", name: "Waterloo & City", color: "#95CDBA", textColor: "#111111", mode: "tube" },
   { id: "elizabeth", name: "Elizabeth line", color: "#6950A1", textColor: "#ffffff", mode: "elizabeth" },
+  { id: "walk", name: "Walk", color: "#111111", textColor: "#ffffff", mode: "walk" },
 ];
 
 export const LINE_ORDER: LineId[] = LINES.map((line) => line.id);

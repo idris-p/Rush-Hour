@@ -1,4 +1,4 @@
-export type LineId =
+export type ExistingLineId =
   | "bakerloo"
   | "central"
   | "circle"
@@ -12,7 +12,9 @@ export type LineId =
   | "waterloo-city"
   | "elizabeth";
 
-export type ModeId = "tube" | "elizabeth";
+export type LineId = ExistingLineId | "walk";
+
+export type ModeId = "tube" | "elizabeth" | "walk";
 
 export type LineDefinition = {
   id: LineId;

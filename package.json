@@ -9,7 +9,8 @@
     "typecheck": "npx tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "generate:network": "node scripts/generate-network.mjs"
+    "generate:network": "node scripts/generate-network.mjs",
+    "preview:network": "node scripts/render-network-preview.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3",

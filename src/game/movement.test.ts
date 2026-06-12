@@ -161,4 +161,31 @@ describe("line selection", () => {
       lineCount: 2,
     });
   });
+
+  it("selects and traverses a walk connection", () => {
+    const walkNetwork: NetworkData = {
+      temporary: true,
+      notes: [],
+      stations: [
+        { id: "bank", name: "Bank", x: 0, y: 0, lines: ["central", "walk"] },
+        { id: "monument", name: "Monument", x: 2, y: 0, lines: ["district", "walk"] },
+      ],
+      connections: [
+        { id: "walk:bank:monument", from: "bank", to: "monument", line: "walk", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }] },
+      ],
+    };
+    const initial = {
+      ...createGameState("walk", walkNetwork, 0),
+      startStationId: "bank",
+      destinationStationId: "monument",
+      currentStationId: "bank",
+      selectedLineId: "central" as const,
+    };
+    const walking = cycleSelectedLine(initial, walkNetwork, 1);
+    const result = attemptMove(walking, walkNetwork, 0, 100);
+
+    expect(walking.selectedLineId).toBe("walk");
+    expect(result.moved).toBe(true);
+    expect(result.targetStationId).toBe("monument");
+  });
 });

@@ -31,5 +31,8 @@ export function renderRevealedLine(
   polyline.setAttribute("stroke-linecap", "round");
   polyline.setAttribute("stroke-linejoin", "round");
   polyline.setAttribute("class", "map-line");
+  if (connection.line === "walk") {
+    polyline.setAttribute("stroke-dasharray", "12 10");
+  }
   layer.append(polyline);
 }

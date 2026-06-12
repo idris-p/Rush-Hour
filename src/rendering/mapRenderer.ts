@@ -10,6 +10,7 @@ import type { Connection, NetworkData, Point } from "../data/types";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { renderRevealedLine } from "./lineRenderer";
 import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
+import { renderRiverThames } from "./riverRenderer";
 import { renderStationMarker } from "./stationRenderer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -56,6 +57,7 @@ export class MapRenderer {
     this.svg.replaceChildren();
 
     this.renderGrid(viewBox);
+    renderRiverThames(this.svg);
 
     const revealedLayer = document.createElementNS(SVG_NS, "g");
     revealedLayer.setAttribute("class", "revealed-lines");
@@ -111,6 +113,7 @@ export class MapRenderer {
     this.svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
     this.svg.replaceChildren();
     this.renderGrid(viewBox);
+    renderRiverThames(this.svg);
   }
 
   zoomIn(): void {
@@ -268,6 +271,9 @@ export class MapRenderer {
         line.setAttribute("y2", String(end.y));
         line.setAttribute("stroke", LINE_BY_ID[stub.connection.line].color);
         line.setAttribute("class", "direction-stub");
+        if (stub.connection.line === "walk") {
+          line.setAttribute("stroke-dasharray", "8 6");
+        }
         layer.append(line);
       });
     }

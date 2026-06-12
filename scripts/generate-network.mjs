@@ -3,6 +3,9 @@ import { fileURLToPath } from "node:url";
 
 const SOURCE_URL = new URL("../src/map/Transport%2520for%2520London%2520-%2520Tube%2520map.svg", import.meta.url);
 const OUTPUT_URL = new URL("../src/data/network.generated.ts", import.meta.url);
+const DECORATIONS_OUTPUT_URL = new URL("../src/data/mapDecorations.generated.ts", import.meta.url);
+const GRID_DIRECTIONS = [[1, 0], [1, 1], [0, 1], [-1, 1], [-1, 0], [-1, -1], [0, -1], [1, -1]];
+const MAXIMUM_SOURCE_DEVIATION = 4;
 
 const LINE_SOURCES = {
   bakerloo: ["hsl(29,100%,40%)", "24.5,-4.5"],
@@ -49,10 +52,13 @@ const UNLABELLED_COMPONENTS = new Map([
 ]);
 
 const MERGED_STATION_NAMES = new Set([
-  "Hammersmith",
   "Shepherd's Bush",
   "Elephant & Castle",
-  "Canary Wharf",
+]);
+
+const WALK_LINKED_STATION_FAMILIES = new Set(["Hammersmith", "Canary Wharf"]);
+const STATION_NAME_BY_NODE = new Map([
+  ["44.5,-7.5", "Moorgate"],
 ]);
 
 class UnionFind {
@@ -75,6 +81,13 @@ const groups = extractTopLevelGroups(svg);
 if (groups.length < 5) throw new Error(`Expected five SVG map groups, found ${groups.length}.`);
 
 const routeElements = extractElements(groups[3], "path").map(parseElement);
+const decorationElements = extractElements(groups[2], "path").map(parseElement);
+const riverElement = decorationElements.find(
+  ({ attributes }) => normalizeCssColor(attributes.stroke) === "hsl(195,44%,71%)",
+);
+if (!riverElement) throw new Error("Unable to find the River Thames in the bundled TfL SVG.");
+const riverThamesPath = expandGridPath(parsePathPoints(riverElement.attributes.d).map(toGridPoint));
+validateDecorationPath("River Thames", riverThamesPath, 2);
 const labelTokens = [...groups[4].matchAll(/<ellipse\b[^>]*\/>|<path\b[^>]*\/>|<g\b[^>]*\/>|<g\b[^>]*>.*?<\/g>/gs)].map(
   (match) => match[0],
 );
@@ -97,16 +110,36 @@ for (const [line, [color, anchor]] of Object.entries(LINE_SOURCES)) {
 
 const routeNodes = new Set(routeEdges.flatMap(({ fromNode, toNode }) => [fromNode, toNode]));
 const unionFind = new UnionFind(routeNodes);
+const interchangeEdges = [];
 for (const { attributes } of routeElements) {
   if (attributes.stroke !== "hsl(348,0%,0%)" || !whitePaths.has(canonicalPath(attributes.d))) continue;
   const points = parsePathPoints(attributes.d);
-  if (points.length >= 2) unionFind.union(pointKey(points[0]), pointKey(points.at(-1)));
+  if (points.length >= 2) {
+    interchangeEdges.push({
+      fromNode: pointKey(points[0]),
+      toNode: pointKey(points.at(-1)),
+      dashed: Boolean(attributes["stroke-dasharray"]),
+      points,
+    });
+    unionFind.union(pointKey(points[0]), pointKey(points.at(-1)));
+  }
 }
 
+const stationLabels = extractStationLabels(labelTokens, routeNodes);
 const labelsByRoot = new Map();
-for (const label of extractStationLabels(labelTokens, routeNodes)) {
+for (const label of stationLabels) {
   for (const candidate of label.candidates) {
     if (unionFind.has(candidate)) addToMapSet(labelsByRoot, unionFind.find(candidate), correctLabel(label.name));
+  }
+}
+
+if (process.env.AUDIT_INTERCHANGES === "1") {
+  const labelsByNode = new Map();
+  for (const label of stationLabels) {
+    for (const node of label.candidates) addToMapSet(labelsByNode, node, correctLabel(label.name));
+  }
+  for (const edge of interchangeEdges) {
+    console.log("INTERCHANGE", edge.fromNode, [...(labelsByNode.get(edge.fromNode) ?? [])], "->", edge.toNode, [...(labelsByNode.get(edge.toNode) ?? [])]);
   }
 }
 
@@ -125,23 +158,48 @@ if (unnamed.length > 0) {
   throw new Error(`Unlabelled route components: ${unnamed.map((root) => [...nodesByRoot.get(root)].join(";")).join(" | ")}`);
 }
 
-const stationGroupByRoot = new Map();
+if (process.env.AUDIT_INTERCHANGES === "1") {
+  for (const [root, nodes] of nodesByRoot) {
+    const names = [...(labelsByRoot.get(root) ?? [])];
+    if (names.length < 2) continue;
+    console.log("COMPOSITE", names);
+    for (const node of nodes) {
+      const lines = [...new Set(routeEdges.filter((edge) => edge.fromNode === node || edge.toNode === node).map((edge) => edge.line))];
+      console.log(" NODE", node, lines);
+    }
+  }
+}
+
+const stationGroupByNode = new Map();
 const stationGroups = new Map();
 for (const root of nodesByRoot.keys()) {
   const names = [...labelsByRoot.get(root)].sort();
   const name = names.join(" / ");
-  const groupKey = MERGED_STATION_NAMES.has(name) ? `merged:${name}` : `root:${root}`;
-  stationGroupByRoot.set(root, groupKey);
-  const group = stationGroups.get(groupKey) ?? { names: new Set(), nodes: new Set() };
-  names.forEach((value) => group.names.add(value));
-  nodesByRoot.get(root).forEach((node) => group.nodes.add(node));
-  stationGroups.set(groupKey, group);
+  const labelledNodesByName = new Map();
+  for (const label of stationLabels) {
+    const correctedName = correctLabel(label.name);
+    if (!names.includes(correctedName)) continue;
+    for (const node of label.candidates) {
+      if (rootsByRouteNode.get(node) === root) addToMapSet(labelledNodesByName, correctedName, node);
+    }
+  }
+
+  for (const node of nodesByRoot.get(root)) {
+    const identity = chooseStationIdentity(root, node, names, labelledNodesByName);
+    const groupKey = MERGED_STATION_NAMES.has(identity.name) ? `merged:${identity.name}` : identity.groupKey;
+    stationGroupByNode.set(node, groupKey);
+    const group = stationGroups.get(groupKey) ?? { names: new Set(), nodes: new Set() };
+    group.names.add(identity.name);
+    group.nodes.add(node);
+    stationGroups.set(groupKey, group);
+  }
 }
 
 const stationByGroup = new Map();
 const usedIds = new Set();
 for (const [groupKey, group] of stationGroups) {
   let name = [...group.names].sort().join(" / ");
+  name = disambiguateStationName(name, group.nodes);
   if (name === "Edgware Road" && group.nodes.has("8.5,-12.5")) {
     name = "Edgware Road (Bakerloo)";
   }
@@ -156,8 +214,8 @@ for (const [groupKey, group] of stationGroups) {
 
 const connectionById = new Map();
 for (const edge of routeEdges) {
-  const fromStation = stationByGroup.get(stationGroupByRoot.get(rootsByRouteNode.get(edge.fromNode)));
-  const toStation = stationByGroup.get(stationGroupByRoot.get(rootsByRouteNode.get(edge.toNode)));
+  const fromStation = stationByGroup.get(stationGroupByNode.get(edge.fromNode));
+  const toStation = stationByGroup.get(stationGroupByNode.get(edge.toNode));
   if (!fromStation || !toStation || fromStation.id === toStation.id) continue;
   const [a, b] = [fromStation.id, toStation.id].sort();
   const id = `${edge.line}:${a}:${b}`;
@@ -168,6 +226,28 @@ for (const edge of routeEdges) {
     line: edge.line,
     path: joinStationPath(fromStation, edge.points.map(toGridPoint), toStation),
   });
+}
+
+for (const nodes of nodesByRoot.values()) {
+  const groups = [...new Set([...nodes].map((node) => stationGroupByNode.get(node)).filter(Boolean))];
+  for (let index = 1; index < groups.length; index += 1) {
+    addWalkConnection(connectionById, stationByGroup.get(groups[index - 1]), stationByGroup.get(groups[index]));
+  }
+}
+
+for (const edge of interchangeEdges) {
+  const fromStation = stationByGroup.get(stationGroupByNode.get(edge.fromNode));
+  const toStation = stationByGroup.get(stationGroupByNode.get(edge.toNode));
+  addWalkConnection(connectionById, fromStation, toStation, edge.points.map(toGridPoint));
+}
+
+for (const name of WALK_LINKED_STATION_FAMILIES) {
+  const matches = [...stationByGroup.values()].filter(
+    (station) => station.name === name || station.name.startsWith(`${name} (`),
+  );
+  for (let index = 1; index < matches.length; index += 1) {
+    addWalkConnection(connectionById, matches[index - 1], matches[index]);
+  }
 }
 
 const stationLines = new Map();
@@ -181,6 +261,7 @@ const stations = [...stationByGroup.values()]
 const connections = [...connectionById.values()].sort(
   (a, b) => a.line.localeCompare(b.line) || a.from.localeCompare(b.from) || a.to.localeCompare(b.to),
 );
+const geometryStats = enforcePlayableGeometry(stations, connections);
 
 const output = `// Generated by scripts/generate-network.mjs from the bundled TfL SVG.\n` +
   `// Do not edit directly; update the SVG or generator corrections.\n\n` +
@@ -188,9 +269,16 @@ const output = `// Generated by scripts/generate-network.mjs from the bundled Tf
   `export const stationSeeds: StationSeed[] = ${JSON.stringify(stations, null, 2)};\n\n` +
   `export const connectionSeeds: ConnectionSeed[] = ${JSON.stringify(connections, null, 2)};\n`;
 await writeFile(OUTPUT_URL, output, "utf8");
+const decorationsOutput = `// Generated by scripts/generate-network.mjs from the bundled TfL SVG.\n` +
+  `// Decorative map geometry only. It is not part of the playable network.\n\n` +
+  `import type { GridPoint } from "./types";\n\n` +
+  `export const riverThamesPath: GridPoint[] = ${JSON.stringify(riverThamesPath, null, 2)};\n`;
+await writeFile(DECORATIONS_OUTPUT_URL, decorationsOutput, "utf8");
 
 console.log(`Generated ${stations.length} stations and ${connections.length} connections in ${fileURLToPath(OUTPUT_URL)}.`);
+console.log(`Generated ${riverThamesPath.length} River Thames grid points in ${fileURLToPath(DECORATIONS_OUTPUT_URL)}.`);
 console.log(Object.fromEntries(Object.keys(LINE_SOURCES).map((line) => [line, connections.filter((item) => item.line === line).length])));
+console.log(`Maximum smooth-path deviation from the scaled source: ${geometryStats.maximumDeviation} grid cells.`);
 
 function extractTopLevelGroups(source) {
   const result = [];
@@ -310,6 +398,66 @@ function findNearestNode(point, nodes) {
   return nearest;
 }
 
+function chooseStationIdentity(root, node, names, labelledNodesByName) {
+  const forcedName = STATION_NAME_BY_NODE.get(node);
+  if (forcedName && names.includes(forcedName)) {
+    return { name: forcedName, groupKey: `split:${root}:${forcedName}` };
+  }
+
+  if (names.length === 1 && names[0] === "Paddington" && node === "5.5,-12.5") {
+    return {
+      name: "Paddington (Hammersmith & City)",
+      groupKey: `split:${root}:paddington-hammersmith-city`,
+    };
+  }
+
+  if (names.length <= 1) {
+    return { name: names[0], groupKey: `root:${root}` };
+  }
+
+  const point = keyToPoint(node);
+  const nearestName = names.reduce((best, candidateName) => {
+    const candidates = [...(labelledNodesByName.get(candidateName) ?? [])];
+    const candidateDistance = candidates.reduce(
+      (minimum, candidate) => Math.min(minimum, distance(point, keyToPoint(candidate))),
+      Number.POSITIVE_INFINITY,
+    );
+    return !best || candidateDistance < best.distance
+      ? { name: candidateName, distance: candidateDistance }
+      : best;
+  }, null).name;
+
+  return { name: nearestName, groupKey: `split:${root}:${nearestName}` };
+}
+
+function disambiguateStationName(name, nodes) {
+  if (name === "Hammersmith") {
+    return nodes.has("-1.5,5.5")
+      ? "Hammersmith (Circle and Hammersmith & City)"
+      : "Hammersmith (District and Piccadilly)";
+  }
+  if (name === "Canary Wharf") {
+    return nodes.has("67.5,7.5") ? "Canary Wharf (Jubilee)" : "Canary Wharf (Elizabeth line)";
+  }
+  return name;
+}
+
+function addWalkConnection(connectionById, fromStation, toStation, sourcePath = null) {
+  if (!fromStation || !toStation || fromStation.id === toStation.id) return;
+  const [a, b] = [fromStation.id, toStation.id].sort();
+  const id = `walk:${a}:${b}`;
+  if (connectionById.has(id)) return;
+  const path = sourcePath
+    ? joinStationPath(fromStation, sourcePath, toStation)
+    : createOctilinearPath(fromStation, toStation);
+  connectionById.set(id, {
+    from: fromStation.id,
+    to: toStation.id,
+    line: "walk",
+    path,
+  });
+}
+
 function joinStationPath(fromStation, routePath, toStation) {
   const start = createOctilinearPath(fromStation, routePath[0]);
   const end = createOctilinearPath(routePath.at(-1), toStation);
@@ -325,6 +473,32 @@ function createOctilinearPath(from, to) {
     path.push({ x, y });
   }
   return path;
+}
+
+function expandGridPath(points) {
+  if (points.length === 0) return [];
+  const path = [points[0]];
+  for (let index = 1; index < points.length; index += 1) {
+    path.push(...createOctilinearPath(points[index - 1], points[index]).slice(1));
+  }
+  return deduplicatePoints(path);
+}
+
+function validateDecorationPath(name, path, maximumTurnAmount) {
+  if (path.length < 2) throw new Error(`${name} must contain at least two grid points.`);
+  for (let index = 1; index < path.length; index += 1) {
+    const dx = Math.abs(path[index].x - path[index - 1].x);
+    const dy = Math.abs(path[index].y - path[index - 1].y);
+    if (dx > 1 || dy > 1 || (dx === 0 && dy === 0)) {
+      throw new Error(`${name} has an invalid grid step at ${index - 1} -> ${index}.`);
+    }
+    if (index < 2) continue;
+    const previousDirection = directionIndex(path[index - 2], path[index - 1]);
+    const currentDirection = directionIndex(path[index - 1], path[index]);
+    if (directionTurnAmount(previousDirection, currentDirection) > maximumTurnAmount) {
+      throw new Error(`${name} has an illegal turn at grid point ${index - 1}.`);
+    }
+  }
 }
 
 function simplifyPath(points) {
@@ -352,6 +526,183 @@ function directionIndex(from, to) {
     .findIndex(([x, y]) => x === dx && y === dy);
 }
 
+function enforcePlayableGeometry(stations, connections) {
+  const exitsByStationAndLine = new Map();
+  for (const connection of connections) {
+    addExit(exitsByStationAndLine, connection, connection.from, connection.path);
+    addExit(exitsByStationAndLine, connection, connection.to, [...connection.path].reverse());
+  }
+
+  const assignedDirections = new Map();
+  for (const exits of exitsByStationAndLine.values()) {
+    const assignment = chooseExitDirections(exits.map((exit) => exit.desiredDirection));
+    exits.forEach((exit, index) => assignedDirections.set(`${exit.connectionKey}:${exit.stationId}`, assignment[index]));
+  }
+
+  const occupiedStationCells = new Set(stations.map(pointKey));
+  let maximumDeviation = 0;
+  for (const connection of connections) {
+    const startDirection = assignedDirections.get(`${connectionKey(connection)}:${connection.from}`);
+    const endDirection = assignedDirections.get(`${connectionKey(connection)}:${connection.to}`);
+    const guidePath = connection.path;
+    connection.path = findSmoothPath(
+      connection.path[0],
+      connection.path.at(-1),
+      startDirection,
+      endDirection,
+      guidePath,
+      occupiedStationCells,
+    );
+    maximumDeviation = Math.max(
+      maximumDeviation,
+      ...connection.path.map((point) => nearestGuideDistance(point, guidePath)),
+    );
+  }
+  if (maximumDeviation > MAXIMUM_SOURCE_DEVIATION) {
+    throw new Error(
+      `Smooth routing deviated ${maximumDeviation} grid cells from the source; maximum is ${MAXIMUM_SOURCE_DEVIATION}.`,
+    );
+  }
+  return { maximumDeviation };
+}
+
+function addExit(exitsByStationAndLine, connection, stationId, path) {
+  const key = `${stationId}:${connection.line}`;
+  const exits = exitsByStationAndLine.get(key) ?? [];
+  exits.push({
+    connectionKey: connectionKey(connection),
+    stationId,
+    desiredDirection: directionIndex(path[0], path[1]),
+  });
+  exitsByStationAndLine.set(key, exits);
+}
+
+function connectionKey(connection) {
+  return `${connection.line}:${connection.from}:${connection.to}`;
+}
+
+function chooseExitDirections(desiredDirections) {
+  let best = null;
+  const assignment = [];
+  const used = new Set();
+
+  function visit(index, score) {
+    if (best && score >= best.score) return;
+    if (index === desiredDirections.length) {
+      if (assignment.length === 2 && directionTurnAmount(assignment[0], assignment[1]) < 3) return;
+      best = { directions: [...assignment], score };
+      return;
+    }
+
+    for (let direction = 0; direction < GRID_DIRECTIONS.length; direction += 1) {
+      if (used.has(direction)) continue;
+      assignment.push(direction);
+      used.add(direction);
+      visit(index + 1, score + directionTurnAmount(desiredDirections[index], direction));
+      used.delete(direction);
+      assignment.pop();
+    }
+  }
+
+  visit(0, 0);
+  if (!best) throw new Error(`Unable to assign ${desiredDirections.length} distinct line exits.`);
+  return best.directions;
+}
+
+function findSmoothPath(start, end, startDirection, endExitDirection, guidePath, occupiedStationCells) {
+  for (const margin of [4, 8, 12, 20]) {
+    const path = searchSmoothPath(
+      start,
+      end,
+      startDirection,
+      endExitDirection,
+      guidePath,
+      occupiedStationCells,
+      margin,
+    );
+    if (path) return path;
+  }
+  throw new Error(`Unable to route smooth path from ${pointKey(start)} to ${pointKey(end)}.`);
+}
+
+function searchSmoothPath(start, end, startDirection, endExitDirection, guidePath, occupiedStationCells, margin) {
+  const startVector = GRID_DIRECTIONS[startDirection];
+  const endVector = GRID_DIRECTIONS[endExitDirection];
+  const first = { x: start.x + startVector[0], y: start.y + startVector[1] };
+  const target = { x: end.x + endVector[0], y: end.y + endVector[1] };
+  const finalDirection = (endExitDirection + 4) % 8;
+  const guideXs = guidePath.map((point) => point.x);
+  const guideYs = guidePath.map((point) => point.y);
+  const minX = Math.min(...guideXs, start.x, end.x) - margin;
+  const maxX = Math.max(...guideXs, start.x, end.x) + margin;
+  const minY = Math.min(...guideYs, start.y, end.y) - margin;
+  const maxY = Math.max(...guideYs, start.y, end.y) + margin;
+  const startKey = stateKey(first, startDirection);
+  const open = [];
+  const costs = new Map([[startKey, 0]]);
+  const previous = new Map();
+  open.push({ point: first, direction: startDirection, score: gridDistance(first, target) });
+
+  while (open.length > 0) {
+    open.sort((a, b) => b.score - a.score);
+    const current = open.pop();
+    const currentKey = stateKey(current.point, current.direction);
+    const currentCost = costs.get(currentKey);
+    if (currentCost === undefined) continue;
+
+    if (samePoint(current.point, target) && directionTurnAmount(current.direction, finalDirection) <= 1) {
+      const middle = rebuildPath(previous, currentKey);
+      return deduplicatePoints([start, ...middle, end]);
+    }
+
+    for (const turn of [-1, 0, 1]) {
+      const direction = (current.direction + turn + 8) % 8;
+      const vector = GRID_DIRECTIONS[direction];
+      const next = { x: current.point.x + vector[0], y: current.point.y + vector[1] };
+      if (next.x < minX || next.x > maxX || next.y < minY || next.y > maxY) continue;
+      if (occupiedStationCells.has(pointKey(next)) && !samePoint(next, target)) continue;
+
+      const nextKey = stateKey(next, direction);
+      const guidePenalty = nearestGuideDistance(next, guidePath) * 0.35;
+      const nextCost = currentCost + 1 + Math.abs(turn) * 0.1 + guidePenalty;
+      if (nextCost >= (costs.get(nextKey) ?? Number.POSITIVE_INFINITY)) continue;
+      costs.set(nextKey, nextCost);
+      previous.set(nextKey, { key: currentKey, point: next });
+      open.push({
+        point: next,
+        direction,
+        score: nextCost + gridDistance(next, target),
+      });
+    }
+  }
+
+  return null;
+}
+
+function rebuildPath(previous, finalKey) {
+  const path = [];
+  let key = finalKey;
+  while (previous.has(key)) {
+    const step = previous.get(key);
+    path.push(step.point);
+    key = step.key;
+  }
+  const [x, y] = key.split(":", 2).map(Number);
+  path.push({ x, y });
+  return path.reverse();
+}
+
+function stateKey(point, direction) { return `${point.x}:${point.y}:${direction}`; }
+function samePoint(a, b) { return a.x === b.x && a.y === b.y; }
+function gridDistance(a, b) { return Math.max(Math.abs(a.x - b.x), Math.abs(a.y - b.y)); }
+function nearestGuideDistance(point, guidePath) {
+  return guidePath.reduce((best, guide) => Math.min(best, gridDistance(point, guide)), Number.POSITIVE_INFINITY);
+}
+function directionTurnAmount(a, b) {
+  const difference = Math.abs(a - b);
+  return Math.min(difference, 8 - difference);
+}
+
 function chooseMedoid(points) {
   return points.reduce((best, point) => {
     const score = points.reduce((sum, candidate) => sum + distance(point, candidate), 0);
@@ -360,9 +711,10 @@ function chooseMedoid(points) {
 }
 
 function canonicalPath(path = "") { return path.replace(/\s+/g, ""); }
+function normalizeCssColor(value = "") { return value.replace(/\s+/g, "").toLowerCase(); }
 function correctLabel(name) { return LABEL_CORRECTIONS.get(name) ?? name; }
 function toGridPoint(point) { return { x: toGridCoordinate(point.x), y: toGridCoordinate(point.y) }; }
-function toGridCoordinate(value) { return roundHalf(value) + 0.5; }
+function toGridCoordinate(value) { return (roundHalf(value) + 0.5) * 2; }
 function roundHalf(value) { return Math.round(value * 2) / 2; }
 function pointKey(point) { return `${roundHalf(point.x)},${roundHalf(point.y)}`; }
 function keyToPoint(key) { const [x, y] = key.split(",").map(Number); return { x, y }; }

@@ -34,6 +34,7 @@ export const networkData: NetworkData = {
   notes: [
     "Station positions and route geometry are generated from the bundled TfL network SVG.",
     "London Underground and Elizabeth line services are included.",
+    "Out-of-station interchanges are represented as playable Walk connections.",
     "DLR, London Overground, London Trams, and Thameslink are excluded.",
   ],
 };
