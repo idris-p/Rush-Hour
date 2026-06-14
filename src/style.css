@@ -105,9 +105,9 @@ svg text {
 }
 
 .cursor-arrow-shape {
-  fill: #111111;
-  stroke: #ffffff;
-  stroke-width: 4;
+  fill: #ffffff;
+  stroke: #111111;
+  stroke-width: 8;
   stroke-linejoin: round;
   paint-order: stroke fill;
 }

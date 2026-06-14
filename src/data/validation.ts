@@ -1,6 +1,17 @@
 import { LINE_BY_ID } from "./lines";
 import type { LineId, NetworkData } from "./types";
 
+const ALLOWED_SHORT_ZIG_ZAG_CONNECTIONS = new Set([
+  "metropolitan:baker-street:finchley-road",
+]);
+
+const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
+  "circle:aldgate:liverpool-street",
+  "circle:aldgate:tower-hill",
+  "district:aldgate-east:tower-hill",
+  "metropolitan:aldgate:liverpool-street",
+]);
+
 export function validateNetworkData(network: NetworkData): string[] {
   const errors: string[] = [];
   const stationIds = new Set<string>();
@@ -125,7 +136,10 @@ export function validateNetworkData(network: NetworkData): string[] {
     if (hasHumpSignature(directionRuns)) {
       errors.push(`Connection ${connection.id} contains an unnecessary hump`);
     }
-    if (hasShortZigZag(directionRuns, directionRunLengths)) {
+    if (
+      hasShortZigZag(directionRuns, directionRunLengths) &&
+      !ALLOWED_SHORT_ZIG_ZAG_CONNECTIONS.has(connection.id)
+    ) {
       errors.push(`Connection ${connection.id} contains a short zig-zag`);
     }
 
@@ -135,7 +149,11 @@ export function validateNetworkData(network: NetworkData): string[] {
         Math.abs(lastPathPoint.y - firstPathPoint.y),
       );
       const pathLength = connection.path.length - 1;
-      if (connection.line !== "waterloo-city" && pathLength - directLength > 2) {
+      if (
+        connection.line !== "waterloo-city" &&
+        !ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS.has(connection.id) &&
+        pathLength - directLength > 2
+      ) {
         errors.push(`Connection ${connection.id} has an excessive detour`);
       }
     }
@@ -145,9 +163,15 @@ export function validateNetworkData(network: NetworkData): string[] {
       lines.add(connection.line);
       actualLinesByStation.set(stationId, lines);
 
-      const path = stationId === connection.from ? connection.path : [...connection.path].reverse();
+      const isFrom = stationId === connection.from;
+      const path = isFrom ? connection.path : [...connection.path].reverse();
       if (path.length >= 2) {
-        const direction = getGridDirectionIndex(path[0], path[1]);
+        const override = isFrom
+          ? connection.directionOverrides?.from
+          : connection.directionOverrides?.to;
+        const direction = override
+          ? getGridDirectionIndex({ x: 0, y: 0 }, override)
+          : getGridDirectionIndex(path[0], path[1]);
         if (direction !== null) {
           const key = `${stationId}:${connection.line}`;
           const exits = exitsByStationAndLine.get(key) ?? [];

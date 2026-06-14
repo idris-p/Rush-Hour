@@ -45,9 +45,13 @@ export type Connection = {
   to: string;
   line: LineId;
   path: GridPoint[];
+  directionOverrides?: {
+    from?: GridPoint;
+    to?: GridPoint;
+  };
 };
 
-export type ConnectionSeed = Omit<Connection, "id" | "path"> & {
+export type ConnectionSeed = Omit<Connection, "id" | "path" | "directionOverrides"> & {
   path?: GridPoint[];
 };
 

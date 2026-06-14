@@ -1,7 +1,7 @@
 import { LINE_BY_ID, compareLineIds } from "../data/lines";
 import type { GameState } from "../game/GameState";
 import {
-  getConnectionPathFrom,
+  getConnectionFirstStepDirection,
   getDirectionAngle,
   getStation,
   type MovementDirection,
@@ -9,6 +9,7 @@ import {
 import type { Connection, NetworkData, Point } from "../data/types";
 import { getSvgPoint } from "../input/mouse";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
+import { CorridorLayout } from "./corridorLayout";
 import { renderRevealedLine } from "./lineRenderer";
 import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
 import { renderRiverThames } from "./riverRenderer";
@@ -38,6 +39,7 @@ const LABEL_OBSTACLE_SELECTOR = [
   ".direction-stub-arrow",
   ".interchange-marker",
   ".station-bar-marker",
+  ".conjoined-station-link",
   ".current-station-highlight",
   ".river-thames-outline",
   ".river-thames-fill",
@@ -55,6 +57,8 @@ export class MapRenderer {
 
   private readonly mapBounds: MapBounds;
 
+  private readonly corridorLayout: CorridorLayout;
+
   private zoom = 1;
 
   private completedCameraCenter: Point | null = null;
@@ -63,6 +67,7 @@ export class MapRenderer {
 
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
+    this.corridorLayout = new CorridorLayout(network);
     this.mapBounds = getNetworkBounds(network);
     this.svg = document.createElementNS(SVG_NS, "svg");
     this.svg.setAttribute("class", "tube-map");
@@ -113,12 +118,17 @@ export class MapRenderer {
 
     const visibleStationIds = new Set<string>([state.currentStationId]);
     for (const group of groupConnectionsByPath(this.getVisibleConnections(state))) {
+      const isCorridorGroup = group.some((connection) =>
+        this.corridorLayout.isCorridorConnection(connection),
+      );
       group.forEach((connection, index) => {
+        const corridorPoints = this.corridorLayout.getConnectionPoints(connection);
         renderRevealedLine(
           revealedLayer,
           connection,
           this.network,
-          getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
+          isCorridorGroup ? 0 : getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
+          corridorPoints,
         );
       });
     }
@@ -135,7 +145,6 @@ export class MapRenderer {
       const directionStubs = this.getDirectionStubs(state.currentStationId, state.revealedConnections);
       this.renderDirectionStubs(
         stubLayer,
-        currentPoint,
         directionStubs,
         !isInterchangeStation(currentStation),
       );
@@ -155,6 +164,7 @@ export class MapRenderer {
         state.selectedLineId,
         station.id === state.currentStationId,
         1 / this.zoom,
+        this.corridorLayout.getStationMarkerGroups(station.id),
       );
       if (label) currentLabel = label;
     }
@@ -314,27 +324,25 @@ export class MapRenderer {
         return [];
       }
 
-      const path = getConnectionPathFrom(connection, stationId);
-      if (!path || path.length < 2) {
+      const unit = getDirectionStubUnit(connection, stationId);
+      if (!unit) {
         return [];
       }
 
-      const first = path[0];
-      const second = path[1];
-      const dx = Math.sign(second.x - first.x);
-      const dy = Math.sign(second.y - first.y);
-      const length = Math.hypot(dx, dy);
-
-      if (length === 0) {
-        return [];
-      }
+      const linePoint = this.corridorLayout.getStationLinePoint(stationId, connection.line);
+      const start = getDirectionStubStart(
+        this.corridorLayout.getStationMarkerGroups(stationId).map((group) => group.point),
+        linePoint,
+        unit,
+      );
 
       return [
         {
           connection,
-          key: `${dx},${dy}`,
-          unit: { x: dx / length, y: dy / length },
-          normal: { x: -dy / length, y: dx / length },
+          key: `${unit.x},${unit.y}|${start.x},${start.y}`,
+          start,
+          unit,
+          normal: { x: -unit.y, y: unit.x },
         },
       ];
     });
@@ -342,7 +350,6 @@ export class MapRenderer {
 
   private renderDirectionStubs(
     layer: SVGGElement,
-    currentPoint: Point,
     stubs: ReturnType<MapRenderer["getDirectionStubs"]>,
     showArrowHeads: boolean,
   ): void {
@@ -359,12 +366,12 @@ export class MapRenderer {
       group.forEach((stub, index) => {
         const offset = getCenteredOffset(index, group.length, PARALLEL_STUB_SPACING);
         const start = {
-          x: currentPoint.x + stub.normal.x * offset,
-          y: currentPoint.y + stub.normal.y * offset,
+          x: stub.start.x + stub.normal.x * offset,
+          y: stub.start.y + stub.normal.y * offset,
         };
         const arrowTip = {
-          x: currentPoint.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
-          y: currentPoint.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
+          x: stub.start.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
+          y: stub.start.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
         };
         const lineEnd = showArrowHeads
           ? {
@@ -560,4 +567,48 @@ function groupConnectionsByPath(connections: Connection[]): Connection[][] {
   return [...groups.values()].map((group) =>
     group.sort((a, b) => compareLineIds(a.line, b.line) || a.id.localeCompare(b.id)),
   );
+}
+
+export function getDirectionStubUnit(connection: Connection, stationId: string): Point | null {
+  const direction = getConnectionFirstStepDirection(connection, stationId);
+  if (!direction) return null;
+  const radians = (getDirectionAngle(direction) * Math.PI) / 180;
+  return {
+    x: snapUnitComponent(Math.cos(radians)),
+    y: snapUnitComponent(Math.sin(radians)),
+  };
+}
+
+export function getDirectionStubStart(
+  markerPoints: Point[],
+  linePoint: Point,
+  unit: Point,
+): Point {
+  if (markerPoints.length < 2) return linePoint;
+
+  const minX = Math.min(...markerPoints.map((point) => point.x));
+  const maxX = Math.max(...markerPoints.map((point) => point.x));
+  const minY = Math.min(...markerPoints.map((point) => point.y));
+  const maxY = Math.max(...markerPoints.map((point) => point.y));
+  const isVertical = Math.abs(maxX - minX) < 0.01;
+  const isHorizontal = Math.abs(maxY - minY) < 0.01;
+
+  if (isVertical && unit.y !== 0) {
+    const targetY = unit.y < 0 ? minY : maxY;
+    return markerPoints.find((point) => Math.abs(point.y - targetY) < 0.01) ?? linePoint;
+  }
+  if (isHorizontal && unit.x !== 0) {
+    const targetX = unit.x < 0 ? minX : maxX;
+    return markerPoints.find((point) => Math.abs(point.x - targetX) < 0.01) ?? linePoint;
+  }
+  return linePoint;
+}
+
+function snapUnitComponent(value: number): number {
+  if (Math.abs(value) < 0.000_001) return 0;
+  if (Math.abs(Math.abs(value) - 1) < 0.000_001) return Math.sign(value);
+  if (Math.abs(Math.abs(value) - Math.SQRT1_2) < 0.000_001) {
+    return Math.sign(value) * Math.SQRT1_2;
+  }
+  return value;
 }

@@ -10,6 +10,7 @@ import {
 } from "./movement";
 import { cycleSelectedLine, getLineCyclePreview } from "./lineSelection";
 import type { NetworkData } from "../data/types";
+import { networkData } from "../data/network";
 
 const testNetwork: NetworkData = {
   temporary: true,
@@ -99,6 +100,73 @@ describe("movement", () => {
     expect(snapAngleToDirection(overallDirection)).toBe("northeast");
     expect(attemptMove(state, testNetwork, overallDirection, 100).moved).toBe(false);
     expect(attemptMove(state, testNetwork, 0, 100).targetStationId).toBe("b");
+  });
+
+  it("requires west to travel from Baker Street to St John's Wood", () => {
+    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "west")?.id)
+      .toBe("st-john-s-wood");
+    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "northwest"))
+      .toBeNull();
+  });
+
+  it("matches Tottenham Court Road clicks to the displayed line exits", () => {
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "central", "west")?.id)
+      .toBe("oxford-circus");
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "central", "east")?.id)
+      .toBe("holborn");
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "northern", "south")?.id)
+      .toBe("leicester-square");
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "northern", "north")?.id)
+      .toBe("goodge-street");
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "elizabeth", "west")?.id)
+      .toBe("bond-street");
+    expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "elizabeth", "east")?.id)
+      .toBe("farringdon");
+  });
+
+  it("uses northwest from Camden Town toward the Edgware branch", () => {
+    expect(findDirectionalNeighbour(networkData, "camden-town", "northern", "northwest")?.id)
+      .toBe("chalk-farm");
+    expect(findDirectionalNeighbour(networkData, "camden-town", "northern", "north"))
+      .toBeNull();
+  });
+
+  it("matches clicks to the updated Bakerloo geometry", () => {
+    expect(findDirectionalNeighbour(networkData, "regent-s-park", "bakerloo", "northwest")?.id)
+      .toBe("baker-street");
+    expect(findDirectionalNeighbour(networkData, "regent-s-park", "bakerloo", "southeast")?.id)
+      .toBe("oxford-circus");
+    expect(findDirectionalNeighbour(networkData, "lambeth-north", "bakerloo", "northwest")?.id)
+      .toBe("waterloo");
+  });
+
+  it("matches clicks to the updated Russell Square and Westminster routes", () => {
+    expect(findDirectionalNeighbour(networkData, "russell-square", "piccadilly", "south")?.id)
+      .toBe("holborn");
+    expect(findDirectionalNeighbour(networkData, "russell-square", "piccadilly", "north")?.id)
+      .toBe("king-s-cross-st-pancras");
+    expect(findDirectionalNeighbour(networkData, "westminster", "jubilee", "northwest")?.id)
+      .toBe("green-park");
+  });
+
+  it("uses one shared lower Waterloo marker for every line", () => {
+    expect(findDirectionalNeighbour(networkData, "waterloo", "jubilee", "northwest")?.id)
+      .toBe("westminster");
+    expect(findDirectionalNeighbour(networkData, "waterloo", "bakerloo", "north")?.id)
+      .toBe("embankment");
+    expect(findDirectionalNeighbour(networkData, "waterloo", "northern", "north")?.id)
+      .toBe("embankment");
+    expect(findDirectionalNeighbour(networkData, "waterloo", "waterloo-city", "east")?.id)
+      .toBe("bank");
+  });
+
+  it("requires west from Sloane Square to South Kensington", () => {
+    for (const line of ["circle", "district"] as const) {
+      expect(findDirectionalNeighbour(networkData, "sloane-square", line, "west")?.id)
+        .toBe("south-kensington");
+      expect(findDirectionalNeighbour(networkData, "sloane-square", line, "northwest"))
+        .toBeNull();
+    }
   });
 
   it("moves along connected stations and reveals the travelled connection", () => {

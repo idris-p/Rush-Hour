@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { NetworkData } from "./types";
+import type { GridPoint, LineId, NetworkData } from "./types";
 import { networkData } from "./network";
 import { validateNetworkData } from "./validation";
 
@@ -140,15 +140,408 @@ describe("network data validation", () => {
     expect(station("canada-water")?.y).toBe(station("north-greenwich")?.y);
   });
 
-  it("routes Piccadilly north-west from Acton Town to Ealing Common", () => {
+  it("aligns the North Ealing to South Harrow Piccadilly stations with Rayners Lane", () => {
+    const ids = [
+      "north-ealing",
+      "park-royal",
+      "alperton",
+      "sudbury-town",
+      "sudbury-hill",
+      "south-harrow",
+      "rayners-lane",
+    ];
+    const stations = ids.map((id) => networkData.stations.find((station) => station.id === id));
+
+    expect(stations.every((station) => station?.x === -38)).toBe(true);
+  });
+
+  it("uses the cleaned Baker Street geometry", () => {
+    expect(stationByName("Baker Street")).toMatchObject({ x: 42, y: -22 });
+    expect(stationByName("Regent's Park")).toMatchObject({ x: 47, y: -17 });
+    expect(directionRuns(findConnectionPath("circle", "baker-street", "great-portland-street")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("hammersmith-city", "baker-street", "edgware-road")))
+      .toEqual(["-1,0"]);
+    expect(directionRuns(findConnectionPath("metropolitan", "baker-street", "finchley-road"))[0])
+      .toBe("-1,-1");
+    const intoBakerStreet = directionRuns(findConnectionPath("bakerloo", "marylebone", "baker-street"));
+    const outOfBakerStreet = directionRuns(findConnectionPath("bakerloo", "baker-street", "regent-s-park"));
+    expect(intoBakerStreet).toEqual(["1,0", "1,1"]);
+    expect(outOfBakerStreet).toEqual(["1,1"]);
+    expect(intoBakerStreet.at(-1)).toBe(outOfBakerStreet[0]);
+  });
+
+  it("routes Bakerloo cleanly through the moved Regent's Park", () => {
+    expect(directionRuns(findConnectionPath("bakerloo", "baker-street", "regent-s-park")))
+      .toEqual(["1,1"]);
+    expect(directionRuns(findConnectionPath("bakerloo", "regent-s-park", "oxford-circus")))
+      .toEqual(["1,1", "0,1"]);
+  });
+
+  it("moves Russell Square west and straightens Piccadilly through it", () => {
+    expect(networkData.stations.find((station) => station.id === "russell-square"))
+      .toMatchObject({ x: 74, y: -18 });
+    expect(directionRuns(findConnectionPath("piccadilly", "holborn", "russell-square")))
+      .toEqual(["1,-1", "0,-1"]);
+    expect(directionRuns(findConnectionPath(
+      "piccadilly",
+      "russell-square",
+      "king-s-cross-st-pancras",
+    ))).toEqual(["0,-1"]);
+  });
+
+  it("routes Jubilee straight north-west from Baker Street to St John's Wood", () => {
+    expect(stationByName("St John's Wood")).toMatchObject({ x: 38, y: -26 });
     const connection = networkData.connections.find(
       (candidate) =>
-        candidate.line === "piccadilly" &&
+        candidate.line === "jubilee" &&
+        candidate.from === "baker-street" &&
+        candidate.to === "st-john-s-wood",
+    );
+    expect(directionRuns(connection?.path ?? []))
+      .toEqual(["-1,-1"]);
+    expect(connection?.directionOverrides?.from).toEqual({ x: -1, y: 0 });
+  });
+
+  it("routes Jubilee north from Bond Street then north-west along Bakerloo to Baker Street", () => {
+    expect(directionRuns(findConnectionPath("jubilee", "bond-street", "baker-street")))
+      .toEqual(["0,-1", "-1,-1"]);
+    expect(findConnectionPath("jubilee", "bond-street", "baker-street"))
+      .toContainEqual({ x: 44, y: -20 });
+  });
+
+  it("routes District and Piccadilly identically from Acton Town to Ealing Common", () => {
+    const connections = networkData.connections.filter(
+      (candidate) =>
+        ["district", "piccadilly"].includes(candidate.line) &&
         candidate.from === "acton-town" &&
         candidate.to === "ealing-common",
     );
 
-    expect(connection?.path.slice(0, 2)).toEqual([{ x: -34, y: 14 }, { x: -35, y: 13 }]);
+    expect(connections).toHaveLength(2);
+    expect(connections[0].path).toEqual(connections[1].path);
+    expect(connections[0].path.slice(0, 5)).toEqual([
+      { x: -34, y: 14 },
+      { x: -35, y: 13 },
+      { x: -36, y: 12 },
+      { x: -37, y: 11 },
+      { x: -38, y: 10 },
+    ]);
+    expect(connections[0].path.slice(-2)).toEqual([{ x: -38, y: 9 }, { x: -38, y: 8 }]);
+  });
+
+  it("keeps the requested west and branch direction sequences around Acton and Earl's Court", () => {
+    expect(directionRuns(findConnectionPath("piccadilly", "acton-town", "south-ealing")))
+      .toEqual(["-1,0"]);
+    expect(directionRuns(findConnectionPath("district", "ealing-common", "ealing-broadway")))
+      .toEqual(["0,-1", "-1,-1"]);
+    expect(directionRuns(findConnectionPath("district", "earl-s-court", "west-brompton")))
+      .toEqual(["-1,1", "0,1"]);
+    expect(directionRuns(findConnectionPath("district", "earl-s-court", "kensington-olympia")))
+      .toEqual(["-1,-1", "0,-1"]);
+    expect(directionRuns(findConnectionPath("district", "earl-s-court", "high-street-kensington")))
+      .toEqual(["1,-1", "0,-1"]);
+    expect(directionRuns(findConnectionPath("jubilee", "wembley-park", "kingsbury")))
+      .toEqual(["-1,-1", "0,-1"]);
+  });
+
+  it("routes Metropolitan exactly along the Jubilee corridor from Baker Street to Finchley Road", () => {
+    const metropolitan = findConnectionPath("metropolitan", "baker-street", "finchley-road");
+    const jubileeEdges = new Set([
+      findConnectionPath("jubilee", "baker-street", "st-john-s-wood"),
+      findConnectionPath("jubilee", "st-john-s-wood", "swiss-cottage"),
+      findConnectionPath("jubilee", "swiss-cottage", "finchley-road"),
+    ].flatMap(pathEdges));
+
+    expect(metropolitan.slice(0, 3)).toEqual([
+      { x: 42, y: -22 },
+      { x: 41, y: -23 },
+      { x: 40, y: -24 },
+    ]);
+    expect(pathEdges(metropolitan).every((edge) => jubileeEdges.has(edge))).toBe(true);
+  });
+
+  it("aligns the Jubilee corridor from St John's Wood through Wembley Park", () => {
+    const stations = [
+      ["st-john-s-wood", 38, -26],
+      ["swiss-cottage", 36, -28],
+      ["finchley-road", 32, -32],
+      ["west-hampstead", 30, -34],
+      ["kilburn", 24, -40],
+      ["willesden-green", 20, -44],
+      ["dollis-hill", 18, -46],
+      ["neasden", 16, -48],
+      ["wembley-park", 14, -50],
+    ] as const;
+
+    for (const [stationId, x, y] of stations) {
+      expect(networkData.stations.find((station) => station.id === stationId))
+        .toMatchObject({ x, y });
+      expect(y - x).toBe(-64);
+    }
+
+    for (let index = 0; index < stations.length - 1; index += 1) {
+      expect(directionRuns(findConnectionPath(
+        "jubilee",
+        stations[index][0],
+        stations[index + 1][0],
+      ))).toEqual(["-1,-1"]);
+    }
+  });
+
+  it("keeps the Preston Road link northwest then west from the moved Wembley Park", () => {
+    const path = findConnectionPath("metropolitan", "wembley-park", "preston-road");
+
+    expect(networkData.stations.find((station) => station.id === "preston-road"))
+      .toMatchObject({ x: 6, y: -54 });
+    expect(path.slice(0, 3)).toEqual([
+      { x: 14, y: -50 },
+      { x: 13, y: -51 },
+      { x: 12, y: -52 },
+    ]);
+    expect(directionRuns(path)).toEqual(["-1,-1", "-1,0"]);
+    expect(path.slice(4).every((point) => point.y === -54)).toBe(true);
+  });
+
+  it("keeps the Kingsbury link northwest then north from the moved Wembley Park", () => {
+    expect(networkData.stations.find((station) => station.id === "kingsbury"))
+      .toMatchObject({ x: 12, y: -58 });
+    expect(directionRuns(findConnectionPath("jubilee", "wembley-park", "kingsbury")))
+      .toEqual(["-1,-1", "0,-1"]);
+  });
+
+  it("uses the requested east, north-east, and north routes in east London", () => {
+    expect(directionRuns(findConnectionPath("jubilee", "north-greenwich", "canning-town")))
+      .toEqual(["1,0", "1,-1", "0,-1"]);
+    expect(directionRuns(findConnectionPath("circle", "tower-hill", "aldgate")))
+      .toEqual(["1,0", "1,-1", "0,-1"]);
+    expect(directionRuns(findConnectionPath("district", "tower-hill", "aldgate-east")))
+      .toEqual(["1,0", "1,-1", "0,-1", "1,-1"]);
+
+    const towerHillToAldgate = findConnectionPath("circle", "tower-hill", "aldgate");
+    expect(towerHillToAldgate.slice(0, 5)).toEqual([
+      { x: 104, y: 0 },
+      { x: 105, y: 0 },
+      { x: 106, y: 0 },
+      { x: 107, y: 0 },
+      { x: 108, y: -1 },
+    ]);
+  });
+
+  it("routes Circle and Metropolitan north, north-west, then west from Aldgate", () => {
+    for (const line of ["circle", "metropolitan"] as const) {
+      const path = findConnectionPath(line, "aldgate", "liverpool-street");
+      expect(directionRuns(path)).toEqual(["0,-1", "-1,-1", "-1,0"]);
+      expect(path.slice(0, 5)).toEqual([
+        { x: 108, y: -8 },
+        { x: 108, y: -9 },
+        { x: 108, y: -10 },
+        { x: 108, y: -11 },
+        { x: 107, y: -12 },
+      ]);
+    }
+  });
+
+  it("moves Mornington Crescent and Old Street without changing the combined Northern paths", () => {
+    expect(networkData.stations.find((station) => station.id === "mornington-crescent"))
+      .toMatchObject({ x: 62, y: -31 });
+    expect(networkData.stations.find((station) => station.id === "old-street"))
+      .toMatchObject({ x: 87, y: -21 });
+
+    expect([
+      ...findConnectionPath("northern", "euston", "mornington-crescent"),
+      ...findConnectionPath("northern", "mornington-crescent", "camden-town").slice(1),
+    ]).toEqual([
+      { x: 66, y: -28 }, { x: 65, y: -28 }, { x: 64, y: -28 },
+      { x: 63, y: -29 }, { x: 62, y: -30 }, { x: 62, y: -31 },
+      { x: 62, y: -32 }, { x: 63, y: -33 }, { x: 64, y: -34 },
+    ]);
+    expect([
+      ...findConnectionPath("northern", "moorgate", "old-street"),
+      ...findConnectionPath("northern", "old-street", "angel").slice(1),
+    ]).toEqual([
+      { x: 88, y: -12 }, { x: 88, y: -13 }, { x: 88, y: -14 },
+      { x: 88, y: -15 }, { x: 88, y: -16 }, { x: 88, y: -17 },
+      { x: 88, y: -18 }, { x: 88, y: -19 }, { x: 88, y: -20 },
+      { x: 87, y: -21 }, { x: 86, y: -22 }, { x: 85, y: -22 },
+      { x: 84, y: -22 }, { x: 83, y: -22 }, { x: 82, y: -22 },
+      { x: 81, y: -22 },
+    ]);
+  });
+
+  it("routes the Northern Edgware branch straight northwest from Camden Town", () => {
+    const branchStations = [
+      ["camden-town", 64, -34],
+      ["chalk-farm", 62, -36],
+      ["belsize-park", 58, -40],
+      ["hampstead", 46, -52],
+      ["golders-green", 42, -56],
+      ["brent-cross", 38, -60],
+      ["hendon-central", 34, -64],
+      ["colindale", 28, -70],
+      ["burnt-oak", 24, -74],
+      ["edgware", 20, -78],
+    ] as const;
+
+    for (const [stationId, x, y] of branchStations) {
+      expect(networkData.stations.find((station) => station.id === stationId))
+        .toMatchObject({ x, y });
+    }
+
+    for (let index = 0; index < branchStations.length - 1; index += 1) {
+      expect(directionRuns(findConnectionPath(
+        "northern",
+        branchStations[index][0],
+        branchStations[index + 1][0],
+      ))).toEqual(["-1,-1"]);
+    }
+  });
+
+  it("moves Angel west three cells without changing the Northern path through it", () => {
+    expect(networkData.stations.find((station) => station.id === "angel"))
+      .toMatchObject({ x: 81, y: -22 });
+    expect([
+      ...findConnectionPath("northern", "old-street", "angel"),
+      ...findConnectionPath("northern", "angel", "king-s-cross-st-pancras").slice(1),
+    ]).toEqual([
+      { x: 87, y: -21 }, { x: 86, y: -22 }, { x: 85, y: -22 },
+      { x: 84, y: -22 }, { x: 83, y: -22 }, { x: 82, y: -22 },
+      { x: 81, y: -22 }, { x: 80, y: -22 }, { x: 79, y: -22 },
+      { x: 78, y: -22 }, { x: 77, y: -22 }, { x: 76, y: -22 },
+      { x: 75, y: -22 }, { x: 74, y: -22 },
+    ]);
+  });
+
+  it("evenly redistributes Piccadilly stations without changing the King's Cross to Finsbury Park path", () => {
+    expect(networkData.stations.find((station) => station.id === "caledonian-road"))
+      .toMatchObject({ x: 75, y: -29 });
+    expect(networkData.stations.find((station) => station.id === "holloway-road"))
+      .toMatchObject({ x: 81, y: -35 });
+    expect(networkData.stations.find((station) => station.id === "arsenal"))
+      .toMatchObject({ x: 88, y: -42 });
+
+    const sections = [
+      findConnectionPath("piccadilly", "king-s-cross-st-pancras", "caledonian-road"),
+      findConnectionPath("piccadilly", "caledonian-road", "holloway-road"),
+      findConnectionPath("piccadilly", "holloway-road", "arsenal"),
+      findConnectionPath("piccadilly", "arsenal", "finsbury-park"),
+    ];
+    expect(sections.map((path) => path.length - 1)).toEqual([7, 6, 7, 6]);
+    expect(sections.flatMap((path, index) => index === 0 ? path : path.slice(1))).toEqual([
+      { x: 74, y: -22 }, { x: 74, y: -23 }, { x: 74, y: -24 },
+      { x: 74, y: -25 }, { x: 74, y: -26 }, { x: 74, y: -27 },
+      { x: 74, y: -28 }, { x: 75, y: -29 }, { x: 76, y: -30 },
+      { x: 77, y: -31 }, { x: 78, y: -32 }, { x: 79, y: -33 },
+      { x: 80, y: -34 }, { x: 81, y: -35 }, { x: 82, y: -36 },
+      { x: 83, y: -37 }, { x: 84, y: -38 }, { x: 85, y: -39 },
+      { x: 86, y: -40 }, { x: 87, y: -41 }, { x: 88, y: -42 },
+      { x: 89, y: -43 }, { x: 90, y: -44 }, { x: 91, y: -45 },
+      { x: 92, y: -46 }, { x: 93, y: -47 }, { x: 94, y: -48 },
+    ]);
+  });
+
+  it("centres Highbury & Islington without changing the Victoria path", () => {
+    expect(networkData.stations.find((station) => station.id === "highbury-and-islington"))
+      .toMatchObject({ x: 87, y: -35 });
+
+    const south = findConnectionPath("victoria", "king-s-cross-st-pancras", "highbury-and-islington");
+    const north = findConnectionPath("victoria", "highbury-and-islington", "finsbury-park");
+    expect([south.length - 1, north.length - 1]).toEqual([13, 13]);
+    expect([...south, ...north.slice(1)]).toEqual([
+      { x: 74, y: -22 }, { x: 75, y: -23 }, { x: 76, y: -24 },
+      { x: 77, y: -25 }, { x: 78, y: -26 }, { x: 79, y: -27 },
+      { x: 80, y: -28 }, { x: 81, y: -29 }, { x: 82, y: -30 },
+      { x: 83, y: -31 }, { x: 84, y: -32 }, { x: 85, y: -33 },
+      { x: 86, y: -34 }, { x: 87, y: -35 }, { x: 88, y: -36 },
+      { x: 89, y: -37 }, { x: 90, y: -38 }, { x: 91, y: -39 },
+      { x: 92, y: -40 }, { x: 92, y: -41 }, { x: 92, y: -42 },
+      { x: 92, y: -43 }, { x: 92, y: -44 }, { x: 92, y: -45 },
+      { x: 92, y: -46 }, { x: 93, y: -47 }, { x: 94, y: -48 },
+    ]);
+  });
+
+  it("moves Bethnal Green down to the same row as Mile End", () => {
+    const bethnalGreen = networkData.stations.find((station) => station.id === "bethnal-green");
+    const mileEnd = networkData.stations.find((station) => station.id === "mile-end");
+
+    expect(bethnalGreen).toMatchObject({ x: 122, y: -14 });
+    expect(bethnalGreen?.y).toBe(mileEnd?.y);
+    expect(directionRuns(findConnectionPath("central", "bethnal-green", "mile-end")))
+      .toEqual(["1,0"]);
+  });
+
+  it("moves Tottenham Court Road two cells east and keeps its routes schematic", () => {
+    expect(networkData.stations.find((station) => station.id === "tottenham-court-road"))
+      .toMatchObject({ x: 62, y: -8 });
+    expect(directionRuns(findConnectionPath("central", "oxford-circus", "tottenham-court-road")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("central", "tottenham-court-road", "holborn")))
+      .toEqual(["1,0", "1,1"]);
+    expect(directionRuns(findConnectionPath("northern", "leicester-square", "tottenham-court-road")))
+      .toEqual(["0,-1"]);
+    expect(directionRuns(findConnectionPath("northern", "tottenham-court-road", "goodge-street")))
+      .toEqual(["0,-1"]);
+  });
+
+  it("moves Elizabeth line Canary Wharf north and keeps Whitechapel to Canary Wharf diagonal", () => {
+    expect(networkData.stations.find((station) => station.id === "canary-wharf-elizabeth-line"))
+      .toMatchObject({ x: 140, y: 9 });
+    expect(directionRuns(findConnectionPath(
+      "elizabeth",
+      "whitechapel",
+      "canary-wharf-elizabeth-line",
+    ))).toEqual(["1,0", "1,1"]);
+  });
+
+  it("routes Elizabeth northeast and above Mile End from Whitechapel to Stratford", () => {
+    const path = findConnectionPath("elizabeth", "whitechapel", "stratford");
+
+    expect(path.slice(0, 3)).toEqual([
+      { x: 118, y: -12 },
+      { x: 118, y: -13 },
+      { x: 119, y: -14 },
+    ]);
+    expect(path).toContainEqual({ x: 130, y: -18 });
+    expect(directionRuns(path)).toEqual(["0,-1", "1,-1", "1,0", "1,-1"]);
+    const connection = networkData.connections.find(
+      (candidate) =>
+        candidate.line === "elizabeth" &&
+        candidate.from === "stratford" &&
+        candidate.to === "whitechapel",
+    );
+    expect(connection?.directionOverrides?.to).toEqual({ x: 1, y: -1 });
+  });
+
+  it("uses east and west movement between Stepney Green and Mile End", () => {
+    for (const line of ["district", "hammersmith-city"] as const) {
+      const connection = networkData.connections.find(
+        (candidate) =>
+          candidate.line === line &&
+          candidate.from === "stepney-green" &&
+          candidate.to === "mile-end",
+      );
+
+      expect(connection?.directionOverrides).toEqual({
+        from: { x: 1, y: 0 },
+        to: { x: -1, y: 0 },
+      });
+    }
+  });
+
+  it("uses west and east movement between Bow Road and Mile End", () => {
+    for (const line of ["district", "hammersmith-city"] as const) {
+      const connection = networkData.connections.find(
+        (candidate) =>
+          candidate.line === line &&
+          candidate.from === "mile-end" &&
+          candidate.to === "bow-road",
+      );
+
+      expect(connection?.directionOverrides).toEqual({
+        from: { x: 1, y: 0 },
+        to: { x: -1, y: 0 },
+      });
+    }
   });
 
   it("allows Waterloo & City to follow the central Tube-map corridor", () => {
@@ -156,7 +549,8 @@ describe("network data validation", () => {
 
     expect(connection?.path.slice(0, 2)).toEqual([{ x: 88, y: -8 }, { x: 88, y: -7 }]);
     expect(connection?.path).toContainEqual({ x: 88, y: 9 });
-    expect(connection?.path).toContainEqual({ x: 77, y: 20 });
+    expect(connection?.path).toContainEqual({ x: 76, y: 21 });
+    expect(connection?.path.at(-1)).toEqual({ x: 62, y: 21 });
     expect(connection?.path).not.toContainEqual({ x: 90, y: 10 });
   });
 
@@ -207,11 +601,68 @@ describe("network data validation", () => {
     expect(directions).toEqual(Array(4).fill({ x: 1, y: 1 }));
   });
 
+  it("routes Bakerloo northwest twice then north from Lambeth North to Waterloo", () => {
+    const path = findConnectionPath("bakerloo", "lambeth-north", "waterloo");
+
+    expect(path.slice(0, 3)).toEqual([
+      { x: 64, y: 30 },
+      { x: 63, y: 29 },
+      { x: 62, y: 28 },
+    ]);
+    expect(directionRuns(path)).toEqual(["-1,-1", "0,-1"]);
+    expect(path.slice(2).every((point) => point.x === 62)).toBe(true);
+  });
+
   it("aligns Embankment with Charing Cross and Waterloo", () => {
     const ids = ["charing-cross", "embankment", "waterloo"];
     const stations = ids.map((id) => networkData.stations.find((station) => station.id === id));
 
     expect(stations.every((station) => station?.x === 62)).toBe(true);
+  });
+
+  it("routes Jubilee northwest then north from Westminster to Green Park", () => {
+    const path = findConnectionPath("jubilee", "westminster", "green-park");
+
+    expect(directionRuns(path)).toEqual(["-1,-1", "0,-1"]);
+    expect(path.at(-3)).toEqual({ x: 44, y: 2 });
+    expect(path.slice(-2)).toEqual([{ x: 44, y: 1 }, { x: 44, y: 0 }]);
+  });
+
+  it("moves the Circle and District corridor from Sloane Square through Temple down one cell", () => {
+    const corridorStations = [
+      ["sloane-square", 38],
+      ["victoria", 44],
+      ["st-james-s-park", 50],
+      ["westminster", 56],
+      ["embankment", 62],
+      ["temple", 72],
+    ] as const;
+
+    for (const [stationId, x] of corridorStations) {
+      expect(networkData.stations.find((station) => station.id === stationId))
+        .toMatchObject({ x, y: 15 });
+    }
+
+    for (const line of ["circle", "district"] as const) {
+      for (let index = 0; index < corridorStations.length - 1; index += 1) {
+        expect(directionRuns(findConnectionPath(
+          line,
+          corridorStations[index][0],
+          corridorStations[index + 1][0],
+        ))).toEqual(["1,0"]);
+      }
+    }
+  });
+
+  it("joins every Waterloo line at the lower marker", () => {
+    expect(networkData.stations.find((station) => station.id === "waterloo"))
+      .toMatchObject({ x: 62, y: 21 });
+    expect(directionRuns(findConnectionPath("bakerloo", "waterloo", "lambeth-north")))
+      .toEqual(["0,1", "1,1"]);
+    expect(directionRuns(findConnectionPath("northern", "embankment", "waterloo")))
+      .toEqual(["0,1"]);
+    expect(findConnectionPath("waterloo-city", "bank", "waterloo").at(-1))
+      .toEqual({ x: 62, y: 21 });
   });
 
   it("routes Northern north then north-east from Kennington to Waterloo", () => {
@@ -228,8 +679,8 @@ describe("network data validation", () => {
       { x: 60, y: 37 },
       { x: 60, y: 36 },
     ]);
-    expect(northboundPath.at(-3)).toEqual({ x: 60, y: 22 });
-    expect(northboundPath.slice(-2)).toEqual([{ x: 61, y: 21 }, { x: 62, y: 20 }]);
+    expect(northboundPath.at(-3)).toEqual({ x: 60, y: 23 });
+    expect(northboundPath.slice(-2)).toEqual([{ x: 61, y: 22 }, { x: 62, y: 21 }]);
   });
 
   it("keeps every playable station in one connected network", () => {
@@ -494,6 +945,30 @@ function hasConnection(fromName: string, toName: string, line: string): boolean 
 function firstStepKey(path: Array<{ x: number; y: number }>, reverse: boolean): string {
   const oriented = reverse ? [...path].reverse() : path;
   return `${Math.sign(oriented[1].x - oriented[0].x)},${Math.sign(oriented[1].y - oriented[0].y)}`;
+}
+
+function findConnectionPath(line: LineId, from: string, to: string): GridPoint[] {
+  const connection = networkData.connections.find(
+    (candidate) =>
+      candidate.line === line &&
+      ((candidate.from === from && candidate.to === to) ||
+        (candidate.from === to && candidate.to === from)),
+  );
+  if (!connection) throw new Error(`Missing ${line} connection ${from} -> ${to}`);
+  return connection.from === from ? connection.path : [...connection.path].reverse();
+}
+
+function pathEdges(path: GridPoint[]): string[] {
+  return path.slice(0, -1).map((point, index) => {
+    const keys = [point, path[index + 1]].map(({ x, y }) => `${x},${y}`).sort();
+    return keys.join(";");
+  });
+}
+
+function directionRuns(path: GridPoint[]): string[] {
+  return path.slice(1)
+    .map((point, index) => `${Math.sign(point.x - path[index].x)},${Math.sign(point.y - path[index].y)}`)
+    .filter((direction, index, all) => index === 0 || direction !== all[index - 1]);
 }
 
 function stationByName(name: string) {

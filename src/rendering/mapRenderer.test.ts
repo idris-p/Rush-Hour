@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { clampViewCenter, getCurrentStationLabelPlacements, getStubArrowHeadPoints } from "./mapRenderer";
+import type { Connection } from "../data/types";
+import {
+  clampViewCenter,
+  getCurrentStationLabelPlacements,
+  getDirectionStubStart,
+  getDirectionStubUnit,
+  getStubArrowHeadPoints,
+} from "./mapRenderer";
 
 describe("direction stub arrows", () => {
   it("aligns an arrow head with the outgoing route direction", () => {
@@ -14,6 +21,55 @@ describe("direction stub arrows", () => {
       { x: 29, y: 8 },
       { x: 29, y: -8 },
     ]);
+  });
+
+  it("uses the same first grid step direction as movement validation", () => {
+    const connection: Connection = {
+      id: "central:a:b",
+      from: "a",
+      to: "b",
+      line: "central",
+      path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: -1 }],
+    };
+
+    expect(getDirectionStubUnit(connection, "a")).toEqual({ x: 1, y: 0 });
+    expect(getDirectionStubUnit(connection, "b")).toEqual({
+      x: -Math.SQRT1_2,
+      y: Math.SQRT1_2,
+    });
+  });
+
+  it("anchors north-facing stubs to the top marker and south-facing stubs to the bottom marker", () => {
+    const top = { x: 100, y: 100 };
+    const bottom = { x: 100, y: 132 };
+
+    for (const unit of [{ x: 0, y: -1 }, { x: -1, y: -1 }, { x: 1, y: -1 }]) {
+      expect(getDirectionStubStart([bottom, top], bottom, unit)).toEqual(top);
+    }
+    for (const unit of [{ x: 0, y: 1 }, { x: -1, y: 1 }, { x: 1, y: 1 }]) {
+      expect(getDirectionStubStart([top, bottom], top, unit)).toEqual(bottom);
+    }
+  });
+
+  it("anchors east-facing stubs to the right marker and west-facing stubs to the left marker", () => {
+    const left = { x: 100, y: 100 };
+    const right = { x: 132, y: 100 };
+
+    for (const unit of [{ x: 1, y: 0 }, { x: 1, y: -1 }, { x: 1, y: 1 }]) {
+      expect(getDirectionStubStart([left, right], left, unit)).toEqual(right);
+    }
+    for (const unit of [{ x: -1, y: 0 }, { x: -1, y: -1 }, { x: -1, y: 1 }]) {
+      expect(getDirectionStubStart([right, left], right, unit)).toEqual(left);
+    }
+  });
+
+  it("keeps line-specific anchors for perpendicular and diagonal marker arrangements", () => {
+    const linePoint = { x: 132, y: 132 };
+
+    expect(getDirectionStubStart([{ x: 100, y: 100 }, { x: 100, y: 132 }], linePoint, { x: 1, y: 0 }))
+      .toEqual(linePoint);
+    expect(getDirectionStubStart([{ x: 100, y: 100 }, { x: 132, y: 132 }], linePoint, { x: 0, y: -1 }))
+      .toEqual(linePoint);
   });
 });
 

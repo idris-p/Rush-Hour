@@ -152,6 +152,15 @@ export function getConnectionPathFrom(connection: Connection, stationId: string)
 }
 
 export function getConnectionFirstStepDirection(connection: Connection, stationId: string): MovementDirection | null {
+  const override = connection.from === stationId
+    ? connection.directionOverrides?.from
+    : connection.to === stationId
+      ? connection.directionOverrides?.to
+      : undefined;
+  if (override) {
+    return gridStepToDirection({ x: 0, y: 0 }, override);
+  }
+
   const path = getConnectionPathFrom(connection, stationId);
   if (!path || path.length < 2) {
     return null;

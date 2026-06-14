@@ -1,5 +1,5 @@
 import { LINE_BY_ID } from "../data/lines";
-import type { Connection, NetworkData } from "../data/types";
+import type { Connection, NetworkData, Point } from "../data/types";
 import { gridPointToSvgPoint } from "./grid";
 import { getCanonicalPath, offsetPolylinePoints } from "./pathOffset";
 import { createRoundedPathData, simplifyPolylinePoints } from "./roundedPath";
@@ -12,6 +12,7 @@ export function renderRevealedLine(
   connection: Connection,
   network: NetworkData,
   offset = 0,
+  connectionPoints?: Point[],
 ): void {
   const hasFromStation = network.stations.some((station) => station.id === connection.from);
   const hasToStation = network.stations.some((station) => station.id === connection.to);
@@ -22,7 +23,7 @@ export function renderRevealedLine(
 
   const path = document.createElementNS(SVG_NS, "path");
   const points = offsetPolylinePoints(
-    simplifyPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint)),
+    connectionPoints ?? simplifyPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint)),
     offset,
   );
   path.setAttribute("d", createRoundedPathData(points, LINE_CORNER_RADIUS));

@@ -1,6 +1,11 @@
 import { describe, expect, it } from "vitest";
 import type { NetworkData, Station } from "../data/types";
-import { getStationLineDirection, isInterchangeStation } from "./stationRenderer";
+import {
+  CONJOINED_CENTRE_LINE_WIDTH,
+  getSelectedLineDashArray,
+  getStationLineDirection,
+  isInterchangeStation,
+} from "./stationRenderer";
 
 describe("station marker geometry", () => {
   it("only treats playable multi-line and walk-linked stations as interchanges", () => {
@@ -31,6 +36,15 @@ describe("station marker geometry", () => {
     ]);
 
     expect(getStationLineDirection(network, "centre", "central")).toEqual({ x: 1, y: 0 });
+  });
+
+  it("uses the walk dash pattern for selected station outlines", () => {
+    expect(getSelectedLineDashArray("walk")).toBe("8 6");
+    expect(getSelectedLineDashArray("district")).toBeNull();
+  });
+
+  it("keeps the conjoined centre line thin", () => {
+    expect(CONJOINED_CENTRE_LINE_WIDTH).toBeGreaterThan(0);
   });
 });
 

@@ -1,6 +1,7 @@
 import { LINE_BY_ID } from "../data/lines";
 import type { LineId, NetworkData, Point, Station } from "../data/types";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
+import type { StationMarkerGroup } from "./corridorLayout";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const INTERCHANGE_OUTLINE_WIDTH = 12;
@@ -11,6 +12,10 @@ const BAR_WIDTH = 5;
 const CURRENT_HIGHLIGHT_WIDTH = 4;
 const CURRENT_HIGHLIGHT_RADIUS =
   INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH / 2;
+const CONJOINED_NECK_WIDTH = INTERCHANGE_OUTLINE_WIDTH;
+const CONJOINED_HIGHLIGHT_RADIUS = INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH;
+const CONJOINED_HIGHLIGHT_NECK_WIDTH = CONJOINED_NECK_WIDTH + CURRENT_HIGHLIGHT_WIDTH * 2;
+export const CONJOINED_CENTRE_LINE_WIDTH = 3.5;
 const NORTHERN_BRANCH_INTERCHANGES = new Set(["Camden Town", "Kennington"]);
 
 export type CurrentStationLabelPlacement = {
@@ -26,6 +31,7 @@ export function renderStationMarker(
   selectedLineId: LineId,
   isCurrent: boolean,
   currentLabelScale = 1,
+  markerGroups: StationMarkerGroup[] = [{ point: gridPointToSvgPoint(station), lines: [...station.lines] }],
   currentLabelPlacement: CurrentStationLabelPlacement = { x: 28, y: -24, textAnchor: "start" },
 ): SVGTextElement | null {
   const point = gridPointToSvgPoint(station);
@@ -33,16 +39,48 @@ export function renderStationMarker(
   group.setAttribute("class", isCurrent ? "station station-current" : "station station-revealed");
   group.setAttribute("transform", `translate(${point.x} ${point.y})`);
 
+  const isConjoined = markerGroups.length > 1;
   const isInterchange = isInterchangeStation(station);
-  if (isCurrent && isInterchange) {
-    group.append(createCurrentHighlight(selectedLineId));
-  }
-
-  if (isInterchange) {
+  if (isConjoined) {
+    if (isCurrent) {
+      if (selectedLineId === "walk") {
+        appendDashedConjoinedHighlight(group, point, markerGroups, LINE_BY_ID.walk.color);
+      } else {
+        appendConjoinedShape(
+          group,
+          point,
+          markerGroups,
+          LINE_BY_ID[selectedLineId].color,
+          CONJOINED_HIGHLIGHT_RADIUS,
+          CONJOINED_HIGHLIGHT_NECK_WIDTH,
+          "current-station-highlight conjoined-station-highlight",
+        );
+      }
+    }
+    appendConjoinedShape(
+      group,
+      point,
+      markerGroups,
+      "#111111",
+      INTERCHANGE_OUTER_RADIUS,
+      CONJOINED_NECK_WIDTH,
+      "interchange-marker conjoined-station-marker",
+    );
+    appendConjoinedCentreLines(group, point, markerGroups);
+    for (const markerGroup of markerGroups) {
+      const offset = subtract(markerGroup.point, point);
+      group.append(createTranslatedMarker(createFilledCircle(INTERCHANGE_RADIUS, "#ffffff"), offset));
+    }
+  } else if (isInterchange) {
+    if (isCurrent) group.append(createCurrentHighlight(selectedLineId));
     group.append(createInterchangeMarker());
   } else {
     const markerLineId = station.lines.find((line) => line !== "walk") ?? selectedLineId;
-    group.append(createBarMarker(getStationLineDirection(network, station.id, markerLineId), LINE_BY_ID[markerLineId].color));
+    const markerPoint = markerGroups[0]?.point ?? point;
+    group.append(createTranslatedMarker(
+      createBarMarker(getStationLineDirection(network, station.id, markerLineId), LINE_BY_ID[markerLineId].color),
+      subtract(markerPoint, point),
+    ));
   }
 
   let currentLabel: SVGTextElement | null = null;
@@ -64,6 +102,31 @@ export function renderStationMarker(
 
 export function isInterchangeStation(station: Station): boolean {
   return new Set(station.lines).size > 1 || NORTHERN_BRANCH_INTERCHANGES.has(station.name);
+}
+
+function appendConjoinedCentreLines(
+  group: SVGGElement,
+  basePoint: Point,
+  markerGroups: StationMarkerGroup[],
+): void {
+  for (let index = 1; index < markerGroups.length; index += 1) {
+    const from = subtract(markerGroups[index - 1].point, basePoint);
+    const to = subtract(markerGroups[index].point, basePoint);
+    const line = document.createElementNS(SVG_NS, "line");
+    line.setAttribute("x1", String(from.x));
+    line.setAttribute("y1", String(from.y));
+    line.setAttribute("x2", String(to.x));
+    line.setAttribute("y2", String(to.y));
+    line.setAttribute("stroke", "#ffffff");
+    line.setAttribute("stroke-width", String(CONJOINED_CENTRE_LINE_WIDTH));
+    line.setAttribute("stroke-linecap", "butt");
+    line.setAttribute("class", "conjoined-station-centre-line");
+    group.append(line);
+  }
+}
+
+export function getSelectedLineDashArray(lineId: LineId): string | null {
+  return lineId === "walk" ? "8 6" : null;
 }
 
 export function getStationLineDirection(network: NetworkData, stationId: string, lineId: LineId): Point {
@@ -104,22 +167,118 @@ function createCurrentHighlight(lineId: LineId): SVGCircleElement {
   highlight.setAttribute("fill", "none");
   highlight.setAttribute("stroke", LINE_BY_ID[lineId].color);
   highlight.setAttribute("stroke-width", String(CURRENT_HIGHLIGHT_WIDTH));
-  if (lineId === "walk") {
-    highlight.setAttribute("stroke-dasharray", "8 6");
+  const dashArray = getSelectedLineDashArray(lineId);
+  if (dashArray) {
+    highlight.setAttribute("stroke-dasharray", dashArray);
     highlight.setAttribute("stroke-linecap", "butt");
   }
   highlight.setAttribute("class", "current-station-highlight");
   return highlight;
 }
 
-function createInterchangeMarker(): SVGCircleElement {
+function createInterchangeMarker(className = "interchange-marker"): SVGCircleElement {
   const marker = document.createElementNS(SVG_NS, "circle");
   marker.setAttribute("r", String(INTERCHANGE_RADIUS));
   marker.setAttribute("fill", "#ffffff");
   marker.setAttribute("stroke", "#111111");
   marker.setAttribute("stroke-width", String(INTERCHANGE_OUTLINE_WIDTH));
-  marker.setAttribute("class", "interchange-marker");
+  marker.setAttribute("class", className);
   return marker;
+}
+
+function appendConjoinedShape(
+  group: SVGGElement,
+  basePoint: Point,
+  markerGroups: StationMarkerGroup[],
+  color: string,
+  radius: number,
+  neckWidth: number,
+  className: string,
+): void {
+  for (let index = 1; index < markerGroups.length; index += 1) {
+    const from = subtract(markerGroups[index - 1].point, basePoint);
+    const to = subtract(markerGroups[index].point, basePoint);
+    group.append(createConjoinedLink(from, to, color, neckWidth, className));
+  }
+  for (const markerGroup of markerGroups) {
+    const offset = subtract(markerGroup.point, basePoint);
+    group.append(createTranslatedMarker(createFilledCircle(radius, color, className), offset));
+  }
+}
+
+function appendDashedConjoinedHighlight(
+  group: SVGGElement,
+  basePoint: Point,
+  markerGroups: StationMarkerGroup[],
+  color: string,
+): void {
+  for (let index = 1; index < markerGroups.length; index += 1) {
+    const from = subtract(markerGroups[index - 1].point, basePoint);
+    const to = subtract(markerGroups[index].point, basePoint);
+    const link = createConjoinedLink(
+      from,
+      to,
+      color,
+      CONJOINED_HIGHLIGHT_NECK_WIDTH,
+      "current-station-highlight conjoined-station-highlight",
+    );
+    applyWalkDash(link);
+    group.append(link);
+  }
+  for (const markerGroup of markerGroups) {
+    const offset = subtract(markerGroup.point, basePoint);
+    const circle = document.createElementNS(SVG_NS, "circle");
+    circle.setAttribute("r", String(INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH / 2));
+    circle.setAttribute("fill", "none");
+    circle.setAttribute("stroke", color);
+    circle.setAttribute("stroke-width", String(CURRENT_HIGHLIGHT_WIDTH));
+    circle.setAttribute("class", "current-station-highlight conjoined-station-highlight");
+    applyWalkDash(circle);
+    group.append(createTranslatedMarker(circle, offset));
+  }
+}
+
+function applyWalkDash(element: SVGElement): void {
+  element.setAttribute("stroke-dasharray", getSelectedLineDashArray("walk")!);
+  element.setAttribute("stroke-linecap", "butt");
+}
+
+function createConjoinedLink(
+  from: Point,
+  to: Point,
+  stroke: string,
+  width: number,
+  className: string,
+): SVGLineElement {
+  const link = document.createElementNS(SVG_NS, "line");
+  link.setAttribute("x1", String(from.x));
+  link.setAttribute("y1", String(from.y));
+  link.setAttribute("x2", String(to.x));
+  link.setAttribute("y2", String(to.y));
+  link.setAttribute("stroke", stroke);
+  link.setAttribute("stroke-width", String(width));
+  link.setAttribute("stroke-linecap", "round");
+  link.setAttribute("class", `conjoined-station-link ${className}`);
+  return link;
+}
+
+function createFilledCircle(radius: number, fill: string, className?: string): SVGCircleElement {
+  const circle = document.createElementNS(SVG_NS, "circle");
+  circle.setAttribute("r", String(radius));
+  circle.setAttribute("fill", fill);
+  if (className) circle.setAttribute("class", className);
+  return circle;
+}
+
+function createTranslatedMarker<T extends SVGElement>(marker: T, offset: Point): T {
+  if (Math.hypot(offset.x, offset.y) > 0.01) {
+    marker.setAttribute("transform", `translate(${offset.x} ${offset.y})`);
+  }
+  return marker;
+}
+
+function subtract(point: Point, origin: Point): Point {
+  return { x: point.x - origin.x, y: point.y - origin.y };
 }
 
 function createBarMarker(lineDirection: Point, color: string): SVGLineElement {

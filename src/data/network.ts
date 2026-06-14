@@ -16,16 +16,521 @@ for (const connection of connectionSeeds) {
   }
 }
 
+const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y">>([
+  ["north-ealing", { x: -38, y: -10 }],
+  ["park-royal", { x: -38, y: -18 }],
+  ["alperton", { x: -38, y: -32 }],
+  ["sudbury-town", { x: -38, y: -38 }],
+  ["sudbury-hill", { x: -38, y: -44 }],
+  ["south-harrow", { x: -38, y: -50 }],
+  ["baker-street", { x: 42, y: -22 }],
+  ["regent-s-park", { x: 47, y: -17 }],
+  ["st-john-s-wood", { x: 38, y: -26 }],
+  ["mornington-crescent", { x: 62, y: -31 }],
+  ["old-street", { x: 87, y: -21 }],
+  ["angel", { x: 81, y: -22 }],
+  ["caledonian-road", { x: 75, y: -29 }],
+  ["holloway-road", { x: 81, y: -35 }],
+  ["arsenal", { x: 88, y: -42 }],
+  ["highbury-and-islington", { x: 87, y: -35 }],
+  ["canary-wharf-elizabeth-line", { x: 140, y: 9 }],
+  ["bethnal-green", { x: 122, y: -14 }],
+  ["tottenham-court-road", { x: 62, y: -8 }],
+  ["chalk-farm", { x: 62, y: -36 }],
+  ["belsize-park", { x: 58, y: -40 }],
+  ["hampstead", { x: 46, y: -52 }],
+  ["golders-green", { x: 42, y: -56 }],
+  ["brent-cross", { x: 38, y: -60 }],
+  ["hendon-central", { x: 34, y: -64 }],
+  ["colindale", { x: 28, y: -70 }],
+  ["burnt-oak", { x: 24, y: -74 }],
+  ["edgware", { x: 20, y: -78 }],
+  ["swiss-cottage", { x: 36, y: -28 }],
+  ["finchley-road", { x: 32, y: -32 }],
+  ["west-hampstead", { x: 30, y: -34 }],
+  ["kilburn", { x: 24, y: -40 }],
+  ["willesden-green", { x: 20, y: -44 }],
+  ["dollis-hill", { x: 18, y: -46 }],
+  ["neasden", { x: 16, y: -48 }],
+  ["wembley-park", { x: 14, y: -50 }],
+  ["russell-square", { x: 74, y: -18 }],
+  ["sloane-square", { x: 38, y: 15 }],
+  ["victoria", { x: 44, y: 15 }],
+  ["st-james-s-park", { x: 50, y: 15 }],
+  ["westminster", { x: 56, y: 15 }],
+  ["embankment", { x: 62, y: 15 }],
+  ["temple", { x: 72, y: 15 }],
+  ["waterloo", { x: 62, y: 21 }],
+]);
+
 const stations: Station[] = stationSeeds.map((station) => ({
   ...station,
+  ...schematicStationPositionOverrides.get(station.id),
   lines: [...(linesByStation.get(station.id) ?? [])].sort(compareLineIds),
 }));
 
-const connections: Connection[] = connectionSeeds.map((connection) => ({
-  ...connection,
-  id: createConnectionId(connection.line, connection.from, connection.to),
-  path: connection.path ?? missingConnectionPath(connection.line, connection.from, connection.to),
-}));
+const schematicPathOverrides = new Map<string, Connection["path"]>([
+  [
+    createConnectionId("piccadilly", "ealing-common", "north-ealing"),
+    expandSchematicPath([{ x: -38, y: 8 }, { x: -38, y: -10 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "north-ealing", "park-royal"),
+    expandSchematicPath([{ x: -38, y: -10 }, { x: -38, y: -18 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "park-royal", "alperton"),
+    expandSchematicPath([{ x: -38, y: -18 }, { x: -38, y: -32 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "alperton", "sudbury-town"),
+    expandSchematicPath([{ x: -38, y: -32 }, { x: -38, y: -38 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "sudbury-town", "sudbury-hill"),
+    expandSchematicPath([{ x: -38, y: -38 }, { x: -38, y: -44 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "sudbury-hill", "south-harrow"),
+    expandSchematicPath([{ x: -38, y: -44 }, { x: -38, y: -50 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "south-harrow", "rayners-lane"),
+    expandSchematicPath([{ x: -38, y: -50 }, { x: -38, y: -62 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "baker-street", "marylebone"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 40, y: -24 }, { x: 32, y: -24 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "baker-street", "regent-s-park"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 47, y: -17 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "oxford-circus", "regent-s-park"),
+    expandSchematicPath([{ x: 50, y: -8 }, { x: 50, y: -14 }, { x: 47, y: -17 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "waterloo", "lambeth-north"),
+    expandSchematicPath([{ x: 62, y: 21 }, { x: 62, y: 28 }, { x: 64, y: 30 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "charing-cross", "embankment"),
+    expandSchematicPath([{ x: 62, y: 8 }, { x: 62, y: 15 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "embankment", "waterloo"),
+    expandSchematicPath([{ x: 62, y: 15 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("circle", "baker-street", "edgware-road"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 24, y: -22 }]),
+  ],
+  [
+    createConnectionId("circle", "great-portland-street", "baker-street"),
+    expandSchematicPath([{ x: 50, y: -22 }, { x: 42, y: -22 }]),
+  ],
+  [
+    createConnectionId("hammersmith-city", "baker-street", "edgware-road"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 24, y: -22 }]),
+  ],
+  [
+    createConnectionId("hammersmith-city", "great-portland-street", "baker-street"),
+    expandSchematicPath([{ x: 50, y: -22 }, { x: 42, y: -22 }]),
+  ],
+  [
+    createConnectionId("jubilee", "baker-street", "bond-street"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 44, y: -20 }, { x: 44, y: -8 }]),
+  ],
+  [
+    createConnectionId("jubilee", "baker-street", "st-john-s-wood"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 38, y: -26 }]),
+  ],
+  [
+    createConnectionId("jubilee", "st-john-s-wood", "swiss-cottage"),
+    expandSchematicPath([{ x: 38, y: -26 }, { x: 36, y: -28 }]),
+  ],
+  [
+    createConnectionId("jubilee", "finchley-road", "swiss-cottage"),
+    expandSchematicPath([{ x: 32, y: -32 }, { x: 36, y: -28 }]),
+  ],
+  [
+    createConnectionId("jubilee", "finchley-road", "west-hampstead"),
+    expandSchematicPath([{ x: 32, y: -32 }, { x: 30, y: -34 }]),
+  ],
+  [
+    createConnectionId("jubilee", "west-hampstead", "kilburn"),
+    expandSchematicPath([{ x: 30, y: -34 }, { x: 24, y: -40 }]),
+  ],
+  [
+    createConnectionId("jubilee", "kilburn", "willesden-green"),
+    expandSchematicPath([{ x: 24, y: -40 }, { x: 20, y: -44 }]),
+  ],
+  [
+    createConnectionId("jubilee", "willesden-green", "dollis-hill"),
+    expandSchematicPath([{ x: 20, y: -44 }, { x: 18, y: -46 }]),
+  ],
+  [
+    createConnectionId("jubilee", "dollis-hill", "neasden"),
+    expandSchematicPath([{ x: 18, y: -46 }, { x: 16, y: -48 }]),
+  ],
+  [
+    createConnectionId("jubilee", "neasden", "wembley-park"),
+    expandSchematicPath([{ x: 16, y: -48 }, { x: 14, y: -50 }]),
+  ],
+  [
+    createConnectionId("jubilee", "wembley-park", "kingsbury"),
+    expandSchematicPath([{ x: 14, y: -50 }, { x: 12, y: -52 }, { x: 12, y: -58 }]),
+  ],
+  [
+    createConnectionId("metropolitan", "baker-street", "finchley-road"),
+    expandSchematicPath([{ x: 42, y: -22 }, { x: 32, y: -32 }]),
+  ],
+  [
+    createConnectionId("metropolitan", "wembley-park", "finchley-road"),
+    expandSchematicPath([{ x: 14, y: -50 }, { x: 32, y: -32 }]),
+  ],
+  [
+    createConnectionId("metropolitan", "great-portland-street", "baker-street"),
+    expandSchematicPath([{ x: 50, y: -22 }, { x: 42, y: -22 }]),
+  ],
+  [
+    createConnectionId("metropolitan", "wembley-park", "preston-road"),
+    expandSchematicPath([{ x: 14, y: -50 }, { x: 10, y: -54 }, { x: 6, y: -54 }]),
+  ],
+  [
+    createConnectionId("jubilee", "north-greenwich", "canning-town"),
+    expandSchematicPath([{ x: 146, y: 16 }, { x: 148, y: 16 }, { x: 154, y: 10 }, { x: 154, y: 4 }]),
+  ],
+  [
+    createConnectionId("jubilee", "green-park", "westminster"),
+    expandSchematicPath([{ x: 44, y: 0 }, { x: 44, y: 3 }, { x: 56, y: 15 }]),
+  ],
+  [
+    createConnectionId("jubilee", "westminster", "waterloo"),
+    expandSchematicPath([{ x: 56, y: 15 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("jubilee", "waterloo", "southwark"),
+    expandSchematicPath([{ x: 62, y: 21 }, { x: 63, y: 22 }, { x: 70, y: 22 }]),
+  ],
+  [
+    createConnectionId("circle", "tower-hill", "aldgate"),
+    expandSchematicPath([{ x: 104, y: 0 }, { x: 107, y: 0 }, { x: 108, y: -1 }, { x: 108, y: -8 }]),
+  ],
+  [
+    createConnectionId("district", "tower-hill", "aldgate-east"),
+    expandSchematicPath([
+      { x: 104, y: 0 },
+      { x: 107, y: 0 },
+      { x: 111, y: -4 },
+      { x: 111, y: -7 },
+      { x: 116, y: -12 },
+    ]),
+  ],
+  [
+    createConnectionId("circle", "aldgate", "liverpool-street"),
+    expandSchematicPath([{ x: 108, y: -8 }, { x: 108, y: -11 }, { x: 107, y: -12 }, { x: 92, y: -12 }]),
+  ],
+  [
+    createConnectionId("metropolitan", "aldgate", "liverpool-street"),
+    expandSchematicPath([{ x: 108, y: -8 }, { x: 108, y: -11 }, { x: 107, y: -12 }, { x: 92, y: -12 }]),
+  ],
+  [
+    createConnectionId("central", "oxford-circus", "tottenham-court-road"),
+    expandSchematicPath([{ x: 50, y: -8 }, { x: 62, y: -8 }]),
+  ],
+  [
+    createConnectionId("central", "tottenham-court-road", "holborn"),
+    expandSchematicPath([{ x: 62, y: -8 }, { x: 68, y: -8 }, { x: 70, y: -6 }]),
+  ],
+  [
+    createConnectionId("northern", "leicester-square", "tottenham-court-road"),
+    expandSchematicPath([{ x: 62, y: 0 }, { x: 62, y: -8 }]),
+  ],
+  [
+    createConnectionId("northern", "tottenham-court-road", "goodge-street"),
+    expandSchematicPath([{ x: 62, y: -8 }, { x: 62, y: -14 }]),
+  ],
+  [
+    createConnectionId("northern", "embankment", "charing-cross"),
+    expandSchematicPath([{ x: 62, y: 15 }, { x: 62, y: 8 }]),
+  ],
+  [
+    createConnectionId("northern", "embankment", "waterloo"),
+    expandSchematicPath([{ x: 62, y: 15 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("northern", "waterloo", "kennington"),
+    expandSchematicPath([{ x: 62, y: 21 }, { x: 60, y: 23 }, { x: 60, y: 38 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "holborn", "russell-square"),
+    expandSchematicPath([{ x: 70, y: -6 }, { x: 74, y: -10 }, { x: 74, y: -18 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "russell-square", "king-s-cross-st-pancras"),
+    expandSchematicPath([{ x: 74, y: -18 }, { x: 74, y: -22 }]),
+  ],
+  [
+    createConnectionId("elizabeth", "farringdon", "tottenham-court-road"),
+    expandSchematicPath([
+      { x: 80, y: -18 },
+      { x: 71, y: -9 },
+      { x: 63, y: -9 },
+      { x: 62, y: -8 },
+    ]),
+  ],
+  [
+    createConnectionId("elizabeth", "tottenham-court-road", "bond-street"),
+    expandSchematicPath([
+      { x: 62, y: -8 },
+      { x: 61, y: -9 },
+      { x: 45, y: -9 },
+      { x: 44, y: -8 },
+    ]),
+  ],
+  [
+    createConnectionId("northern", "euston", "mornington-crescent"),
+    expandSchematicPath([{ x: 66, y: -28 }, { x: 64, y: -28 }, { x: 62, y: -30 }, { x: 62, y: -31 }]),
+  ],
+  [
+    createConnectionId("northern", "mornington-crescent", "camden-town"),
+    expandSchematicPath([{ x: 62, y: -31 }, { x: 62, y: -32 }, { x: 64, y: -34 }]),
+  ],
+  [
+    createConnectionId("northern", "camden-town", "chalk-farm"),
+    expandSchematicPath([{ x: 64, y: -34 }, { x: 62, y: -36 }]),
+  ],
+  [
+    createConnectionId("northern", "chalk-farm", "belsize-park"),
+    expandSchematicPath([{ x: 62, y: -36 }, { x: 58, y: -40 }]),
+  ],
+  [
+    createConnectionId("northern", "belsize-park", "hampstead"),
+    expandSchematicPath([{ x: 58, y: -40 }, { x: 46, y: -52 }]),
+  ],
+  [
+    createConnectionId("northern", "hampstead", "golders-green"),
+    expandSchematicPath([{ x: 42, y: -56 }, { x: 46, y: -52 }]),
+  ],
+  [
+    createConnectionId("northern", "golders-green", "brent-cross"),
+    expandSchematicPath([{ x: 38, y: -60 }, { x: 42, y: -56 }]),
+  ],
+  [
+    createConnectionId("northern", "brent-cross", "hendon-central"),
+    expandSchematicPath([{ x: 34, y: -64 }, { x: 38, y: -60 }]),
+  ],
+  [
+    createConnectionId("northern", "hendon-central", "colindale"),
+    expandSchematicPath([{ x: 28, y: -70 }, { x: 34, y: -64 }]),
+  ],
+  [
+    createConnectionId("northern", "colindale", "burnt-oak"),
+    expandSchematicPath([{ x: 28, y: -70 }, { x: 24, y: -74 }]),
+  ],
+  [
+    createConnectionId("northern", "burnt-oak", "edgware"),
+    expandSchematicPath([{ x: 24, y: -74 }, { x: 20, y: -78 }]),
+  ],
+  [
+    createConnectionId("northern", "moorgate", "old-street"),
+    expandSchematicPath([{ x: 88, y: -12 }, { x: 88, y: -20 }, { x: 87, y: -21 }]),
+  ],
+  [
+    createConnectionId("northern", "old-street", "angel"),
+    expandSchematicPath([{ x: 87, y: -21 }, { x: 86, y: -22 }, { x: 81, y: -22 }]),
+  ],
+  [
+    createConnectionId("northern", "angel", "king-s-cross-st-pancras"),
+    expandSchematicPath([{ x: 81, y: -22 }, { x: 74, y: -22 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "caledonian-road", "king-s-cross-st-pancras"),
+    expandSchematicPath([{ x: 75, y: -29 }, { x: 74, y: -28 }, { x: 74, y: -22 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "caledonian-road", "holloway-road"),
+    expandSchematicPath([{ x: 75, y: -29 }, { x: 81, y: -35 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "holloway-road", "arsenal"),
+    expandSchematicPath([{ x: 81, y: -35 }, { x: 88, y: -42 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "arsenal", "finsbury-park"),
+    expandSchematicPath([{ x: 88, y: -42 }, { x: 94, y: -48 }]),
+  ],
+  [
+    createConnectionId("victoria", "king-s-cross-st-pancras", "highbury-and-islington"),
+    expandSchematicPath([{ x: 74, y: -22 }, { x: 87, y: -35 }]),
+  ],
+  [
+    createConnectionId("victoria", "highbury-and-islington", "finsbury-park"),
+    expandSchematicPath([
+      { x: 87, y: -35 },
+      { x: 92, y: -40 },
+      { x: 92, y: -46 },
+      { x: 94, y: -48 },
+    ]),
+  ],
+  [
+    createConnectionId("victoria", "victoria", "green-park"),
+    expandSchematicPath([{ x: 44, y: 15 }, { x: 44, y: 0 }]),
+  ],
+  [
+    createConnectionId("victoria", "victoria", "pimlico"),
+    expandSchematicPath([{ x: 44, y: 15 }, { x: 44, y: 30 }]),
+  ],
+  [
+    createConnectionId("waterloo-city", "bank", "waterloo"),
+    expandSchematicPath([{ x: 88, y: -8 }, { x: 88, y: 9 }, { x: 76, y: 21 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("elizabeth", "liverpool-street", "whitechapel"),
+    expandSchematicPath([
+      { x: 118, y: -12 },
+      { x: 117, y: -13 },
+      { x: 93, y: -13 },
+      { x: 92, y: -12 },
+    ]),
+  ],
+  [
+    createConnectionId("elizabeth", "whitechapel", "canary-wharf-elizabeth-line"),
+    expandSchematicPath([{ x: 118, y: -12 }, { x: 119, y: -12 }, { x: 140, y: 9 }]),
+  ],
+  [
+    createConnectionId("elizabeth", "canary-wharf-elizabeth-line", "custom-house"),
+    expandSchematicPath([
+      { x: 140, y: 9 },
+      { x: 141, y: 10 },
+      { x: 170, y: 10 },
+      { x: 172, y: 12 },
+    ]),
+  ],
+  [
+    createConnectionId("walk", "canary-wharf-jubilee", "canary-wharf-elizabeth-line"),
+    expandSchematicPath([{ x: 136, y: 16 }, { x: 140, y: 12 }, { x: 140, y: 9 }]),
+  ],
+  [
+    createConnectionId("central", "liverpool-street", "bethnal-green"),
+    expandSchematicPath([{ x: 92, y: -12 }, { x: 94, y: -14 }, { x: 122, y: -14 }]),
+  ],
+  [
+    createConnectionId("central", "bethnal-green", "mile-end"),
+    expandSchematicPath([{ x: 122, y: -14 }, { x: 130, y: -14 }]),
+  ],
+  [
+    createConnectionId("elizabeth", "whitechapel", "stratford"),
+    expandSchematicPath([
+      { x: 150, y: -30 },
+      { x: 138, y: -18 },
+      { x: 123, y: -18 },
+      { x: 118, y: -13 },
+      { x: 118, y: -12 },
+    ]),
+  ],
+]);
+
+for (const line of ["circle", "district"] as const) {
+  schematicPathOverrides.set(
+    createConnectionId(line, "south-kensington", "sloane-square"),
+    expandSchematicPath([{ x: 28, y: 14 }, { x: 37, y: 14 }, { x: 38, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "sloane-square", "victoria"),
+    expandSchematicPath([{ x: 38, y: 15 }, { x: 44, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "victoria", "st-james-s-park"),
+    expandSchematicPath([{ x: 44, y: 15 }, { x: 50, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "st-james-s-park", "westminster"),
+    expandSchematicPath([{ x: 50, y: 15 }, { x: 56, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "westminster", "embankment"),
+    expandSchematicPath([{ x: 56, y: 15 }, { x: 62, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "embankment", "temple"),
+    expandSchematicPath([{ x: 62, y: 15 }, { x: 72, y: 15 }]),
+  );
+  schematicPathOverrides.set(
+    createConnectionId(line, "temple", "blackfriars"),
+    expandSchematicPath([{ x: 72, y: 15 }, { x: 73, y: 15 }, { x: 78, y: 10 }]),
+  );
+}
+
+const connectionDirectionOverrides = new Map<string, NonNullable<Connection["directionOverrides"]>>([
+  [
+    createConnectionId("jubilee", "baker-street", "st-john-s-wood"),
+    { from: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("elizabeth", "liverpool-street", "whitechapel"),
+    { from: { x: -1, y: 0 }, to: { x: 1, y: 0 } },
+  ],
+  [
+    createConnectionId("elizabeth", "whitechapel", "canary-wharf-elizabeth-line"),
+    { from: { x: 1, y: 1 } },
+  ],
+  [
+    createConnectionId("elizabeth", "whitechapel", "stratford"),
+    { to: { x: 1, y: -1 } },
+  ],
+  [
+    createConnectionId("district", "stepney-green", "mile-end"),
+    { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("hammersmith-city", "stepney-green", "mile-end"),
+    { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("district", "mile-end", "bow-road"),
+    { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("hammersmith-city", "mile-end", "bow-road"),
+    { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("elizabeth", "farringdon", "tottenham-court-road"),
+    { to: { x: 1, y: 0 } },
+  ],
+  [
+    createConnectionId("elizabeth", "tottenham-court-road", "bond-street"),
+    { from: { x: -1, y: 0 }, to: { x: 1, y: 0 } },
+  ],
+  [
+    createConnectionId("jubilee", "westminster", "waterloo"),
+    { to: { x: -1, y: -1 } },
+  ],
+  [
+    createConnectionId("circle", "south-kensington", "sloane-square"),
+    { to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("district", "south-kensington", "sloane-square"),
+    { to: { x: -1, y: 0 } },
+  ],
+]);
+
+const connections: Connection[] = connectionSeeds.map((connection) => {
+  const id = createConnectionId(connection.line, connection.from, connection.to);
+  return {
+    ...connection,
+    id,
+    directionOverrides: connectionDirectionOverrides.get(id),
+    path:
+      schematicPathOverrides.get(id) ??
+      connection.path ??
+      missingConnectionPath(connection.line, connection.from, connection.to),
+  };
+});
 
 export const networkData: NetworkData = {
   stations,
@@ -41,4 +546,25 @@ export const networkData: NetworkData = {
 
 function missingConnectionPath(line: LineId, from: string, to: string): never {
   throw new Error(`Generated connection is missing a path: ${line} ${from} -> ${to}`);
+}
+
+function expandSchematicPath(waypoints: Connection["path"]): Connection["path"] {
+  const path = [waypoints[0]];
+  for (let index = 1; index < waypoints.length; index += 1) {
+    const target = waypoints[index];
+    let current = path.at(-1)!;
+    const dx = target.x - current.x;
+    const dy = target.y - current.y;
+    if (dx !== 0 && dy !== 0 && Math.abs(dx) !== Math.abs(dy)) {
+      throw new Error(`Schematic segment is not cardinal or diagonal: ${JSON.stringify([current, target])}`);
+    }
+    while (current.x !== target.x || current.y !== target.y) {
+      current = {
+        x: current.x + Math.sign(target.x - current.x),
+        y: current.y + Math.sign(target.y - current.y),
+      };
+      path.push(current);
+    }
+  }
+  return path;
 }
