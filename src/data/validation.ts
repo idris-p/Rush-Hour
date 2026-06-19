@@ -9,12 +9,16 @@ const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
   "circle:aldgate:liverpool-street",
   "circle:aldgate:tower-hill",
   "district:aldgate-east:tower-hill",
+  "central:gants-hill:newbury-park",
+  "central:grange-hill:hainault",
   "metropolitan:aldgate:liverpool-street",
   "piccadilly:hatton-cross:heathrow-terminal-4",
   "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
 ]);
 
 const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([
+  "central:gants-hill:newbury-park",
+  "central:grange-hill:hainault",
   "piccadilly:hatton-cross:heathrow-terminal-4",
   "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
 ]);

@@ -97,6 +97,16 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["kew-gardens", { x: -31, y: 26 }],
   ["richmond", { x: -37, y: 32 }],
   ["russell-square", { x: 74, y: -18 }],
+  ["wanstead", { x: 159, y: -45 }],
+  ["redbridge", { x: 164, y: -45 }],
+  ["gants-hill", { x: 169, y: -45 }],
+  ["newbury-park", { x: 171, y: -47 }],
+  ["barkingside", { x: 171, y: -51 }],
+  ["fairlop", { x: 171, y: -55 }],
+  ["hainault", { x: 171, y: -59 }],
+  ["grange-hill", { x: 169, y: -61 }],
+  ["chigwell", { x: 164, y: -61 }],
+  ["roding-valley", { x: 159, y: -61 }],
   ["sloane-square", { x: 38, y: 15 }],
   ["victoria", { x: 44, y: 15 }],
   ["st-james-s-park", { x: 50, y: 15 }],
@@ -268,6 +278,50 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   [
     createConnectionId("jubilee", "west-ham", "stratford"),
     expandSchematicPath([{ x: 154, y: -12 }, { x: 154, y: -26 }, { x: 150, y: -30 }]),
+  ],
+  [
+    createConnectionId("central", "leytonstone", "wanstead"),
+    expandSchematicPath([{ x: 156, y: -44 }, { x: 157, y: -45 }, { x: 159, y: -45 }]),
+  ],
+  [
+    createConnectionId("central", "wanstead", "redbridge"),
+    expandSchematicPath([{ x: 159, y: -45 }, { x: 164, y: -45 }]),
+  ],
+  [
+    createConnectionId("central", "redbridge", "gants-hill"),
+    expandSchematicPath([{ x: 164, y: -45 }, { x: 169, y: -45 }]),
+  ],
+  [
+    createConnectionId("central", "gants-hill", "newbury-park"),
+    expandSchematicPath([{ x: 169, y: -45 }, { x: 171, y: -45 }, { x: 171, y: -47 }]),
+  ],
+  [
+    createConnectionId("central", "newbury-park", "barkingside"),
+    expandSchematicPath([{ x: 171, y: -47 }, { x: 171, y: -51 }]),
+  ],
+  [
+    createConnectionId("central", "barkingside", "fairlop"),
+    expandSchematicPath([{ x: 171, y: -51 }, { x: 171, y: -55 }]),
+  ],
+  [
+    createConnectionId("central", "fairlop", "hainault"),
+    expandSchematicPath([{ x: 171, y: -55 }, { x: 171, y: -59 }]),
+  ],
+  [
+    createConnectionId("central", "hainault", "grange-hill"),
+    expandSchematicPath([{ x: 171, y: -59 }, { x: 171, y: -61 }, { x: 169, y: -61 }]),
+  ],
+  [
+    createConnectionId("central", "grange-hill", "chigwell"),
+    expandSchematicPath([{ x: 169, y: -61 }, { x: 164, y: -61 }]),
+  ],
+  [
+    createConnectionId("central", "chigwell", "roding-valley"),
+    expandSchematicPath([{ x: 164, y: -61 }, { x: 159, y: -61 }]),
+  ],
+  [
+    createConnectionId("central", "roding-valley", "woodford"),
+    expandSchematicPath([{ x: 159, y: -61 }, { x: 157, y: -61 }, { x: 156, y: -60 }]),
   ],
   [
     createConnectionId("metropolitan", "baker-street", "finchley-road"),
