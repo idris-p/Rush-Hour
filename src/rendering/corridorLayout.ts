@@ -61,10 +61,11 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["hammersmith-city:mile-end:stepney-green", [{ x: 128, y: -12 }, { x: 132, y: -12 }]],
   ["district:bow-road:mile-end", [{ x: 132, y: -12 }, { x: 136, y: -12 }]],
   ["hammersmith-city:bow-road:mile-end", [{ x: 132, y: -12 }, { x: 136, y: -12 }]],
+  ["elizabeth:bond-street:paddington", [{ x: 18, y: -18 }, { x: 27, y: -18 }, { x: 36, y: -9 }, { x: 45, y: -9 }]],
   ["elizabeth:bond-street:tottenham-court-road", [{ x: 63, y: -9 }, { x: 45, y: -9 }]],
   [
     "elizabeth:farringdon:tottenham-court-road",
-    [{ x: 80, y: -18 }, { x: 71, y: -9 }, { x: 63, y: -9 }],
+    [{ x: 80, y: -18 }, { x: 77, y: -18 }, { x: 68, y: -9 }, { x: 63, y: -9 }],
   ],
   [
     "central:mile-end:stratford",

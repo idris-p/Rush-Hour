@@ -74,7 +74,7 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["holloway-road", { x: 81, y: -35 }],
   ["arsenal", { x: 88, y: -42 }],
   ["highbury-and-islington", { x: 87, y: -35 }],
-  ["canary-wharf-elizabeth-line", { x: 140, y: 9 }],
+  ["canary-wharf-elizabeth-line", { x: 142, y: 10 }],
   ["bethnal-green", { x: 122, y: -14 }],
   ["tottenham-court-road", { x: 62, y: -8 }],
   ["chalk-farm", { x: 62, y: -36 }],
@@ -115,6 +115,9 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["embankment", { x: 62, y: 15 }],
   ["temple", { x: 72, y: 15 }],
   ["waterloo", { x: 62, y: 21 }],
+  ["holborn", { x: 72, y: -8 }],
+  ["chancery-lane", { x: 77, y: -8 }],
+  ["st-paul-s", { x: 83, y: -8 }],
 ]);
 
 const stations: Station[] = stationSeeds.map((station) => ({
@@ -384,7 +387,19 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("central", "tottenham-court-road", "holborn"),
-    expandSchematicPath([{ x: 62, y: -8 }, { x: 68, y: -8 }, { x: 70, y: -6 }]),
+    expandSchematicPath([{ x: 62, y: -8 }, { x: 72, y: -8 }]),
+  ],
+  [
+    createConnectionId("central", "holborn", "chancery-lane"),
+    expandSchematicPath([{ x: 72, y: -8 }, { x: 77, y: -8 }]),
+  ],
+  [
+    createConnectionId("central", "chancery-lane", "st-paul-s"),
+    expandSchematicPath([{ x: 77, y: -8 }, { x: 83, y: -8 }]),
+  ],
+  [
+    createConnectionId("central", "st-paul-s", "bank"),
+    expandSchematicPath([{ x: 88, y: -8 }, { x: 83, y: -8 }]),
   ],
   [
     createConnectionId("northern", "leicester-square", "tottenham-court-road"),
@@ -408,7 +423,11 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("piccadilly", "holborn", "russell-square"),
-    expandSchematicPath([{ x: 70, y: -6 }, { x: 74, y: -10 }, { x: 74, y: -18 }]),
+    expandSchematicPath([{ x: 72, y: -8 }, { x: 74, y: -10 }, { x: 74, y: -18 }]),
+  ],
+  [
+    createConnectionId("piccadilly", "covent-garden", "holborn"),
+    expandSchematicPath([{ x: 66, y: -2 }, { x: 72, y: -8 }]),
   ],
   [
     createConnectionId("piccadilly", "russell-square", "king-s-cross-st-pancras"),
@@ -418,8 +437,8 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
     createConnectionId("elizabeth", "farringdon", "tottenham-court-road"),
     expandSchematicPath([
       { x: 80, y: -18 },
-      { x: 71, y: -9 },
-      { x: 63, y: -9 },
+      { x: 77, y: -18 },
+      { x: 67, y: -8 },
       { x: 62, y: -8 },
     ]),
   ],
@@ -429,6 +448,15 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
       { x: 62, y: -8 },
       { x: 61, y: -9 },
       { x: 45, y: -9 },
+      { x: 44, y: -8 },
+    ]),
+  ],
+  [
+    createConnectionId("elizabeth", "paddington", "bond-street"),
+    expandSchematicPath([
+      { x: 18, y: -18 },
+      { x: 25, y: -18 },
+      { x: 35, y: -8 },
       { x: 44, y: -8 },
     ]),
   ],
@@ -656,20 +684,19 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("elizabeth", "whitechapel", "canary-wharf-elizabeth-line"),
-    expandSchematicPath([{ x: 118, y: -12 }, { x: 119, y: -12 }, { x: 140, y: 9 }]),
+    expandSchematicPath([{ x: 118, y: -12 }, { x: 119, y: -12 }, { x: 141, y: 10 }, { x: 142, y: 10 }]),
   ],
   [
     createConnectionId("elizabeth", "canary-wharf-elizabeth-line", "custom-house"),
     expandSchematicPath([
-      { x: 140, y: 9 },
-      { x: 141, y: 10 },
+      { x: 142, y: 10 },
       { x: 170, y: 10 },
       { x: 172, y: 12 },
     ]),
   ],
   [
     createConnectionId("walk", "canary-wharf-jubilee", "canary-wharf-elizabeth-line"),
-    expandSchematicPath([{ x: 136, y: 16 }, { x: 140, y: 12 }, { x: 140, y: 9 }]),
+    expandSchematicPath([{ x: 136, y: 16 }, { x: 142, y: 10 }]),
   ],
   [
     createConnectionId("central", "liverpool-street", "bethnal-green"),

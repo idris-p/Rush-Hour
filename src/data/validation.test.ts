@@ -513,31 +513,81 @@ describe("network data validation", () => {
       .toEqual(["1,0"]);
   });
 
-  it("moves Tottenham Court Road two cells east and keeps its routes schematic", () => {
+  it("moves Tottenham Court Road and Holborn while keeping their routes schematic", () => {
     expect(networkData.stations.find((station) => station.id === "tottenham-court-road"))
       .toMatchObject({ x: 62, y: -8 });
+    expect(networkData.stations.find((station) => station.id === "holborn"))
+      .toMatchObject({ x: 72, y: -8 });
     expect(directionRuns(findConnectionPath("central", "oxford-circus", "tottenham-court-road")))
       .toEqual(["1,0"]);
     expect(directionRuns(findConnectionPath("central", "tottenham-court-road", "holborn")))
-      .toEqual(["1,0", "1,1"]);
+      .toEqual(["1,0"]);
+    expect([
+      networkData.stations.find((station) => station.id === "holborn"),
+      networkData.stations.find((station) => station.id === "chancery-lane"),
+      networkData.stations.find((station) => station.id === "st-paul-s"),
+      networkData.stations.find((station) => station.id === "bank"),
+    ].map((station) => station && { x: station.x, y: station.y })).toEqual([
+      { x: 72, y: -8 },
+      { x: 77, y: -8 },
+      { x: 83, y: -8 },
+      { x: 88, y: -8 },
+    ]);
+    expect(directionRuns(findConnectionPath("central", "holborn", "chancery-lane")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("central", "chancery-lane", "st-paul-s")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("central", "st-paul-s", "bank")))
+      .toEqual(["1,0"]);
     expect(directionRuns(findConnectionPath("northern", "leicester-square", "tottenham-court-road")))
       .toEqual(["0,-1"]);
     expect(directionRuns(findConnectionPath("northern", "tottenham-court-road", "goodge-street")))
       .toEqual(["0,-1"]);
+    expect(directionRuns(findConnectionPath("elizabeth", "farringdon", "tottenham-court-road")))
+      .toEqual(["-1,0", "-1,1", "-1,0"]);
+    expect(findConnectionPath("elizabeth", "farringdon", "tottenham-court-road"))
+      .toEqual(expect.arrayContaining([
+        { x: 77, y: -18 },
+        { x: 67, y: -8 },
+      ]));
   });
 
-  it("moves Elizabeth line Canary Wharf north and keeps Whitechapel to Canary Wharf diagonal", () => {
+  it("moves Elizabeth line Canary Wharf southeast and keeps nearby links schematic", () => {
     expect(networkData.stations.find((station) => station.id === "canary-wharf-elizabeth-line"))
-      .toMatchObject({ x: 140, y: 9 });
+      .toMatchObject({ x: 142, y: 10 });
     expect(directionRuns(findConnectionPath(
       "elizabeth",
-      "whitechapel",
       "canary-wharf-elizabeth-line",
+      "whitechapel",
+    ))).toEqual(["-1,0", "-1,-1", "-1,0"]);
+    expect(directionRuns(findConnectionPath(
+      "elizabeth",
+      "canary-wharf-elizabeth-line",
+      "custom-house",
     ))).toEqual(["1,0", "1,1"]);
+    expect(directionRuns(findConnectionPath(
+      "elizabeth",
+      "custom-house",
+      "canary-wharf-elizabeth-line",
+    ))).toEqual(["-1,-1", "-1,0"]);
+    expect(findConnectionPath("elizabeth", "custom-house", "canary-wharf-elizabeth-line"))
+      .toContainEqual({ x: 170, y: 10 });
+    expect(directionRuns(findConnectionPath(
+      "walk",
+      "canary-wharf-elizabeth-line",
+      "canary-wharf-jubilee",
+    ))).toEqual(["-1,1"]);
   });
 
   it("keeps Acton Main Line fixed and reshapes the Elizabeth line west of Paddington", () => {
     expect(stationByName("Acton Main Line")).toMatchObject({ x: -20, y: -14 });
+    expect(directionRuns(findConnectionPath("elizabeth", "bond-street", "paddington")))
+      .toEqual(["-1,0", "-1,-1", "-1,0"]);
+    expect(findConnectionPath("elizabeth", "bond-street", "paddington"))
+      .toEqual(expect.arrayContaining([
+        { x: 35, y: -8 },
+        { x: 25, y: -18 },
+      ]));
     expect(directionRuns(findConnectionPath("elizabeth", "paddington", "acton-main-line")))
       .toEqual(["-1,0", "-1,1"]);
     expect(findConnectionPath("elizabeth", "paddington", "acton-main-line"))

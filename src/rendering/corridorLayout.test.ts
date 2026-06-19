@@ -233,15 +233,15 @@ describe("shared corridor layout", () => {
     expect(hammersmithCity.every((point) => point.y === -12)).toBe(true);
   });
 
-  it("renders Elizabeth straight diagonally from Whitechapel to Canary Wharf", () => {
+  it("renders Elizabeth west then diagonally from Canary Wharf to Whitechapel", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedDirectionRuns(
       layout,
       "elizabeth",
-      "whitechapel",
       "canary-wharf-elizabeth-line",
-    )).toEqual(["1,1"]);
+      "whitechapel",
+    )).toEqual(["-1,0", "-1,-1"]);
   });
 
   it("makes Mile End a three-cell northwest-to-southeast conjoined marker", () => {
@@ -377,21 +377,49 @@ describe("shared corridor layout", () => {
     )).toEqual(["1,0"]);
   });
 
+  it("renders Elizabeth west then northwest from Bond Street to Paddington", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(
+      layout,
+      "elizabeth",
+      "bond-street",
+      "paddington",
+    )).toEqual([
+      { x: 45, y: -9 },
+      { x: 36, y: -9 },
+      { x: 27, y: -18 },
+      { x: 18, y: -18 },
+    ]);
+    expect(renderedDirectionRuns(
+      layout,
+      "elizabeth",
+      "bond-street",
+      "paddington",
+    )).toEqual(["-1,0", "-1,-1", "-1,0"]);
+  });
+
   it("keeps every Tottenham Court Road exit visually clean after moving it east", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedDirectionRuns(layout, "central", "oxford-circus", "tottenham-court-road"))
       .toEqual(["1,0"]);
     expect(renderedDirectionRuns(layout, "central", "tottenham-court-road", "holborn"))
-      .toEqual(["1,0", "1,1"]);
+      .toEqual(["1,0"]);
+    expect(renderedGridPoints(layout, "central", "holborn", "chancery-lane"))
+      .toEqual([{ x: 72, y: -8 }, { x: 77, y: -8 }]);
+    expect(renderedGridPoints(layout, "central", "chancery-lane", "st-paul-s"))
+      .toEqual([{ x: 77, y: -8 }, { x: 83, y: -8 }]);
+    expect(renderedGridPoints(layout, "central", "st-paul-s", "bank"))
+      .toEqual([{ x: 83, y: -8 }, { x: 88, y: -8 }]);
     expect(renderedDirectionRuns(layout, "northern", "leicester-square", "tottenham-court-road"))
       .toEqual(["0,-1"]);
     expect(renderedDirectionRuns(layout, "northern", "tottenham-court-road", "goodge-street"))
       .toEqual(["0,-1"]);
     expect(renderedDirectionRuns(layout, "elizabeth", "bond-street", "tottenham-court-road"))
       .toEqual(["1,0"]);
-    expect(renderedDirectionRuns(layout, "elizabeth", "tottenham-court-road", "farringdon"))
-      .toEqual(["1,0", "1,-1"]);
+    expect(renderedDirectionRuns(layout, "elizabeth", "farringdon", "tottenham-court-road"))
+      .toEqual(["-1,0", "-1,1", "-1,0"]);
   });
 
   it("places the Ealing Common markers left and right", () => {
