@@ -9,6 +9,7 @@ const SVG_NS = "http://www.w3.org/2000/svg";
 const LINE_CORNER_RADIUS = 20;
 const LOOP_ARROW_ARM_LENGTH = 13;
 export const LINE_REVEAL_ANIMATION_SPEED = 1 / 160;
+const WALK_LINE_DASH_PATTERN = [12, 10] as const;
 
 export type LineRevealRenderOptions = {
   fromStationId: string;
@@ -47,11 +48,11 @@ export function renderRevealedLine(
   path.setAttribute("stroke-linejoin", "round");
   path.setAttribute("class", reveal ? "map-line map-line-growing" : "map-line");
   if (connection.line === "walk") {
-    path.setAttribute("stroke-dasharray", "12 10");
+    path.setAttribute("stroke-dasharray", WALK_LINE_DASH_PATTERN.join(" "));
   }
   layer.append(path);
   if (reveal) {
-    applyLineRevealProgress(path, reveal.progress);
+    applyLineRevealProgress(path, reveal.progress, connection.line === "walk");
   }
 
   if (connection.oneWay && connection.line !== "walk") {
@@ -71,11 +72,44 @@ export function renderRevealedLine(
   }
 }
 
-function applyLineRevealProgress(path: SVGPathElement, progress: number): void {
+function applyLineRevealProgress(path: SVGPathElement, progress: number, preserveWalkDashes: boolean): void {
   const clampedProgress = Math.max(0, Math.min(1, progress));
   const length = path.getTotalLength();
+  if (preserveWalkDashes) {
+    path.style.strokeDasharray = getWalkRevealDashArray(length, clampedProgress);
+    path.style.strokeDashoffset = "0";
+    return;
+  }
+
   path.style.strokeDasharray = String(length);
   path.style.strokeDashoffset = String(length * (1 - clampedProgress));
+}
+
+export function getWalkRevealDashArray(totalLength: number, progress: number): string {
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  const revealLength = totalLength * clampedProgress;
+  if (revealLength <= 0) {
+    return `0 ${Math.max(0, totalLength)}`;
+  }
+  if (revealLength >= totalLength) {
+    return WALK_LINE_DASH_PATTERN.join(" ");
+  }
+
+  const dashArray: number[] = [];
+  let remainingRevealLength = revealLength;
+  let patternIndex = 0;
+  while (remainingRevealLength > 0) {
+    const segmentLength = Math.min(WALK_LINE_DASH_PATTERN[patternIndex], remainingRevealLength);
+    dashArray.push(segmentLength);
+    remainingRevealLength -= segmentLength;
+    patternIndex = patternIndex === 0 ? 1 : 0;
+  }
+
+  if (dashArray.length % 2 === 0) {
+    dashArray.push(0);
+  }
+  dashArray.push(Math.max(0, totalLength - revealLength));
+  return dashArray.join(" ");
 }
 
 function orientPointsFromStation(
