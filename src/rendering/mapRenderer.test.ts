@@ -5,9 +5,11 @@ import {
   getCurrentStationLabelPlacements,
   getDirectionStubStart,
   getDirectionStubUnit,
+  getSelectedStationMarkerPoint,
   getStubArrowHeadPoints,
 } from "./mapRenderer";
 import { getOneWayArrowLineSegments } from "./lineRenderer";
+import { STUB_STROKE_WIDTH } from "./lineStyles";
 
 describe("direction stub arrows", () => {
   it("aligns an arrow head with the outgoing route direction", () => {
@@ -19,8 +21,8 @@ describe("direction stub arrows", () => {
       ),
     ).toEqual([
       { x: 40, y: 0 },
-      { x: 29, y: 8 },
-      { x: 29, y: -8 },
+      { x: 29, y: STUB_STROKE_WIDTH / 2 },
+      { x: 29, y: -STUB_STROKE_WIDTH / 2 },
     ]);
   });
 
@@ -123,6 +125,33 @@ describe("current station label placement", () => {
     expect(placements[0]).toEqual({ x: 26, y: 5, textAnchor: "start" });
     expect(Math.hypot(placements[7].x, placements[7].y - 12)).toBeCloseTo(26);
     expect(Math.hypot(placements[8].x, placements[8].y - 5)).toBeCloseTo(32);
+  });
+});
+
+describe("current station camera anchor", () => {
+  it("uses the conjoined marker that contains the selected line", () => {
+    const fallback = { x: 100, y: 100 };
+    const centralPoint = { x: 80, y: 100 };
+    const elizabethPoint = { x: 120, y: 100 };
+
+    expect(getSelectedStationMarkerPoint(
+      [
+        { point: centralPoint, lines: ["central"] },
+        { point: elizabethPoint, lines: ["elizabeth", "jubilee"] },
+      ],
+      "jubilee",
+      fallback,
+    )).toBe(elizabethPoint);
+  });
+
+  it("falls back to the base station point when the selected line has no marker group", () => {
+    const fallback = { x: 100, y: 100 };
+
+    expect(getSelectedStationMarkerPoint(
+      [{ point: { x: 80, y: 100 }, lines: ["central"] }],
+      "walk",
+      fallback,
+    )).toBe(fallback);
   });
 });
 

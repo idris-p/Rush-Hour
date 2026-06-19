@@ -66,6 +66,7 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["baker-street", { x: 42, y: -22 }],
   ["regent-s-park", { x: 47, y: -17 }],
   ["st-john-s-wood", { x: 38, y: -26 }],
+  ["euston", { x: 64, y: -28 }],
   ["mornington-crescent", { x: 62, y: -31 }],
   ["old-street", { x: 87, y: -21 }],
   ["angel", { x: 81, y: -22 }],
@@ -432,8 +433,20 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
     ]),
   ],
   [
+    createConnectionId("northern", "euston", "camden-town"),
+    expandSchematicPath([{ x: 64, y: -28 }, { x: 66, y: -30 }, { x: 66, y: -32 }, { x: 64, y: -34 }]),
+  ],
+  [
+    createConnectionId("northern", "euston", "king-s-cross-st-pancras"),
+    expandSchematicPath([{ x: 64, y: -28 }, { x: 67, y: -28 }, { x: 73, y: -22 }, { x: 74, y: -22 }]),
+  ],
+  [
     createConnectionId("northern", "euston", "mornington-crescent"),
-    expandSchematicPath([{ x: 66, y: -28 }, { x: 64, y: -28 }, { x: 62, y: -30 }, { x: 62, y: -31 }]),
+    expandSchematicPath([{ x: 64, y: -28 }, { x: 62, y: -30 }, { x: 62, y: -31 }]),
+  ],
+  [
+    createConnectionId("northern", "warren-street", "euston"),
+    expandSchematicPath([{ x: 62, y: -20 }, { x: 62, y: -26 }, { x: 64, y: -28 }]),
   ],
   [
     createConnectionId("northern", "mornington-crescent", "camden-town"),
@@ -504,6 +517,14 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
     expandSchematicPath([{ x: 88, y: -42 }, { x: 94, y: -48 }]),
   ],
   [
+    createConnectionId("victoria", "euston", "king-s-cross-st-pancras"),
+    expandSchematicPath([{ x: 64, y: -28 }, { x: 67, y: -28 }, { x: 73, y: -22 }, { x: 74, y: -22 }]),
+  ],
+  [
+    createConnectionId("victoria", "warren-street", "euston"),
+    expandSchematicPath([{ x: 62, y: -20 }, { x: 62, y: -26 }, { x: 64, y: -28 }]),
+  ],
+  [
     createConnectionId("victoria", "king-s-cross-st-pancras", "highbury-and-islington"),
     expandSchematicPath([{ x: 74, y: -22 }, { x: 87, y: -35 }]),
   ],
@@ -527,6 +548,10 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   [
     createConnectionId("waterloo-city", "bank", "waterloo"),
     expandSchematicPath([{ x: 88, y: -8 }, { x: 88, y: 9 }, { x: 76, y: 21 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("walk", "euston", "euston-square"),
+    expandSchematicPath([{ x: 64, y: -28 }, { x: 58, y: -22 }]),
   ],
   [
     createConnectionId("district", "gunnersbury", "turnham-green"),

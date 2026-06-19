@@ -6,10 +6,10 @@ import {
   getStation,
   type MovementDirection,
 } from "../game/movement";
-import type { Connection, NetworkData, Point } from "../data/types";
+import type { Connection, LineId, NetworkData, Point } from "../data/types";
 import { getSvgPoint } from "../input/mouse";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
-import { CorridorLayout } from "./corridorLayout";
+import { CorridorLayout, type StationMarkerGroup } from "./corridorLayout";
 import { STUB_STROKE_WIDTH } from "./lineStyles";
 import { renderRevealedLine } from "./lineRenderer";
 import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
@@ -28,7 +28,8 @@ const MAX_ZOOM = 2.4;
 const ZOOM_STEP = 1.25;
 const STUB_LENGTH = 40;
 const STUB_ARROW_LENGTH = 11;
-const STUB_ARROW_HALF_WIDTH = 8;
+const STUB_ARROW_HALF_WIDTH = STUB_STROKE_WIDTH / 2;
+const STUB_ARROW_OVERLAP = 0.2;
 const LABEL_RADII = [26, 32, 40, 50, 62, 76, 92, 112];
 const LABEL_SAMPLE_COLUMNS = 5;
 const LABEL_SAMPLE_ROWS = 3;
@@ -82,7 +83,11 @@ export class MapRenderer {
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
     const currentStation = getStation(this.network, state.currentStationId);
-    const currentPoint = gridPointToSvgPoint(currentStation);
+    const currentPoint = getSelectedStationMarkerPoint(
+      this.corridorLayout.getStationMarkerGroups(state.currentStationId),
+      state.selectedLineId,
+      gridPointToSvgPoint(currentStation),
+    );
     const viewBoxSize = this.getViewBoxSize();
     if (!state.completed) {
       this.completedCameraCenter = null;
@@ -376,8 +381,8 @@ export class MapRenderer {
         };
         const lineEnd = showArrowHeads
           ? {
-              x: arrowTip.x - stub.unit.x * STUB_ARROW_LENGTH,
-              y: arrowTip.y - stub.unit.y * STUB_ARROW_LENGTH,
+              x: arrowTip.x - stub.unit.x * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
+              y: arrowTip.y - stub.unit.y * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
             }
           : arrowTip;
         const line = document.createElementNS(SVG_NS, "line");
@@ -451,6 +456,14 @@ export function clampViewCenter(
     x: clampAxis(center.x, viewBoxSize.width, bounds.minX - padding, bounds.maxX + padding),
     y: clampAxis(center.y, viewBoxSize.height, bounds.minY - padding, bounds.maxY + padding),
   };
+}
+
+export function getSelectedStationMarkerPoint(
+  markerGroups: StationMarkerGroup[],
+  selectedLineId: LineId,
+  fallback: Point,
+): Point {
+  return markerGroups.find((group) => group.lines.includes(selectedLineId))?.point ?? fallback;
 }
 
 export function getStubArrowHeadPoints(end: Point, unit: Point, normal: Point): Point[] {

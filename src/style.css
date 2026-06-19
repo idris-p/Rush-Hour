@@ -75,7 +75,7 @@ svg text {
 
 .one-way-line-arrow {
   stroke: #f7f2e5;
-  stroke-width: 4;
+  stroke-width: 6;
   stroke-linecap: square;
   stroke-linejoin: miter;
   pointer-events: none;
