@@ -7,6 +7,7 @@ import {
   getDirectionStubUnit,
   getSelectedStationMarkerPoint,
   getStubArrowHeadPoints,
+  groupConnectionsByRenderedPath,
 } from "./mapRenderer";
 import { getOneWayArrowLineSegments } from "./lineRenderer";
 import { STUB_STROKE_WIDTH } from "./lineStyles";
@@ -152,6 +153,33 @@ describe("current station camera anchor", () => {
       "walk",
       fallback,
     )).toBe(fallback);
+  });
+});
+
+describe("revealed line grouping", () => {
+  it("groups duplicate rendered paths even when the source directions are reversed", () => {
+    const bakerloo: Connection = {
+      id: "bakerloo:charing-cross:embankment",
+      from: "charing-cross",
+      to: "embankment",
+      line: "bakerloo",
+      path: [],
+    };
+    const northern: Connection = {
+      id: "northern:charing-cross:embankment",
+      from: "embankment",
+      to: "charing-cross",
+      line: "northern",
+      path: [],
+    };
+
+    const groups = groupConnectionsByRenderedPath([
+      { connection: northern, points: [{ x: 62, y: 15 }, { x: 62, y: 8 }] },
+      { connection: bakerloo, points: [{ x: 62, y: 8 }, { x: 62, y: 15 }] },
+    ]);
+
+    expect(groups).toHaveLength(1);
+    expect(groups[0].map((item) => item.connection.line)).toEqual(["bakerloo", "northern"]);
   });
 });
 

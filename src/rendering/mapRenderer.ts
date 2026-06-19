@@ -122,24 +122,25 @@ export class MapRenderer {
     revealedLayer.setAttribute("class", "revealed-lines");
     this.svg.append(revealedLayer);
 
+    const visibleConnections = this.getVisibleConnections(state);
+    const visibleConnectionPaths = visibleConnections.map((connection) => ({
+      connection,
+      points: this.corridorLayout.getConnectionPoints(connection),
+    }));
     const visibleStationIds = new Set<string>([state.currentStationId]);
-    for (const group of groupConnectionsByPath(this.getVisibleConnections(state))) {
-      const isCorridorGroup = group.some((connection) =>
-        this.corridorLayout.isCorridorConnection(connection),
-      );
-      group.forEach((connection, index) => {
-        const corridorPoints = this.corridorLayout.getConnectionPoints(connection);
+    for (const group of groupConnectionsByRenderedPath(visibleConnectionPaths)) {
+      group.forEach(({ connection, points }, index) => {
         renderRevealedLine(
           revealedLayer,
           connection,
           this.network,
-          isCorridorGroup ? 0 : getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
-          corridorPoints,
+          getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
+          points,
         );
       });
     }
 
-    for (const connection of this.getVisibleConnections(state)) {
+    for (const connection of visibleConnections) {
       visibleStationIds.add(connection.from);
       visibleStationIds.add(connection.to);
     }
@@ -569,18 +570,26 @@ function isMajorGridLine(value: number): boolean {
   return Math.round(value / GRID_CELL_SIZE) % 5 === 0;
 }
 
-function groupConnectionsByPath(connections: Connection[]): Connection[][] {
-  const groups = new Map<string, Connection[]>();
+type RenderedConnectionPath = {
+  connection: Connection;
+  points: Point[];
+};
 
-  for (const connection of connections) {
-    const key = getCanonicalPathKey(connection.path);
+export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]): RenderedConnectionPath[][] {
+  const groups = new Map<string, RenderedConnectionPath[]>();
+
+  for (const item of items) {
+    const key = getCanonicalPathKey(item.points);
     const group = groups.get(key) ?? [];
-    group.push(connection);
+    group.push(item);
     groups.set(key, group);
   }
 
   return [...groups.values()].map((group) =>
-    group.sort((a, b) => compareLineIds(a.line, b.line) || a.id.localeCompare(b.id)),
+    group.sort((a, b) =>
+      compareLineIds(a.connection.line, b.connection.line) ||
+      a.connection.id.localeCompare(b.connection.id),
+    ),
   );
 }
 

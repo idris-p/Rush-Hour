@@ -1,19 +1,24 @@
-import type { GridPoint, Point } from "../data/types";
+import type { Point } from "../data/types";
 import { LINE_STROKE_WIDTH, STUB_STROKE_WIDTH } from "./lineStyles";
 
 export const PARALLEL_LINE_SPACING = LINE_STROKE_WIDTH;
 export const PARALLEL_STUB_SPACING = STUB_STROKE_WIDTH;
 
-export function getCanonicalPathKey(path: GridPoint[]): string {
+type PathPoint = {
+  x: number;
+  y: number;
+};
+
+export function getCanonicalPathKey(path: readonly PathPoint[]): string {
   const forward = serializePath(path);
   const reverse = serializePath([...path].reverse());
   return forward <= reverse ? forward : reverse;
 }
 
-export function getCanonicalPath(path: GridPoint[]): GridPoint[] {
+export function getCanonicalPath<T extends PathPoint>(path: readonly T[]): T[] {
   const forward = serializePath(path);
   const reverse = serializePath([...path].reverse());
-  return forward <= reverse ? path : [...path].reverse();
+  return forward <= reverse ? [...path] : [...path].reverse();
 }
 
 export function getCenteredOffset(index: number, count: number, spacing: number): number {
@@ -45,7 +50,7 @@ export function offsetPolylinePoints(points: Point[], offset: number): Point[] {
   });
 }
 
-function serializePath(path: GridPoint[]): string {
+function serializePath(path: readonly PathPoint[]): string {
   return path.map((point) => `${point.x},${point.y}`).join(";");
 }
 

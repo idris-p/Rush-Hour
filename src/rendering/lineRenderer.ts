@@ -24,8 +24,11 @@ export function renderRevealedLine(
   }
 
   const path = document.createElementNS(SVG_NS, "path");
+  const basePoints = connectionPoints
+    ? getCanonicalPath(connectionPoints)
+    : simplifyPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint));
   const points = offsetPolylinePoints(
-    connectionPoints ?? simplifyPolylinePoints(getCanonicalPath(connection.path).map(gridPointToSvgPoint)),
+    basePoints,
     offset,
   );
   path.setAttribute("d", createRoundedPathData(points, LINE_CORNER_RADIUS));
