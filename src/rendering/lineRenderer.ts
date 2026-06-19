@@ -1,12 +1,12 @@
 import { LINE_BY_ID } from "../data/lines";
 import type { Connection, NetworkData, Point } from "../data/types";
 import { gridPointToSvgPoint } from "./grid";
+import { LINE_STROKE_WIDTH } from "./lineStyles";
 import { getCanonicalPath, offsetPolylinePoints } from "./pathOffset";
 import { createRoundedPathData, simplifyPolylinePoints } from "./roundedPath";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const LINE_CORNER_RADIUS = 20;
-const LINE_STROKE_WIDTH = 12;
 const LOOP_ARROW_ARM_LENGTH = 13;
 
 export function renderRevealedLine(

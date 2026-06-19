@@ -1,7 +1,8 @@
 import type { GridPoint, Point } from "../data/types";
+import { LINE_STROKE_WIDTH, STUB_STROKE_WIDTH } from "./lineStyles";
 
-export const PARALLEL_LINE_SPACING = 7;
-export const PARALLEL_STUB_SPACING = 6;
+export const PARALLEL_LINE_SPACING = LINE_STROKE_WIDTH;
+export const PARALLEL_STUB_SPACING = STUB_STROKE_WIDTH;
 
 export function getCanonicalPathKey(path: GridPoint[]): string {
   const forward = serializePath(path);
@@ -75,4 +76,3 @@ function normalizePoint(point: Point): Point | null {
     y: point.y / length,
   };
 }
-

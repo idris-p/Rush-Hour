@@ -10,6 +10,7 @@ import type { Connection, NetworkData, Point } from "../data/types";
 import { getSvgPoint } from "../input/mouse";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { CorridorLayout } from "./corridorLayout";
+import { STUB_STROKE_WIDTH } from "./lineStyles";
 import { renderRevealedLine } from "./lineRenderer";
 import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
 import { renderRiverThames } from "./riverRenderer";
@@ -385,6 +386,7 @@ export class MapRenderer {
         line.setAttribute("x2", String(lineEnd.x));
         line.setAttribute("y2", String(lineEnd.y));
         line.setAttribute("stroke", LINE_BY_ID[stub.connection.line].color);
+        line.setAttribute("stroke-width", String(STUB_STROKE_WIDTH));
         line.setAttribute("class", "direction-stub");
         if (stub.connection.line === "walk") {
           line.setAttribute("stroke-dasharray", "8 6");

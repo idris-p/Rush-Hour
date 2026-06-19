@@ -69,7 +69,6 @@ svg text {
 }
 
 .direction-stub {
-  stroke-width: 12;
   stroke-linecap: butt;
   opacity: 1;
 }
