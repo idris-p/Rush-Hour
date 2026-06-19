@@ -651,17 +651,17 @@ describe("network data validation", () => {
       ["roding-valley", ["-1,0", "1,0"]],
     ] as const;
 
-    expect(stationByName("Wanstead")).toMatchObject({ x: 159, y: -45 });
-    expect(stationByName("Redbridge")).toMatchObject({ x: 164, y: -45 });
-    expect(stationByName("Gants Hill")).toMatchObject({ x: 169, y: -45 });
-    expect(stationByName("Newbury Park")).toMatchObject({ x: 171, y: -47 });
-    expect(stationByName("Barkingside")).toMatchObject({ x: 171, y: -51 });
-    expect(stationByName("Fairlop")).toMatchObject({ x: 171, y: -55 });
-    expect(stationByName("Hainault")).toMatchObject({ x: 171, y: -59 });
-    expect(stationByName("Grange Hill")).toMatchObject({ x: 169, y: -61 });
-    expect(stationByName("Chigwell")).toMatchObject({ x: 164, y: -61 });
-    expect(stationByName("Roding Valley")).toMatchObject({ x: 159, y: -61 });
-    expect(171 - 157).toBe(14);
+    expect(stationByName("Wanstead")).toMatchObject({ x: 160, y: -46 });
+    expect(stationByName("Redbridge")).toMatchObject({ x: 165, y: -46 });
+    expect(stationByName("Gants Hill")).toMatchObject({ x: 170, y: -46 });
+    expect(stationByName("Newbury Park")).toMatchObject({ x: 172, y: -48 });
+    expect(stationByName("Barkingside")).toMatchObject({ x: 172, y: -52 });
+    expect(stationByName("Fairlop")).toMatchObject({ x: 172, y: -56 });
+    expect(stationByName("Hainault")).toMatchObject({ x: 172, y: -60 });
+    expect(stationByName("Grange Hill")).toMatchObject({ x: 170, y: -62 });
+    expect(stationByName("Chigwell")).toMatchObject({ x: 165, y: -62 });
+    expect(stationByName("Roding Valley")).toMatchObject({ x: 160, y: -62 });
+    expect(172 - 158).toBe(14);
     expect(loopStationSpacing(["Wanstead", "Redbridge", "Gants Hill"], "x")).toEqual([5, 5]);
     expect(loopStationSpacing(["Newbury Park", "Barkingside", "Fairlop", "Hainault"], "y"))
       .toEqual([4, 4, 4]);
@@ -674,6 +674,16 @@ describe("network data validation", () => {
       .toEqual(["1,-1", "1,0"]);
     expect(directionRuns(findConnectionPath("central", "woodford", "roding-valley")))
       .toEqual(["1,-1", "1,0"]);
+    expect(findConnectionPath("central", "leytonstone", "wanstead").slice(0, 3)).toEqual([
+      { x: 156, y: -44 },
+      { x: 157, y: -45 },
+      { x: 158, y: -46 },
+    ]);
+    expect(findConnectionPath("central", "woodford", "roding-valley").slice(0, 3)).toEqual([
+      { x: 156, y: -60 },
+      { x: 157, y: -61 },
+      { x: 158, y: -62 },
+    ]);
     expect(directionRuns(findConnectionPath("central", "gants-hill", "newbury-park")))
       .toEqual(["1,0", "0,-1"]);
     expect(directionRuns(findConnectionPath("central", "hainault", "grange-hill")))
