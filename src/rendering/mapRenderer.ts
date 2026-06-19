@@ -16,7 +16,6 @@ import {
   getCanonicalPath,
   getCanonicalPathKey,
   getCenteredOffset,
-  offsetPolylinePoints,
   PARALLEL_LINE_SPACING,
   PARALLEL_STUB_SPACING,
 } from "./pathOffset";
@@ -351,8 +350,7 @@ export class MapRenderer {
       if (revealIndex < 0) continue;
 
       const { connection, points } = group[revealIndex];
-      const offset = getCenteredOffset(revealIndex, group.length, PARALLEL_LINE_SPACING);
-      const path = offsetPolylinePoints(getCanonicalPath(points), offset);
+      const path = getCanonicalPath(points);
       const fromPoint = this.corridorLayout.getStationLinePoint(lineReveal.fromStationId, connection.line);
       const orientedPath = isCloserToPoint(path.at(-1)!, fromPoint, path[0])
         ? [...path].reverse()
