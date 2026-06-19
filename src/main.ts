@@ -4,7 +4,7 @@ import { validateNetworkData } from "./data/validation";
 import { createGameState, type GameState } from "./game/GameState";
 import { generateSeed } from "./game/seed";
 import { cycleSelectedLine } from "./game/lineSelection";
-import { attemptMoveInDirection } from "./game/movement";
+import { attemptMoveInDirection, type MovementDirection } from "./game/movement";
 import { bindKeyboardControls } from "./input/keyboard";
 import {
   clearMouseIntentPosition,
@@ -13,11 +13,23 @@ import {
 } from "./input/mouseIntent";
 import { MapRenderer } from "./rendering/mapRenderer";
 import { LINE_REVEAL_ANIMATION_SPEED } from "./rendering/lineRenderer";
+import { GRID_CELL_SIZE } from "./rendering/grid";
+import { STATION_WIPE_COMPONENT_RADIUS } from "./rendering/stationRenderer";
 import { Hud } from "./ui/hud";
 import type { Point } from "./data/types";
 
 const REJECTED_MOVE_FLASH_MS = 180;
-const STATION_FADE_IN_ANIMATION_SPEED = 1 / 60;
+const LINE_SWITCH_CAMERA_PAN_SPEED = 1 / 160;
+const LINE_REVEAL_ANIMATION_DURATION_MS = 1 / LINE_REVEAL_ANIMATION_SPEED;
+
+// Start when the line head reaches the largest current-station marker radius on the shortest grid move,
+// then finish the wipe exactly as the line reveal reaches the station centre.
+const STATION_WIPE_START_LINE_PROGRESS = Math.max(
+  0,
+  1 - STATION_WIPE_COMPONENT_RADIUS / GRID_CELL_SIZE,
+);
+const STATION_WIPE_ANIMATION_SPEED =
+  1 / ((1 - STATION_WIPE_START_LINE_PROGRESS) * LINE_REVEAL_ANIMATION_DURATION_MS);
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) {
@@ -40,10 +52,18 @@ let lineRevealAnimation: {
   fromStationId: string;
   hiddenCurrentStationId: string | null;
   revealLine: boolean;
+  direction: MovementDirection;
+  stationWipeStarted: boolean;
   startedAt: number;
 } | null = null;
-let stationFadeAnimation: {
+let stationWipeAnimation: {
   stationId: string;
+  direction: MovementDirection;
+  startedAt: number;
+} | null = null;
+let cameraPanAnimation: {
+  from: Point;
+  to: Point;
   startedAt: number;
 } | null = null;
 
@@ -53,7 +73,8 @@ const hud = new Hud(root, networkData, {
     pendingSeed = generateSeed();
     state = null;
     lineRevealAnimation = null;
-    stationFadeAnimation = null;
+    stationWipeAnimation = null;
+    cameraPanAnimation = null;
     pointerPoint = null;
     mouseIntent = createMouseIntentState();
     hud.setSeed(pendingSeed);
@@ -78,7 +99,8 @@ function startRun(seed: string): void {
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
   lineRevealAnimation = null;
-  stationFadeAnimation = null;
+  stationWipeAnimation = null;
+  cameraPanAnimation = null;
   render();
 }
 
@@ -89,7 +111,8 @@ function render(now = performance.now()): void {
       pointerPoint,
       mouseIntent.direction,
       getActiveLineRevealAnimation(now),
-      getActiveStationFadeAnimation(now),
+      getActiveStationWipeAnimation(now),
+      getActiveCameraPanAnimation(now),
     );
   } else {
     renderer.renderIdle();
@@ -101,20 +124,31 @@ function tick(): void {
   const now = performance.now();
   if (state) {
     const hadLineRevealAnimation = lineRevealAnimation !== null;
-    const hadStationFadeAnimation = stationFadeAnimation !== null;
-    if (lineRevealAnimation && getLineRevealAnimationProgress(now) >= 1) {
-      if (lineRevealAnimation.hiddenCurrentStationId) {
-        stationFadeAnimation = {
-          stationId: lineRevealAnimation.hiddenCurrentStationId,
-          startedAt: now,
-        };
-      }
+    const hadStationWipeAnimation = stationWipeAnimation !== null;
+    const hadCameraPanAnimation = cameraPanAnimation !== null;
+    const lineRevealProgress = getLineRevealAnimationProgress(now);
+    if (
+      lineRevealAnimation?.hiddenCurrentStationId &&
+      !lineRevealAnimation.stationWipeStarted &&
+      lineRevealProgress >= STATION_WIPE_START_LINE_PROGRESS
+    ) {
+      stationWipeAnimation = {
+        stationId: lineRevealAnimation.hiddenCurrentStationId,
+        direction: lineRevealAnimation.direction,
+        startedAt: now,
+      };
+      lineRevealAnimation.stationWipeStarted = true;
+    }
+    if (lineRevealAnimation && lineRevealProgress >= 1) {
       lineRevealAnimation = null;
     }
-    if (stationFadeAnimation && getStationFadeAnimationProgress(now) >= 1) {
-      stationFadeAnimation = null;
+    if (stationWipeAnimation && getStationWipeAnimationProgress(now) >= 1) {
+      stationWipeAnimation = null;
     }
-    if (hadLineRevealAnimation || hadStationFadeAnimation) {
+    if (cameraPanAnimation && getCameraPanAnimationProgress(now) >= 1) {
+      cameraPanAnimation = null;
+    }
+    if (hadLineRevealAnimation || hadStationWipeAnimation || hadCameraPanAnimation) {
       render(now);
     } else {
       hud.update(state, now);
@@ -145,23 +179,44 @@ function getLineRevealAnimationProgress(now: number): number {
   return Math.max(0, Math.min(1, (now - lineRevealAnimation.startedAt) * LINE_REVEAL_ANIMATION_SPEED));
 }
 
-function getActiveStationFadeAnimation(now: number) {
-  if (!stationFadeAnimation) {
+function getActiveStationWipeAnimation(now: number) {
+  if (!stationWipeAnimation) {
     return null;
   }
 
   return {
-    stationId: stationFadeAnimation.stationId,
-    progress: getStationFadeAnimationProgress(now),
+    stationId: stationWipeAnimation.stationId,
+    direction: stationWipeAnimation.direction,
+    progress: getStationWipeAnimationProgress(now),
   };
 }
 
-function getStationFadeAnimationProgress(now: number): number {
-  if (!stationFadeAnimation) {
+function getStationWipeAnimationProgress(now: number): number {
+  if (!stationWipeAnimation) {
     return 1;
   }
 
-  return Math.max(0, Math.min(1, (now - stationFadeAnimation.startedAt) * STATION_FADE_IN_ANIMATION_SPEED));
+  return Math.max(0, Math.min(1, (now - stationWipeAnimation.startedAt) * STATION_WIPE_ANIMATION_SPEED));
+}
+
+function getActiveCameraPanAnimation(now: number) {
+  if (!cameraPanAnimation) {
+    return null;
+  }
+
+  return {
+    from: cameraPanAnimation.from,
+    to: cameraPanAnimation.to,
+    progress: getCameraPanAnimationProgress(now),
+  };
+}
+
+function getCameraPanAnimationProgress(now: number): number {
+  if (!cameraPanAnimation) {
+    return 1;
+  }
+
+  return Math.max(0, Math.min(1, (now - cameraPanAnimation.startedAt) * LINE_SWITCH_CAMERA_PAN_SPEED));
 }
 
 bindKeyboardControls((direction) => {
@@ -169,7 +224,14 @@ bindKeyboardControls((direction) => {
     return;
   }
 
+  const previousState = state;
   state = cycleSelectedLine(state, networkData, direction);
+  const pan = renderer.getLineSwitchCameraPan(previousState, state);
+  if (!lineRevealAnimation && pan) {
+    cameraPanAnimation = { ...pan, startedAt: performance.now() };
+  } else {
+    cameraPanAnimation = null;
+  }
   render();
 });
 
@@ -220,7 +282,8 @@ renderer.svg.addEventListener("click", () => {
   if (result.moved && result.targetStationId) {
     const connectionId = createConnectionId(selectedLineId, fromStationId, result.targetStationId);
     const revealLine = !revealedConnectionsBeforeMove.has(connectionId);
-    stationFadeAnimation = null;
+    stationWipeAnimation = null;
+    cameraPanAnimation = null;
     lineRevealAnimation = {
       connectionId,
       fromStationId,
@@ -228,6 +291,8 @@ renderer.svg.addEventListener("click", () => {
         ? result.targetStationId
         : null,
       revealLine,
+      direction: mouseIntent.direction,
+      stationWipeStarted: false,
       startedAt: now,
     };
   }

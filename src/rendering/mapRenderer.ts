@@ -91,11 +91,15 @@ export class MapRenderer {
     pointerPoint: Point | null,
     pointerDirection: MovementDirection,
     lineReveal: LineRevealAnimation | null = null,
-    stationFade: StationFadeAnimation | null = null,
+    stationWipe: StationWipeAnimation | null = null,
+    cameraPan: CameraPanAnimation | null = null,
   ): void {
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
-    const hideCurrentStation = lineReveal?.hiddenCurrentStationId === state.currentStationId;
+    const hiddenCurrentStationId = lineReveal?.hiddenCurrentStationId ?? null;
+    const isCurrentStationWiping = stationWipe?.stationId === hiddenCurrentStationId;
+    const hideCurrentStation = hiddenCurrentStationId === state.currentStationId && !isCurrentStationWiping;
+    const suppressCurrentStationStubs = hiddenCurrentStationId === state.currentStationId;
     const visibleConnections = this.getVisibleConnections(state);
     const visibleConnectionPaths = visibleConnections.map((connection) => ({
       connection,
@@ -110,7 +114,8 @@ export class MapRenderer {
     const revealCameraPoint = lineReveal
       ? this.getLineRevealCameraPoint(visibleConnectionPaths, lineReveal)
       : null;
-    const cameraAnchor = revealCameraPoint ?? currentPoint;
+    const cameraPanPoint = cameraPan ? interpolatePoint(cameraPan.from, cameraPan.to, cameraPan.progress) : null;
+    const cameraAnchor = revealCameraPoint ?? cameraPanPoint ?? currentPoint;
     const viewBoxSize = this.getViewBoxSize();
     if (!state.completed) {
       this.completedCameraCenter = null;
@@ -163,15 +168,15 @@ export class MapRenderer {
     }
 
     for (const connection of visibleConnections) {
-      if (connection.from !== lineReveal?.hiddenCurrentStationId) {
+      if (connection.from !== hiddenCurrentStationId || isCurrentStationWiping) {
         visibleStationIds.add(connection.from);
       }
-      if (connection.to !== lineReveal?.hiddenCurrentStationId) {
+      if (connection.to !== hiddenCurrentStationId || isCurrentStationWiping) {
         visibleStationIds.add(connection.to);
       }
     }
 
-    if (!state.completed && !hideCurrentStation) {
+    if (!state.completed && !suppressCurrentStationStubs) {
       const stubLayer = document.createElementNS(SVG_NS, "g");
       stubLayer.setAttribute("class", "direction-stubs");
       this.svg.append(stubLayer);
@@ -199,7 +204,15 @@ export class MapRenderer {
         1 / this.zoom,
         this.corridorLayout.getStationMarkerGroups(station.id),
         undefined,
-        stationFade?.stationId === station.id ? { opacity: stationFade.progress } : undefined,
+        stationWipe?.stationId === station.id
+          ? {
+              wipe: {
+                id: `station-wipe-${station.id}`,
+                direction: stationWipe.direction,
+                progress: stationWipe.progress,
+              },
+            }
+          : undefined,
       );
       if (label) currentLabel = label;
     }
@@ -259,6 +272,19 @@ export class MapRenderer {
       this.mapBounds,
       MAP_PAN_PADDING,
     );
+  }
+
+  getLineSwitchCameraPan(fromState: GameState, toState: GameState): { from: Point; to: Point } | null {
+    if (fromState.currentStationId !== toState.currentStationId || fromState.selectedLineId === toState.selectedLineId) {
+      return null;
+    }
+
+    const from = this.getCurrentStationCameraPoint(fromState);
+    const to = this.getCurrentStationCameraPoint(toState);
+    if (distance(from, to) < 0.01) {
+      return null;
+    }
+    return { from, to };
   }
 
   private renderGrid(viewBox: { x: number; y: number; width: number; height: number }): void {
@@ -339,6 +365,15 @@ export class MapRenderer {
 
   private getVisibleConnections(state: GameState): Connection[] {
     return this.network.connections.filter((connection) => state.revealedConnections.has(connection.id));
+  }
+
+  private getCurrentStationCameraPoint(state: GameState): Point {
+    const station = getStation(this.network, state.currentStationId);
+    return getSelectedStationMarkerPoint(
+      this.corridorLayout.getStationMarkerGroups(state.currentStationId),
+      state.selectedLineId,
+      gridPointToSvgPoint(station),
+    );
   }
 
   private getViewBoxSize(): { width: number; height: number } {
@@ -687,8 +722,15 @@ export type LineRevealAnimation = {
   progress: number;
 };
 
-export type StationFadeAnimation = {
+export type StationWipeAnimation = {
   stationId: string;
+  direction: MovementDirection;
+  progress: number;
+};
+
+export type CameraPanAnimation = {
+  from: Point;
+  to: Point;
   progress: number;
 };
 
@@ -698,6 +740,14 @@ function isCloserToPoint(candidate: Point, target: Point, other: Point): boolean
 
 function distance(first: Point, second: Point): number {
   return Math.hypot(first.x - second.x, first.y - second.y);
+}
+
+function interpolatePoint(from: Point, to: Point, progress: number): Point {
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  return {
+    x: from.x + (to.x - from.x) * clampedProgress,
+    y: from.y + (to.y - from.y) * clampedProgress,
+  };
 }
 
 export function getDirectionStubUnit(connection: Connection, stationId: string): Point | null {

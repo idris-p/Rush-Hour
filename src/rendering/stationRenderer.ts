@@ -1,5 +1,6 @@
 import { LINE_BY_ID } from "../data/lines";
 import type { LineId, NetworkData, Point, Station } from "../data/types";
+import type { MovementDirection } from "../game/movement";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import type { StationMarkerGroup } from "./corridorLayout";
 
@@ -15,9 +16,16 @@ const CURRENT_HIGHLIGHT_RADIUS =
   INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH / 2;
 const CONJOINED_NECK_WIDTH = INTERCHANGE_OUTLINE_WIDTH;
 const CONJOINED_HIGHLIGHT_RADIUS = INTERCHANGE_OUTER_RADIUS + CURRENT_HIGHLIGHT_WIDTH;
+export const STATION_WIPE_COMPONENT_RADIUS = CONJOINED_HIGHLIGHT_RADIUS;
 const CONJOINED_HIGHLIGHT_NECK_WIDTH = CONJOINED_NECK_WIDTH + CURRENT_HIGHLIGHT_WIDTH * 2;
 export const CONJOINED_CENTRE_LINE_WIDTH = 3.5;
 const NORTHERN_BRANCH_INTERCHANGES = new Set(["Camden Town", "Kennington"]);
+const WIPE_BOUNDS = {
+  x: -160,
+  y: -140,
+  width: 420,
+  height: 280,
+};
 
 export type CurrentStationLabelPlacement = {
   x: number;
@@ -26,7 +34,11 @@ export type CurrentStationLabelPlacement = {
 };
 
 export type StationMarkerRenderOptions = {
-  opacity?: number;
+  wipe?: {
+    id: string;
+    direction: MovementDirection;
+    progress: number;
+  };
 };
 
 export function renderStationMarker(
@@ -44,19 +56,17 @@ export function renderStationMarker(
   const group = document.createElementNS(SVG_NS, "g");
   group.setAttribute("class", isCurrent ? "station station-current" : "station station-revealed");
   group.setAttribute("transform", `translate(${point.x} ${point.y})`);
-  if (options.opacity !== undefined) {
-    group.setAttribute("opacity", String(Math.max(0, Math.min(1, options.opacity))));
-  }
+  const contentGroup = createWipeContentGroup(group, options.wipe);
 
   const isConjoined = markerGroups.length > 1;
   const isInterchange = isInterchangeStation(station);
   if (isConjoined) {
     if (isCurrent) {
       if (selectedLineId === "walk") {
-        appendDashedConjoinedHighlight(group, point, markerGroups, LINE_BY_ID.walk.color);
+        appendDashedConjoinedHighlight(contentGroup, point, markerGroups, LINE_BY_ID.walk.color);
       } else {
         appendConjoinedShape(
-          group,
+          contentGroup,
           point,
           markerGroups,
           LINE_BY_ID[selectedLineId].color,
@@ -67,7 +77,7 @@ export function renderStationMarker(
       }
     }
     appendConjoinedShape(
-      group,
+      contentGroup,
       point,
       markerGroups,
       "#111111",
@@ -75,18 +85,18 @@ export function renderStationMarker(
       CONJOINED_NECK_WIDTH,
       "interchange-marker conjoined-station-marker",
     );
-    appendConjoinedCentreLines(group, point, markerGroups);
+    appendConjoinedCentreLines(contentGroup, point, markerGroups);
     for (const markerGroup of markerGroups) {
       const offset = subtract(markerGroup.point, point);
-      group.append(createTranslatedMarker(createFilledCircle(INTERCHANGE_RADIUS, "#ffffff"), offset));
+      contentGroup.append(createTranslatedMarker(createFilledCircle(INTERCHANGE_RADIUS, "#ffffff"), offset));
     }
   } else if (isInterchange) {
-    if (isCurrent) group.append(createCurrentHighlight(selectedLineId));
-    group.append(createInterchangeMarker());
+    if (isCurrent) contentGroup.append(createCurrentHighlight(selectedLineId));
+    contentGroup.append(createInterchangeMarker());
   } else {
     const markerLineId = station.lines.find((line) => line !== "walk") ?? selectedLineId;
     const markerPoint = markerGroups[0]?.point ?? point;
-    group.append(createTranslatedMarker(
+    contentGroup.append(createTranslatedMarker(
       createBarMarker(getStationLineDirection(network, station.id, markerLineId), LINE_BY_ID[markerLineId].color),
       subtract(markerPoint, point),
     ));
@@ -101,12 +111,54 @@ export function renderStationMarker(
     label.setAttribute("text-anchor", currentLabelPlacement.textAnchor);
     label.setAttribute("transform", `scale(${currentLabelScale})`);
     label.setAttribute("class", "current-station-label");
-    group.append(label);
+    contentGroup.append(label);
     currentLabel = label;
   }
 
   layer.append(group);
   return currentLabel;
+}
+
+function createWipeContentGroup(
+  group: SVGGElement,
+  wipe: StationMarkerRenderOptions["wipe"],
+): SVGGElement {
+  if (!wipe) {
+    return group;
+  }
+
+  const clipPath = document.createElementNS(SVG_NS, "clipPath");
+  clipPath.setAttribute("id", wipe.id);
+  clipPath.setAttribute("clipPathUnits", "userSpaceOnUse");
+  const rect = document.createElementNS(SVG_NS, "rect");
+  const wipeRect = getWipeRect(wipe.direction, wipe.progress);
+  rect.setAttribute("x", String(wipeRect.x));
+  rect.setAttribute("y", String(wipeRect.y));
+  rect.setAttribute("width", String(wipeRect.width));
+  rect.setAttribute("height", String(wipeRect.height));
+  clipPath.append(rect);
+  group.append(clipPath);
+
+  const contentGroup = document.createElementNS(SVG_NS, "g");
+  contentGroup.setAttribute("clip-path", `url(#${wipe.id})`);
+  group.append(contentGroup);
+  return contentGroup;
+}
+
+function getWipeRect(direction: MovementDirection, progress: number): typeof WIPE_BOUNDS {
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  const horizontalSign = direction.includes("east") ? 1 : direction.includes("west") ? -1 : 0;
+  const verticalSign = direction.includes("south") ? 1 : direction.includes("north") ? -1 : 0;
+
+  const width = horizontalSign === 0 ? WIPE_BOUNDS.width : WIPE_BOUNDS.width * clampedProgress;
+  const height = verticalSign === 0 ? WIPE_BOUNDS.height : WIPE_BOUNDS.height * clampedProgress;
+
+  return {
+    x: horizontalSign < 0 ? WIPE_BOUNDS.x + WIPE_BOUNDS.width - width : WIPE_BOUNDS.x,
+    y: verticalSign < 0 ? WIPE_BOUNDS.y + WIPE_BOUNDS.height - height : WIPE_BOUNDS.y,
+    width,
+    height,
+  };
 }
 
 export function isInterchangeStation(station: Station): boolean {
