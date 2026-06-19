@@ -50,6 +50,10 @@ const STATION_LINE_POINT_OVERRIDES = new Map<string, GridPoint>([
   ["mile-end|hammersmith-city", { x: 132, y: -12 }],
   ["bond-street|elizabeth", { x: 45, y: -9 }],
   ["tottenham-court-road|elizabeth", { x: 63, y: -9 }],
+  ["stratford|central", { x: 148, y: -30 }],
+  ["stratford|elizabeth", { x: 150, y: -30 }],
+  ["stratford|jubilee", { x: 150, y: -30 }],
+  ["leyton|central", { x: 153, y: -35 }],
 ]);
 
 const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
@@ -61,6 +65,14 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   [
     "elizabeth:farringdon:tottenham-court-road",
     [{ x: 80, y: -18 }, { x: 71, y: -9 }, { x: 63, y: -9 }],
+  ],
+  [
+    "central:mile-end:stratford",
+    [{ x: 130, y: -14 }, { x: 132, y: -14 }, { x: 148, y: -30 }],
+  ],
+  [
+    "central:leyton:stratford",
+    [{ x: 148, y: -30 }, { x: 153, y: -35 }],
   ],
 ]);
 

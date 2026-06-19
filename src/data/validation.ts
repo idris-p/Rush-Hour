@@ -10,6 +10,13 @@ const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
   "circle:aldgate:tower-hill",
   "district:aldgate-east:tower-hill",
   "metropolitan:aldgate:liverpool-street",
+  "piccadilly:hatton-cross:heathrow-terminal-4",
+  "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
+]);
+
+const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([
+  "piccadilly:hatton-cross:heathrow-terminal-4",
+  "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
 ]);
 
 export function validateNetworkData(network: NetworkData): string[] {
@@ -120,7 +127,7 @@ export function validateNetworkData(network: NetworkData): string[] {
       }
 
       const turnAmount = getDirectionTurnAmount(previousDirection, currentDirection);
-      if (turnAmount > 1) {
+      if (turnAmount > 1 && !ALLOWED_SHARP_TURN_CONNECTIONS.has(connection.id)) {
         errors.push(`Connection ${connection.id} has sharp turn at path point ${index - 1}`);
       }
     }
@@ -164,6 +171,9 @@ export function validateNetworkData(network: NetworkData): string[] {
       actualLinesByStation.set(stationId, lines);
 
       const isFrom = stationId === connection.from;
+      if (connection.oneWay && !isFrom) {
+        continue;
+      }
       const path = isFrom ? connection.path : [...connection.path].reverse();
       if (path.length >= 2) {
         const override = isFrom

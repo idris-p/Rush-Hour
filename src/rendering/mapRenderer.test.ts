@@ -7,6 +7,7 @@ import {
   getDirectionStubUnit,
   getStubArrowHeadPoints,
 } from "./mapRenderer";
+import { getOneWayArrowLineSegments } from "./lineRenderer";
 
 describe("direction stub arrows", () => {
   it("aligns an arrow head with the outgoing route direction", () => {
@@ -70,6 +71,49 @@ describe("direction stub arrows", () => {
       .toEqual(linePoint);
     expect(getDirectionStubStart([{ x: 100, y: 100 }, { x: 132, y: 132 }], linePoint, { x: 0, y: -1 }))
       .toEqual(linePoint);
+  });
+});
+
+describe("one-way line arrows", () => {
+  it("uses two line chevrons for the Piccadilly Heathrow loop", () => {
+    expect(getOneWayArrowLineSegments({
+      id: "piccadilly:hatton-cross:heathrow-terminal-4",
+      from: "hatton-cross",
+      to: "heathrow-terminal-4",
+      line: "piccadilly",
+      path: [],
+      oneWay: true,
+    })).toEqual([
+      [
+        { from: { x: -1981, y: 1219 }, to: { x: -1968, y: 1232 } },
+        { from: { x: -1955, y: 1219 }, to: { x: -1968, y: 1232 } },
+      ],
+    ]);
+
+    expect(getOneWayArrowLineSegments({
+      id: "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
+      from: "heathrow-terminal-4",
+      to: "heathrow-terminal-2-and-3",
+      line: "piccadilly",
+      path: [],
+      oneWay: true,
+    })).toEqual([
+      [
+        { from: { x: -2237, y: 1341 }, to: { x: -2224, y: 1328 } },
+        { from: { x: -2211, y: 1341 }, to: { x: -2224, y: 1328 } },
+      ],
+    ]);
+  });
+
+  it("does not draw generic arrows on other one-way connections", () => {
+    expect(getOneWayArrowLineSegments({
+      id: "central:a:b",
+      from: "a",
+      to: "b",
+      line: "central",
+      path: [],
+      oneWay: true,
+    })).toEqual([]);
   });
 });
 

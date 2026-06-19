@@ -69,9 +69,17 @@ svg text {
 }
 
 .direction-stub {
-  stroke-width: 9;
+  stroke-width: 12;
   stroke-linecap: butt;
   opacity: 1;
+}
+
+.one-way-line-arrow {
+  stroke: #f7f2e5;
+  stroke-width: 4;
+  stroke-linecap: square;
+  stroke-linejoin: miter;
+  pointer-events: none;
 }
 
 .grid-line {
@@ -90,7 +98,7 @@ svg text {
 
 .current-station-label {
   fill: #111111;
-  font-size: 15px;
+  font-size: 18px;
   font-weight: 750;
   stroke: #ffffff;
   stroke-width: 4px;

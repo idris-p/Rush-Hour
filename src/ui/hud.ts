@@ -111,7 +111,7 @@ export class Hud {
     this.completionCloseButton = document.createElement("button");
     this.completionCloseButton.type = "button";
     this.completionCloseButton.className = "completion-close";
-    this.completionCloseButton.textContent = "×";
+    this.completionCloseButton.textContent = "x";
     this.completionCloseButton.ariaLabel = "Close results";
     this.completionCloseButton.addEventListener("click", () => {
       this.completionDismissed = true;

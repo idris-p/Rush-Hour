@@ -159,6 +159,22 @@ describe("shared corridor layout", () => {
       .toBe(1);
   });
 
+  it("aligns the Richmond branch with the lower Turnham Green marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const turnhamGreen = layout.getStationLinePoint("turnham-green", "district");
+    const gunnersbury = layout.getStationLinePoint("gunnersbury", "district");
+    const kewGardens = layout.getStationLinePoint("kew-gardens", "district");
+    const richmond = layout.getStationLinePoint("richmond", "district");
+    const gridPoints = [turnhamGreen, gunnersbury, kewGardens, richmond].map((point) => ({
+      x: (point.x - GRID_CELL_SIZE / 2) / GRID_CELL_SIZE,
+      y: (point.y - GRID_CELL_SIZE / 2) / GRID_CELL_SIZE,
+    }));
+
+    expect(gridPoints.every(({ x, y }) => x + y === -5)).toBe(true);
+    expect(renderedDirectionRuns(layout, "district", "turnham-green", "gunnersbury"))
+      .toEqual(["-1,1"]);
+  });
+
   it("keeps ordinary interchanges outside the declared corridors joined", () => {
     const layout = new CorridorLayout(networkData);
 
@@ -255,6 +271,35 @@ describe("shared corridor layout", () => {
       const previous = points[index];
       return previous.y === -18 && point.y === -18 && previous.x <= 130 && point.x >= 130;
     })).toBe(true);
+  });
+
+  it("makes Stratford a horizontal Central and Elizabeth/Jubilee conjoined marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("stratford");
+    const central = groups.find((group) => group.lines.includes("central"));
+    const elizabethJubilee = groups.find((group) => group.lines.includes("elizabeth"));
+
+    expect(groups).toHaveLength(2);
+    expect(central?.lines).toEqual(["central"]);
+    expect([...(elizabethJubilee?.lines ?? [])].sort()).toEqual(["elizabeth", "jubilee"]);
+    expect(gridPointFromSvgPoint(central!.point)).toEqual({ x: 148, y: -30 });
+    expect(gridPointFromSvgPoint(elizabethJubilee!.point)).toEqual({ x: 150, y: -30 });
+  });
+
+  it("renders Central collinear through the left Stratford marker into Leyton", () => {
+    const layout = new CorridorLayout(networkData);
+    const leyton = layout.getStationLinePoint("leyton", "central");
+
+    expect(renderedGridPoints(layout, "central", "mile-end", "stratford")).toEqual([
+      { x: 130, y: -14 },
+      { x: 132, y: -14 },
+      { x: 148, y: -30 },
+    ]);
+    expect(gridPointFromSvgPoint(leyton)).toEqual({ x: 153, y: -35 });
+    expect(renderedDirectionRuns(layout, "central", "mile-end", "stratford"))
+      .toEqual(["1,0", "1,-1"]);
+    expect(renderedDirectionRuns(layout, "central", "stratford", "leyton"))
+      .toEqual(["1,-1"]);
   });
 
   it("renders District and Hammersmith & City straight east from Stepney Green to Mile End", () => {
@@ -381,7 +426,7 @@ describe("shared corridor layout", () => {
     expect(renderedDirectionRuns(layout, "district", "acton-town", "ealing-common"))
       .toEqual(["-1,-1", "0,-1"]);
     expect(renderedDirectionRuns(layout, "piccadilly", "acton-town", "south-ealing"))
-      .toEqual(["-1,0"]);
+      .toEqual(["-1,0", "-1,1"]);
   });
 
   it("renders the moved Sloane Square corridor straight from South Kensington", () => {

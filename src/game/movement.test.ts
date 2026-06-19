@@ -149,6 +149,28 @@ describe("movement", () => {
       .toBe("green-park");
   });
 
+  it("matches clicks to the conjoined Central marker at Stratford", () => {
+    expect(findDirectionalNeighbour(networkData, "stratford", "central", "northeast")?.id)
+      .toBe("leyton");
+    expect(findDirectionalNeighbour(networkData, "stratford", "central", "southwest")?.id)
+      .toBe("mile-end");
+  });
+
+  it("enforces the one-way Piccadilly Heathrow Terminal 4 loop", () => {
+    expect(findDirectionalNeighbour(networkData, "hatton-cross", "piccadilly", "south")?.id)
+      .toBe("heathrow-terminal-4");
+    expect(findDirectionalNeighbour(networkData, "heathrow-terminal-4", "piccadilly", "west")?.id)
+      .toBe("heathrow-terminal-2-and-3");
+    expect(findDirectionalNeighbour(networkData, "heathrow-terminal-2-and-3", "piccadilly", "south"))
+      .toBeNull();
+    expect(findDirectionalNeighbour(networkData, "heathrow-terminal-4", "piccadilly", "west"))
+      .not.toMatchObject({ id: "hatton-cross" });
+    expect(findDirectionalNeighbour(networkData, "hatton-cross", "piccadilly", "southwest")?.id)
+      .toBe("heathrow-terminal-2-and-3");
+    expect(findDirectionalNeighbour(networkData, "heathrow-terminal-2-and-3", "piccadilly", "southwest")?.id)
+      .toBe("heathrow-terminal-5");
+  });
+
   it("uses one shared lower Waterloo marker for every line", () => {
     expect(findDirectionalNeighbour(networkData, "waterloo", "jubilee", "northwest")?.id)
       .toBe("westminster");
@@ -167,6 +189,11 @@ describe("movement", () => {
       expect(findDirectionalNeighbour(networkData, "sloane-square", line, "northwest"))
         .toBeNull();
     }
+  });
+
+  it("uses southwest from Turnham Green onto the aligned Richmond branch", () => {
+    expect(findDirectionalNeighbour(networkData, "turnham-green", "district", "southwest")?.id)
+      .toBe("gunnersbury");
   });
 
   it("moves along connected stations and reveals the travelled connection", () => {

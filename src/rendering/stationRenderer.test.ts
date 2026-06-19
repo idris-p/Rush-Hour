@@ -2,10 +2,12 @@ import { describe, expect, it } from "vitest";
 import type { NetworkData, Station } from "../data/types";
 import {
   CONJOINED_CENTRE_LINE_WIDTH,
+  STATION_BAR_MARKER_LENGTH,
   getSelectedLineDashArray,
   getStationLineDirection,
   isInterchangeStation,
 } from "./stationRenderer";
+import { GRID_CELL_SIZE } from "./grid";
 
 describe("station marker geometry", () => {
   it("only treats playable multi-line and walk-linked stations as interchanges", () => {
@@ -45,6 +47,10 @@ describe("station marker geometry", () => {
 
   it("keeps the conjoined centre line thin", () => {
     expect(CONJOINED_CENTRE_LINE_WIDTH).toBeGreaterThan(0);
+  });
+
+  it("uses a one-cell marker height for non-interchange stations", () => {
+    expect(STATION_BAR_MARKER_LENGTH).toBe(GRID_CELL_SIZE);
   });
 });
 

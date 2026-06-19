@@ -59,7 +59,9 @@ export function getConnectionBetween(network: NetworkData, from: string, to: str
 
 export function getLineConnections(network: NetworkData, stationId: string, line: string): Connection[] {
   return network.connections.filter(
-    (connection) => connection.line === line && (connection.from === stationId || connection.to === stationId),
+    (connection) =>
+      connection.line === line &&
+      (connection.from === stationId || (!connection.oneWay && connection.to === stationId)),
   );
 }
 
@@ -144,7 +146,7 @@ export function getConnectionPathFrom(connection: Connection, stationId: string)
     return connection.path;
   }
 
-  if (connection.to === stationId) {
+  if (!connection.oneWay && connection.to === stationId) {
     return [...connection.path].reverse();
   }
 

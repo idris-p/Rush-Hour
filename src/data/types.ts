@@ -45,6 +45,7 @@ export type Connection = {
   to: string;
   line: LineId;
   path: GridPoint[];
+  oneWay?: boolean;
   directionOverrides?: {
     from?: GridPoint;
     to?: GridPoint;
