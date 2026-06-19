@@ -79,9 +79,15 @@ export class MapRenderer {
     container.append(this.svg);
   }
 
-  render(state: GameState, pointerPoint: Point | null, pointerDirection: MovementDirection): void {
+  render(
+    state: GameState,
+    pointerPoint: Point | null,
+    pointerDirection: MovementDirection,
+    lineReveal: LineRevealAnimation | null = null,
+  ): void {
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
+    const hideCurrentStation = lineReveal?.hiddenCurrentStationId === state.currentStationId;
     const currentStation = getStation(this.network, state.currentStationId);
     const currentPoint = getSelectedStationMarkerPoint(
       this.corridorLayout.getStationMarkerGroups(state.currentStationId),
@@ -127,25 +133,33 @@ export class MapRenderer {
       connection,
       points: this.corridorLayout.getConnectionPoints(connection),
     }));
-    const visibleStationIds = new Set<string>([state.currentStationId]);
+    const visibleStationIds = new Set<string>(hideCurrentStation ? [] : [state.currentStationId]);
     for (const group of groupConnectionsByRenderedPath(visibleConnectionPaths)) {
       group.forEach(({ connection, points }, index) => {
+        const reveal = lineReveal?.connectionId === connection.id
+          ? { fromStationId: lineReveal.fromStationId, progress: lineReveal.progress }
+          : null;
         renderRevealedLine(
           revealedLayer,
           connection,
           this.network,
           getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
           points,
+          reveal,
         );
       });
     }
 
     for (const connection of visibleConnections) {
-      visibleStationIds.add(connection.from);
-      visibleStationIds.add(connection.to);
+      if (connection.from !== lineReveal?.hiddenCurrentStationId) {
+        visibleStationIds.add(connection.from);
+      }
+      if (connection.to !== lineReveal?.hiddenCurrentStationId) {
+        visibleStationIds.add(connection.to);
+      }
     }
 
-    if (!state.completed) {
+    if (!state.completed && !hideCurrentStation) {
       const stubLayer = document.createElementNS(SVG_NS, "g");
       stubLayer.setAttribute("class", "direction-stubs");
       this.svg.append(stubLayer);
@@ -592,6 +606,13 @@ export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]):
     ),
   );
 }
+
+export type LineRevealAnimation = {
+  connectionId: string;
+  fromStationId: string;
+  hiddenCurrentStationId: string | null;
+  progress: number;
+};
 
 export function getDirectionStubUnit(connection: Connection, stationId: string): Point | null {
   const direction = getConnectionFirstStepDirection(connection, stationId);

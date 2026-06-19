@@ -1,5 +1,5 @@
 import "./style.css";
-import { networkData } from "./data/network";
+import { createConnectionId, networkData } from "./data/network";
 import { validateNetworkData } from "./data/validation";
 import { createGameState, type GameState } from "./game/GameState";
 import { generateSeed } from "./game/seed";
@@ -12,6 +12,7 @@ import {
   updateMouseIntent,
 } from "./input/mouseIntent";
 import { MapRenderer } from "./rendering/mapRenderer";
+import { LINE_REVEAL_ANIMATION_SPEED } from "./rendering/lineRenderer";
 import { Hud } from "./ui/hud";
 import type { Point } from "./data/types";
 
@@ -33,12 +34,19 @@ let mouseIntent = createMouseIntentState();
 let pendingSeed = generateSeed();
 let panPointerId: number | null = null;
 let lastPanPoint: Point | null = null;
+let lineRevealAnimation: {
+  connectionId: string;
+  fromStationId: string;
+  hiddenCurrentStationId: string | null;
+  startedAt: number;
+} | null = null;
 
 const hud = new Hud(root, networkData, {
   onPlaySeed: (seed) => startRun(seed.trim() === "" ? pendingSeed : seed.trim()),
   onRandomSeed: () => {
     pendingSeed = generateSeed();
     state = null;
+    lineRevealAnimation = null;
     pointerPoint = null;
     mouseIntent = createMouseIntentState();
     hud.setSeed(pendingSeed);
@@ -62,13 +70,13 @@ function startRun(seed: string): void {
   state = createGameState(seed, networkData, performance.now());
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
+  lineRevealAnimation = null;
   render();
 }
 
-function render(): void {
-  const now = performance.now();
+function render(now = performance.now()): void {
   if (state) {
-    renderer.render(state, pointerPoint, mouseIntent.direction);
+    renderer.render(state, pointerPoint, mouseIntent.direction, getActiveLineRevealAnimation(now));
   } else {
     renderer.renderIdle();
   }
@@ -76,10 +84,40 @@ function render(): void {
 }
 
 function tick(): void {
+  const now = performance.now();
   if (state) {
-    hud.update(state, performance.now());
+    const hadLineRevealAnimation = lineRevealAnimation !== null;
+    if (lineRevealAnimation && getLineRevealAnimationProgress(now) >= 1) {
+      lineRevealAnimation = null;
+    }
+    if (hadLineRevealAnimation) {
+      render(now);
+    } else {
+      hud.update(state, now);
+    }
   }
   requestAnimationFrame(tick);
+}
+
+function getActiveLineRevealAnimation(now: number) {
+  if (!lineRevealAnimation) {
+    return null;
+  }
+
+  return {
+    connectionId: lineRevealAnimation.connectionId,
+    fromStationId: lineRevealAnimation.fromStationId,
+    hiddenCurrentStationId: lineRevealAnimation.hiddenCurrentStationId,
+    progress: getLineRevealAnimationProgress(now),
+  };
+}
+
+function getLineRevealAnimationProgress(now: number): number {
+  if (!lineRevealAnimation) {
+    return 1;
+  }
+
+  return Math.max(0, Math.min(1, (now - lineRevealAnimation.startedAt) * LINE_REVEAL_ANIMATION_SPEED));
 }
 
 bindKeyboardControls((direction) => {
@@ -127,8 +165,29 @@ renderer.svg.addEventListener("click", () => {
     return;
   }
 
-  const result = attemptMoveInDirection(state, networkData, mouseIntent.direction, performance.now());
+  const now = performance.now();
+  const previousState = state;
+  const fromStationId = state.currentStationId;
+  const selectedLineId = state.selectedLineId;
+  const revealedConnectionsBeforeMove = state.revealedConnections;
+  const result = attemptMoveInDirection(state, networkData, mouseIntent.direction, now);
   state = result.state;
+
+  if (result.moved && result.targetStationId) {
+    const connectionId = createConnectionId(selectedLineId, fromStationId, result.targetStationId);
+    if (revealedConnectionsBeforeMove.has(connectionId)) {
+      lineRevealAnimation = null;
+    } else {
+      lineRevealAnimation = {
+        connectionId,
+        fromStationId,
+        hiddenCurrentStationId: isStationVisible(result.targetStationId, previousState, revealedConnectionsBeforeMove)
+          ? null
+          : result.targetStationId,
+        startedAt: now,
+      };
+    }
+  }
 
   if (state.completed) {
     pointerPoint = null;
@@ -190,3 +249,19 @@ renderer.svg.addEventListener("pointercancel", endPan);
 
 render();
 requestAnimationFrame(tick);
+
+function isStationVisible(
+  stationId: string,
+  currentState: GameState,
+  revealedConnectionIds: Set<string>,
+): boolean {
+  if (currentState.currentStationId === stationId || currentState.startStationId === stationId) {
+    return true;
+  }
+
+  return networkData.connections.some(
+    (connection) =>
+      revealedConnectionIds.has(connection.id) &&
+      (connection.from === stationId || connection.to === stationId),
+  );
+}

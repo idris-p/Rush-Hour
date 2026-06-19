@@ -8,6 +8,12 @@ import { createRoundedPathData, simplifyPolylinePoints } from "./roundedPath";
 const SVG_NS = "http://www.w3.org/2000/svg";
 const LINE_CORNER_RADIUS = 20;
 const LOOP_ARROW_ARM_LENGTH = 13;
+export const LINE_REVEAL_ANIMATION_SPEED = 1 / 160;
+
+export type LineRevealRenderOptions = {
+  fromStationId: string;
+  progress: number;
+};
 
 export function renderRevealedLine(
   layer: SVGGElement,
@@ -15,6 +21,7 @@ export function renderRevealedLine(
   network: NetworkData,
   offset = 0,
   connectionPoints?: Point[],
+  reveal?: LineRevealRenderOptions | null,
 ): void {
   const hasFromStation = network.stations.some((station) => station.id === connection.from);
   const hasToStation = network.stations.some((station) => station.id === connection.to);
@@ -31,17 +38,21 @@ export function renderRevealedLine(
     basePoints,
     offset,
   );
-  path.setAttribute("d", createRoundedPathData(points, LINE_CORNER_RADIUS));
+  const orientedPoints = reveal ? orientPointsFromStation(points, connection, connectionPoints, network, reveal.fromStationId) : points;
+  path.setAttribute("d", createRoundedPathData(orientedPoints, LINE_CORNER_RADIUS));
   path.setAttribute("fill", "none");
   path.setAttribute("stroke", LINE_BY_ID[connection.line].color);
   path.setAttribute("stroke-width", String(LINE_STROKE_WIDTH));
   path.setAttribute("stroke-linecap", "butt");
   path.setAttribute("stroke-linejoin", "round");
-  path.setAttribute("class", "map-line");
+  path.setAttribute("class", reveal ? "map-line map-line-growing" : "map-line");
   if (connection.line === "walk") {
     path.setAttribute("stroke-dasharray", "12 10");
   }
   layer.append(path);
+  if (reveal) {
+    applyLineRevealProgress(path, reveal.progress);
+  }
 
   if (connection.oneWay && connection.line !== "walk") {
     for (const arrow of getOneWayArrowLineSegments(connection)) {
@@ -58,6 +69,49 @@ export function renderRevealedLine(
       layer.append(group);
     }
   }
+}
+
+function applyLineRevealProgress(path: SVGPathElement, progress: number): void {
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  const length = path.getTotalLength();
+  path.style.strokeDasharray = String(length);
+  path.style.strokeDashoffset = String(length * (1 - clampedProgress));
+}
+
+function orientPointsFromStation(
+  points: Point[],
+  connection: Connection,
+  connectionPoints: Point[] | undefined,
+  network: NetworkData,
+  stationId: string,
+): Point[] {
+  const [canonicalStartStationId] = getCanonicalEndpointStationIds(connection, connectionPoints, network);
+  return canonicalStartStationId === stationId ? points : [...points].reverse();
+}
+
+function getCanonicalEndpointStationIds(
+  connection: Connection,
+  connectionPoints: Point[] | undefined,
+  network: NetworkData,
+): [string, string] {
+  const rawPoints = connectionPoints ?? simplifyPolylinePoints(connection.path.map(gridPointToSvgPoint));
+  const rawEndpointStationIds = getRawEndpointStationIds(connection, network);
+  const canonicalPoints = getCanonicalPath(rawPoints);
+  return pointsMatch(canonicalPoints[0], rawPoints[0])
+    ? rawEndpointStationIds
+    : [rawEndpointStationIds[1], rawEndpointStationIds[0]];
+}
+
+function getRawEndpointStationIds(connection: Connection, network: NetworkData): [string, string] {
+  const fromStation = network.stations.find((station) => station.id === connection.from);
+  if (!fromStation) return [connection.from, connection.to];
+  return pointsMatch(gridPointToSvgPoint(connection.path[0]), gridPointToSvgPoint(fromStation))
+    ? [connection.from, connection.to]
+    : [connection.to, connection.from];
+}
+
+function pointsMatch(first: Point, second: Point): boolean {
+  return Math.abs(first.x - second.x) < 0.01 && Math.abs(first.y - second.y) < 0.01;
 }
 
 export type OneWayArrowLineSegment = {
