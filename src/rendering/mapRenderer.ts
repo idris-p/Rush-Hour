@@ -12,7 +12,14 @@ import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { CorridorLayout, type StationMarkerGroup } from "./corridorLayout";
 import { STUB_STROKE_WIDTH } from "./lineStyles";
 import { renderRevealedLine } from "./lineRenderer";
-import { getCanonicalPathKey, getCenteredOffset, PARALLEL_LINE_SPACING, PARALLEL_STUB_SPACING } from "./pathOffset";
+import {
+  getCanonicalPath,
+  getCanonicalPathKey,
+  getCenteredOffset,
+  offsetPolylinePoints,
+  PARALLEL_LINE_SPACING,
+  PARALLEL_STUB_SPACING,
+} from "./pathOffset";
 import { renderRiverThames } from "./riverRenderer";
 import {
   isInterchangeStation,
@@ -84,28 +91,38 @@ export class MapRenderer {
     pointerPoint: Point | null,
     pointerDirection: MovementDirection,
     lineReveal: LineRevealAnimation | null = null,
+    stationFade: StationFadeAnimation | null = null,
   ): void {
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
     const hideCurrentStation = lineReveal?.hiddenCurrentStationId === state.currentStationId;
+    const visibleConnections = this.getVisibleConnections(state);
+    const visibleConnectionPaths = visibleConnections.map((connection) => ({
+      connection,
+      points: this.corridorLayout.getConnectionPoints(connection),
+    }));
     const currentStation = getStation(this.network, state.currentStationId);
     const currentPoint = getSelectedStationMarkerPoint(
       this.corridorLayout.getStationMarkerGroups(state.currentStationId),
       state.selectedLineId,
       gridPointToSvgPoint(currentStation),
     );
+    const revealCameraPoint = lineReveal
+      ? this.getLineRevealCameraPoint(visibleConnectionPaths, lineReveal)
+      : null;
+    const cameraAnchor = revealCameraPoint ?? currentPoint;
     const viewBoxSize = this.getViewBoxSize();
     if (!state.completed) {
       this.completedCameraCenter = null;
     }
     const cameraCenter = state.completed
       ? clampViewCenter(
-          this.completedCameraCenter ?? currentPoint,
+          revealCameraPoint ?? this.completedCameraCenter ?? cameraAnchor,
           viewBoxSize,
           this.mapBounds,
           MAP_PAN_PADDING,
         )
-      : currentPoint;
+      : cameraAnchor;
     if (state.completed) {
       this.completedCameraCenter = cameraCenter;
     }
@@ -128,15 +145,10 @@ export class MapRenderer {
     revealedLayer.setAttribute("class", "revealed-lines");
     this.svg.append(revealedLayer);
 
-    const visibleConnections = this.getVisibleConnections(state);
-    const visibleConnectionPaths = visibleConnections.map((connection) => ({
-      connection,
-      points: this.corridorLayout.getConnectionPoints(connection),
-    }));
     const visibleStationIds = new Set<string>(hideCurrentStation ? [] : [state.currentStationId]);
     for (const group of groupConnectionsByRenderedPath(visibleConnectionPaths)) {
       group.forEach(({ connection, points }, index) => {
-        const reveal = lineReveal?.connectionId === connection.id
+        const reveal = lineReveal?.revealLine && lineReveal.connectionId === connection.id
           ? { fromStationId: lineReveal.fromStationId, progress: lineReveal.progress }
           : null;
         renderRevealedLine(
@@ -186,6 +198,8 @@ export class MapRenderer {
         station.id === state.currentStationId,
         1 / this.zoom,
         this.corridorLayout.getStationMarkerGroups(station.id),
+        undefined,
+        stationFade?.stationId === station.id ? { opacity: stationFade.progress } : undefined,
       );
       if (label) currentLabel = label;
     }
@@ -300,6 +314,27 @@ export class MapRenderer {
     shape.setAttribute("class", "cursor-arrow-shape");
     arrow.append(shape);
     layer.append(arrow);
+  }
+
+  private getLineRevealCameraPoint(
+    visibleConnectionPaths: RenderedConnectionPath[],
+    lineReveal: LineRevealAnimation,
+  ): Point | null {
+    for (const group of groupConnectionsByRenderedPath(visibleConnectionPaths)) {
+      const revealIndex = group.findIndex(({ connection }) => connection.id === lineReveal.connectionId);
+      if (revealIndex < 0) continue;
+
+      const { connection, points } = group[revealIndex];
+      const offset = getCenteredOffset(revealIndex, group.length, PARALLEL_LINE_SPACING);
+      const path = offsetPolylinePoints(getCanonicalPath(points), offset);
+      const fromPoint = this.corridorLayout.getStationLinePoint(lineReveal.fromStationId, connection.line);
+      const orientedPath = isCloserToPoint(path.at(-1)!, fromPoint, path[0])
+        ? [...path].reverse()
+        : path;
+      return getPointAlongPolyline(orientedPath, lineReveal.progress);
+    }
+
+    return null;
   }
 
   private getVisibleConnections(state: GameState): Connection[] {
@@ -607,12 +642,63 @@ export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]):
   );
 }
 
+export function getPointAlongPolyline(points: Point[], progress: number): Point {
+  if (points.length === 0) {
+    return { x: 0, y: 0 };
+  }
+  if (points.length === 1) {
+    return points[0];
+  }
+
+  const clampedProgress = Math.max(0, Math.min(1, progress));
+  const segmentLengths = points.slice(0, -1).map((point, index) =>
+    Math.hypot(points[index + 1].x - point.x, points[index + 1].y - point.y),
+  );
+  const totalLength = segmentLengths.reduce((sum, length) => sum + length, 0);
+  if (totalLength === 0) {
+    return points[0];
+  }
+
+  let remainingLength = totalLength * clampedProgress;
+  for (let index = 0; index < segmentLengths.length; index += 1) {
+    const segmentLength = segmentLengths[index];
+    if (remainingLength > segmentLength) {
+      remainingLength -= segmentLength;
+      continue;
+    }
+
+    const from = points[index];
+    const to = points[index + 1];
+    const segmentProgress = segmentLength === 0 ? 0 : remainingLength / segmentLength;
+    return {
+      x: from.x + (to.x - from.x) * segmentProgress,
+      y: from.y + (to.y - from.y) * segmentProgress,
+    };
+  }
+
+  return points.at(-1)!;
+}
+
 export type LineRevealAnimation = {
   connectionId: string;
   fromStationId: string;
   hiddenCurrentStationId: string | null;
+  revealLine: boolean;
   progress: number;
 };
+
+export type StationFadeAnimation = {
+  stationId: string;
+  progress: number;
+};
+
+function isCloserToPoint(candidate: Point, target: Point, other: Point): boolean {
+  return distance(candidate, target) < distance(other, target);
+}
+
+function distance(first: Point, second: Point): number {
+  return Math.hypot(first.x - second.x, first.y - second.y);
+}
 
 export function getDirectionStubUnit(connection: Connection, stationId: string): Point | null {
   const direction = getConnectionFirstStepDirection(connection, stationId);

@@ -17,6 +17,7 @@ import { Hud } from "./ui/hud";
 import type { Point } from "./data/types";
 
 const REJECTED_MOVE_FLASH_MS = 180;
+const STATION_FADE_IN_ANIMATION_SPEED = 1 / 60;
 
 const root = document.querySelector<HTMLElement>("#app");
 if (!root) {
@@ -38,6 +39,11 @@ let lineRevealAnimation: {
   connectionId: string;
   fromStationId: string;
   hiddenCurrentStationId: string | null;
+  revealLine: boolean;
+  startedAt: number;
+} | null = null;
+let stationFadeAnimation: {
+  stationId: string;
   startedAt: number;
 } | null = null;
 
@@ -47,6 +53,7 @@ const hud = new Hud(root, networkData, {
     pendingSeed = generateSeed();
     state = null;
     lineRevealAnimation = null;
+    stationFadeAnimation = null;
     pointerPoint = null;
     mouseIntent = createMouseIntentState();
     hud.setSeed(pendingSeed);
@@ -71,12 +78,19 @@ function startRun(seed: string): void {
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
   lineRevealAnimation = null;
+  stationFadeAnimation = null;
   render();
 }
 
 function render(now = performance.now()): void {
   if (state) {
-    renderer.render(state, pointerPoint, mouseIntent.direction, getActiveLineRevealAnimation(now));
+    renderer.render(
+      state,
+      pointerPoint,
+      mouseIntent.direction,
+      getActiveLineRevealAnimation(now),
+      getActiveStationFadeAnimation(now),
+    );
   } else {
     renderer.renderIdle();
   }
@@ -87,10 +101,20 @@ function tick(): void {
   const now = performance.now();
   if (state) {
     const hadLineRevealAnimation = lineRevealAnimation !== null;
+    const hadStationFadeAnimation = stationFadeAnimation !== null;
     if (lineRevealAnimation && getLineRevealAnimationProgress(now) >= 1) {
+      if (lineRevealAnimation.hiddenCurrentStationId) {
+        stationFadeAnimation = {
+          stationId: lineRevealAnimation.hiddenCurrentStationId,
+          startedAt: now,
+        };
+      }
       lineRevealAnimation = null;
     }
-    if (hadLineRevealAnimation) {
+    if (stationFadeAnimation && getStationFadeAnimationProgress(now) >= 1) {
+      stationFadeAnimation = null;
+    }
+    if (hadLineRevealAnimation || hadStationFadeAnimation) {
       render(now);
     } else {
       hud.update(state, now);
@@ -108,6 +132,7 @@ function getActiveLineRevealAnimation(now: number) {
     connectionId: lineRevealAnimation.connectionId,
     fromStationId: lineRevealAnimation.fromStationId,
     hiddenCurrentStationId: lineRevealAnimation.hiddenCurrentStationId,
+    revealLine: lineRevealAnimation.revealLine,
     progress: getLineRevealAnimationProgress(now),
   };
 }
@@ -118,6 +143,25 @@ function getLineRevealAnimationProgress(now: number): number {
   }
 
   return Math.max(0, Math.min(1, (now - lineRevealAnimation.startedAt) * LINE_REVEAL_ANIMATION_SPEED));
+}
+
+function getActiveStationFadeAnimation(now: number) {
+  if (!stationFadeAnimation) {
+    return null;
+  }
+
+  return {
+    stationId: stationFadeAnimation.stationId,
+    progress: getStationFadeAnimationProgress(now),
+  };
+}
+
+function getStationFadeAnimationProgress(now: number): number {
+  if (!stationFadeAnimation) {
+    return 1;
+  }
+
+  return Math.max(0, Math.min(1, (now - stationFadeAnimation.startedAt) * STATION_FADE_IN_ANIMATION_SPEED));
 }
 
 bindKeyboardControls((direction) => {
@@ -175,18 +219,17 @@ renderer.svg.addEventListener("click", () => {
 
   if (result.moved && result.targetStationId) {
     const connectionId = createConnectionId(selectedLineId, fromStationId, result.targetStationId);
-    if (revealedConnectionsBeforeMove.has(connectionId)) {
-      lineRevealAnimation = null;
-    } else {
-      lineRevealAnimation = {
-        connectionId,
-        fromStationId,
-        hiddenCurrentStationId: isStationVisible(result.targetStationId, previousState, revealedConnectionsBeforeMove)
-          ? null
-          : result.targetStationId,
-        startedAt: now,
-      };
-    }
+    const revealLine = !revealedConnectionsBeforeMove.has(connectionId);
+    stationFadeAnimation = null;
+    lineRevealAnimation = {
+      connectionId,
+      fromStationId,
+      hiddenCurrentStationId: revealLine && !isStationVisible(result.targetStationId, previousState, revealedConnectionsBeforeMove)
+        ? result.targetStationId
+        : null,
+      revealLine,
+      startedAt: now,
+    };
   }
 
   if (state.completed) {

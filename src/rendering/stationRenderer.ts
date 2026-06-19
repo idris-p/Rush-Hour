@@ -25,6 +25,10 @@ export type CurrentStationLabelPlacement = {
   textAnchor: "start" | "middle" | "end";
 };
 
+export type StationMarkerRenderOptions = {
+  opacity?: number;
+};
+
 export function renderStationMarker(
   layer: SVGGElement,
   station: Station,
@@ -34,11 +38,15 @@ export function renderStationMarker(
   currentLabelScale = 1,
   markerGroups: StationMarkerGroup[] = [{ point: gridPointToSvgPoint(station), lines: [...station.lines] }],
   currentLabelPlacement: CurrentStationLabelPlacement = { x: 28, y: -24, textAnchor: "start" },
+  options: StationMarkerRenderOptions = {},
 ): SVGTextElement | null {
   const point = gridPointToSvgPoint(station);
   const group = document.createElementNS(SVG_NS, "g");
   group.setAttribute("class", isCurrent ? "station station-current" : "station station-revealed");
   group.setAttribute("transform", `translate(${point.x} ${point.y})`);
+  if (options.opacity !== undefined) {
+    group.setAttribute("opacity", String(Math.max(0, Math.min(1, options.opacity))));
+  }
 
   const isConjoined = markerGroups.length > 1;
   const isInterchange = isInterchangeStation(station);

@@ -5,6 +5,7 @@ import {
   getCurrentStationLabelPlacements,
   getDirectionStubStart,
   getDirectionStubUnit,
+  getPointAlongPolyline,
   getSelectedStationMarkerPoint,
   getStubArrowHeadPoints,
   groupConnectionsByRenderedPath,
@@ -180,6 +181,16 @@ describe("revealed line grouping", () => {
 
     expect(groups).toHaveLength(1);
     expect(groups[0].map((item) => item.connection.line)).toEqual(["bakerloo", "northern"]);
+  });
+});
+
+describe("line reveal camera", () => {
+  it("samples camera positions by distance along the revealed polyline", () => {
+    expect(getPointAlongPolyline([
+      { x: 0, y: 0 },
+      { x: 10, y: 0 },
+      { x: 10, y: 10 },
+    ], 0.75)).toEqual({ x: 10, y: 5 });
   });
 });
 
