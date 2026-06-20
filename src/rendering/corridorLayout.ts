@@ -50,6 +50,8 @@ const STATION_LINE_POINT_OVERRIDES = new Map<string, GridPoint>([
   ["mile-end|hammersmith-city", { x: 132, y: -12 }],
   ["bond-street|elizabeth", { x: 45, y: -9 }],
   ["tottenham-court-road|elizabeth", { x: 63, y: -9 }],
+  ["euston|victoria", { x: 67, y: -25 }],
+  ["king-s-cross-st-pancras|victoria", { x: 77, y: -25 }],
   ["stratford|central", { x: 148, y: -30 }],
   ["stratford|elizabeth", { x: 150, y: -30 }],
   ["stratford|jubilee", { x: 150, y: -30 }],
@@ -75,6 +77,9 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
     "central:leyton:stratford",
     [{ x: 148, y: -30 }, { x: 153, y: -35 }],
   ],
+  ["victoria:euston:warren-street", [{ x: 62, y: -20 }, { x: 67, y: -25 }]],
+  ["victoria:euston:king-s-cross-st-pancras", [{ x: 67, y: -25 }, { x: 77, y: -25 }]],
+  ["victoria:highbury-and-islington:king-s-cross-st-pancras", [{ x: 77, y: -25 }, { x: 87, y: -35 }]],
 ]);
 
 export type StationMarkerGroup = {
@@ -83,6 +88,8 @@ export type StationMarkerGroup = {
 };
 
 export class CorridorLayout {
+  private readonly network: NetworkData;
+
   private readonly corridorLanesByEdge = new Map<string, readonly (readonly LineId[])[]>();
 
   private readonly rawConnectionPoints = new Map<string, Point[]>();
@@ -92,9 +99,10 @@ export class CorridorLayout {
   private readonly stationLinePoints = new Map<string, Point>();
 
   constructor(
-    private readonly network: NetworkData,
+    network: NetworkData,
     corridors: readonly SharedCorridor[] = SHARED_CORRIDORS,
   ) {
+    this.network = network;
     this.buildCorridorEdges(corridors);
   }
 

@@ -179,7 +179,6 @@ describe("shared corridor layout", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(layout.getStationMarkerGroups("baker-street")).toHaveLength(1);
-    expect(layout.getStationMarkerGroups("king-s-cross-st-pancras")).toHaveLength(1);
   });
 
   it("uses the requested line groupings at the additional conjoined stations", () => {
@@ -201,6 +200,55 @@ describe("shared corridor layout", () => {
       ["district"],
       ["piccadilly"],
     ]);
+  });
+
+  it("makes Euston a northwest-to-southeast conjoined marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("euston");
+    const northern = groups.find((group) => group.lines.includes("northern"));
+    const victoria = groups.find((group) => group.lines.includes("victoria"));
+
+    expect(groups).toHaveLength(2);
+    expect(northern?.lines).toEqual(["northern"]);
+    expect(victoria?.lines).toEqual(["victoria"]);
+    expect(gridPointFromSvgPoint(northern!.point)).toEqual({ x: 64, y: -28 });
+    expect(gridPointFromSvgPoint(layout.getStationLinePoint("euston", "walk"))).toEqual({ x: 64, y: -28 });
+    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 67, y: -25 });
+    expect(victoria!.point.x - northern!.point.x).toBe(GRID_CELL_SIZE * 3);
+    expect(victoria!.point.y - northern!.point.y).toBe(GRID_CELL_SIZE * 3);
+  });
+
+  it("renders Victoria straight northeast from Warren Street into the Euston Victoria marker", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "victoria", "warren-street", "euston"))
+      .toEqual([{ x: 62, y: -20 }, { x: 67, y: -25 }]);
+    expect(renderedDirectionRuns(layout, "victoria", "warren-street", "euston"))
+      .toEqual(["1,-1"]);
+  });
+
+  it("makes King's Cross St Pancras a southwest-to-northeast conjoined marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("king-s-cross-st-pancras");
+    const existing = groups.find((group) => !group.lines.includes("victoria"));
+    const victoria = groups.find((group) => group.lines.includes("victoria"));
+
+    expect(groups).toHaveLength(2);
+    expect(existing?.lines).toEqual(["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly"]);
+    expect(victoria?.lines).toEqual(["victoria"]);
+    expect(gridPointFromSvgPoint(existing!.point)).toEqual({ x: 74, y: -22 });
+    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 77, y: -25 });
+    expect(victoria!.point.x - existing!.point.x).toBe(GRID_CELL_SIZE * 3);
+    expect(victoria!.point.y - existing!.point.y).toBe(-GRID_CELL_SIZE * 3);
+  });
+
+  it("renders Victoria horizontally from Euston to King's Cross St Pancras", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "victoria", "euston", "king-s-cross-st-pancras"))
+      .toEqual([{ x: 67, y: -25 }, { x: 77, y: -25 }]);
+    expect(renderedDirectionRuns(layout, "victoria", "euston", "king-s-cross-st-pancras"))
+      .toEqual(["1,0"]);
   });
 
   it("places Elizabeth above the other lines at Liverpool Street and Whitechapel", () => {

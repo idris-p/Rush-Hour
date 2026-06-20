@@ -191,6 +191,20 @@ describe("movement", () => {
     }
   });
 
+  it("uses northeast from Warren Street into the Euston Victoria marker", () => {
+    expect(findDirectionalNeighbour(networkData, "warren-street", "victoria", "northeast")?.id)
+      .toBe("euston");
+    expect(findDirectionalNeighbour(networkData, "euston", "victoria", "southwest")?.id)
+      .toBe("warren-street");
+  });
+
+  it("uses east from Euston into the King's Cross St Pancras Victoria marker", () => {
+    expect(findDirectionalNeighbour(networkData, "euston", "victoria", "east")?.id)
+      .toBe("king-s-cross-st-pancras");
+    expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "victoria", "west")?.id)
+      .toBe("euston");
+  });
+
   it("uses southwest from Turnham Green onto the aligned Richmond branch", () => {
     expect(findDirectionalNeighbour(networkData, "turnham-green", "district", "southwest")?.id)
       .toBe("gunnersbury");

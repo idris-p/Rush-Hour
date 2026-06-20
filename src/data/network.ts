@@ -810,6 +810,14 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
     createConnectionId("district", "gunnersbury", "turnham-green"),
     { to: { x: -1, y: 1 } },
   ],
+  [
+    createConnectionId("victoria", "warren-street", "euston"),
+    { from: { x: 1, y: -1 }, to: { x: -1, y: 1 } },
+  ],
+  [
+    createConnectionId("victoria", "euston", "king-s-cross-st-pancras"),
+    { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
 ]);
 
 const oneWayConnectionIds = new Set<string>([

@@ -11,7 +11,7 @@
     "test:watch": "vitest",
     "generate:network": "node scripts/generate-network.mjs",
     "audit:network": "node scripts/audit-network.mjs",
-    "preview:network": "node scripts/render-network-preview.mjs"
+    "preview:network": "node --import ./scripts/register-ts-loader.mjs scripts/render-network-preview.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.3",
