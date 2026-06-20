@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import type { Connection } from "../data/types";
+import { networkData } from "../data/network";
+import type { Connection, LineId, Point } from "../data/types";
 import {
   clampViewCenter,
   getCurrentStationLabelPlacements,
@@ -10,8 +11,10 @@ import {
   getStubArrowHeadPoints,
   groupConnectionsByRenderedPath,
 } from "./mapRenderer";
+import { CorridorLayout } from "./corridorLayout";
 import { getOneWayArrowLineSegments } from "./lineRenderer";
 import { STUB_STROKE_WIDTH } from "./lineStyles";
+import { getCanonicalPath, getCenteredOffset, offsetPolylinePoints, PARALLEL_LINE_SPACING } from "./pathOffset";
 
 describe("direction stub arrows", () => {
   it("aligns an arrow head with the outgoing route direction", () => {
@@ -182,7 +185,112 @@ describe("revealed line grouping", () => {
     expect(groups).toHaveLength(1);
     expect(groups[0].map((item) => item.connection.line)).toEqual(["bakerloo", "northern"]);
   });
+
+  it("places Circle above Hammersmith & City between Edgware Road and Baker Street", () => {
+    const group = getSharedLineGroup(["circle", "hammersmith-city"], "edgware-road", "baker-street");
+    const circle = getOffsetMidpoint(group, "circle");
+    const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
+
+    expect(circle.y).toBeLessThan(hammersmithCity.y);
+  });
+
+  it("places Circle above District between South Kensington and Sloane Square", () => {
+    const group = getSharedLineGroup(["circle", "district"], "south-kensington", "sloane-square");
+    const circle = getOffsetMidpoint(group, "circle");
+    const district = getOffsetMidpoint(group, "district");
+
+    expect(circle.y).toBeLessThan(district.y);
+  });
+
+  it("keeps Circle on the left between Hammersmith and Ladbroke Grove", () => {
+    const stationPairs = [
+      ["hammersmith-circle-and-hammersmith-and-city", "goldhawk-road"],
+      ["goldhawk-road", "shepherd-s-bush-market"],
+      ["shepherd-s-bush-market", "wood-lane"],
+      ["wood-lane", "latimer-road"],
+      ["latimer-road", "ladbroke-grove"],
+    ] as const;
+
+    for (const [from, to] of stationPairs) {
+      const group = getSharedLineGroup(["circle", "hammersmith-city"], from, to);
+      const circle = getOffsetMidpoint(group, "circle");
+      const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
+      const routeDirection = getRouteDirection(group, "circle", from);
+      const leftNormal = { x: routeDirection.y, y: -routeDirection.x };
+      const circleRelativeToHammersmithCity = {
+        x: circle.x - hammersmithCity.x,
+        y: circle.y - hammersmithCity.y,
+      };
+
+      expect(
+        circleRelativeToHammersmithCity.x * leftNormal.x +
+          circleRelativeToHammersmithCity.y * leftNormal.y,
+        `${from} -> ${to}`,
+      ).toBeGreaterThan(0);
+    }
+  });
 });
+
+type RenderedConnectionPathGroup = ReturnType<typeof groupConnectionsByRenderedPath>[number];
+
+function getSharedLineGroup(
+  lineIds: readonly LineId[],
+  firstStationId: string,
+  secondStationId: string,
+): RenderedConnectionPathGroup {
+  const layout = new CorridorLayout(networkData);
+  const items = lineIds.map((line) => {
+    const connection = networkData.connections.find(
+      (candidate) =>
+        candidate.line === line &&
+        ((candidate.from === firstStationId && candidate.to === secondStationId) ||
+          (candidate.from === secondStationId && candidate.to === firstStationId)),
+    );
+    if (!connection) throw new Error(`Missing ${line} connection ${firstStationId} -> ${secondStationId}`);
+    return { connection, points: layout.getConnectionPoints(connection) };
+  });
+  const groups = groupConnectionsByRenderedPath(items);
+  expect(groups).toHaveLength(1);
+  return groups[0];
+}
+
+function getOffsetMidpoint(group: RenderedConnectionPathGroup, line: LineId): Point {
+  const index = group.findIndex((item) => item.connection.line === line);
+  if (index < 0) throw new Error(`Missing rendered ${line} line`);
+  const offsetPoints = offsetPolylinePoints(
+    getCanonicalPath(group[index].points),
+    getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
+  );
+  return getPolylineMidpoint(offsetPoints);
+}
+
+function getPolylineMidpoint(points: Point[]): Point {
+  return {
+    x: points.reduce((sum, point) => sum + point.x, 0) / points.length,
+    y: points.reduce((sum, point) => sum + point.y, 0) / points.length,
+  };
+}
+
+function getRouteDirection(
+  group: RenderedConnectionPathGroup,
+  line: LineId,
+  routeFromStationId: string,
+): Point {
+  const item = group.find((candidate) => candidate.connection.line === line);
+  if (!item) throw new Error(`Missing rendered ${line} line`);
+  const points = item.connection.from === routeFromStationId ? item.points : [...item.points].reverse();
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const direction = {
+      x: points[index + 1].x - points[index].x,
+      y: points[index + 1].y - points[index].y,
+    };
+    const length = Math.hypot(direction.x, direction.y);
+    if (length > 0) {
+      return { x: direction.x / length, y: direction.y / length };
+    }
+  }
+  throw new Error(`Missing route direction for ${line}`);
+}
 
 describe("line reveal camera", () => {
   it("samples camera positions by distance along the revealed polyline", () => {

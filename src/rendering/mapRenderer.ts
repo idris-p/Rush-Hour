@@ -57,6 +57,14 @@ const LABEL_OBSTACLE_SELECTOR = [
   ".zoom-controls",
   ".completion-overlay:not([hidden])",
 ].join(",");
+const CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH = [
+  "hammersmith-circle-and-hammersmith-and-city",
+  "goldhawk-road",
+  "shepherd-s-bush-market",
+  "wood-lane",
+  "latimer-road",
+  "ladbroke-grove",
+] as const;
 
 export class MapRenderer {
   readonly svg: SVGSVGElement;
@@ -667,12 +675,135 @@ export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]):
     groups.set(key, group);
   }
 
-  return [...groups.values()].map((group) =>
-    group.sort((a, b) =>
-      compareLineIds(a.connection.line, b.connection.line) ||
-      a.connection.id.localeCompare(b.connection.id),
-    ),
+  return [...groups.values()].map(sortRenderedConnectionPathGroup);
+}
+
+function sortRenderedConnectionPathGroup(group: RenderedConnectionPath[]): RenderedConnectionPath[] {
+  const sharedPathLineOrder = getExplicitSharedPathLineOrder(group);
+  return [...group].sort((a, b) =>
+    getSharedPathLineRank(a, sharedPathLineOrder) -
+      getSharedPathLineRank(b, sharedPathLineOrder) ||
+    compareRenderedConnectionPaths(a, b),
   );
+}
+
+function getExplicitSharedPathLineOrder(group: RenderedConnectionPath[]): readonly LineId[] | null {
+  return getCircleDistrictSharedPathOrder(group) ?? getCircleHammersmithCitySharedPathOrder(group);
+}
+
+function getSharedPathLineRank(
+  item: RenderedConnectionPath,
+  orderedLines: readonly LineId[] | null,
+): number {
+  const orderedIndex = orderedLines?.indexOf(item.connection.line) ?? -1;
+  return orderedIndex >= 0 ? orderedIndex : Number.MAX_SAFE_INTEGER;
+}
+
+function getCircleHammersmithCitySharedPathOrder(
+  group: RenderedConnectionPath[],
+): readonly LineId[] | null {
+  if (!group.some((item) => item.connection.line === "circle") ||
+      !group.some((item) => item.connection.line === "hammersmith-city")) {
+    return null;
+  }
+
+  const circle = group.find((item) => item.connection.line === "circle");
+  if (!circle) return null;
+  const canonicalDirection = getFirstSegmentDirection(getCanonicalPath(circle.points));
+  if (!canonicalDirection) return null;
+
+  if (hasConnectionBetween(circle.connection, "baker-street", "edgware-road")) {
+    return getSharedPathOrderWithLineAbove(canonicalDirection, "circle", "hammersmith-city");
+  }
+
+  const fromBranchIndex = CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH.indexOf(
+    circle.connection.from as (typeof CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH)[number],
+  );
+  const toBranchIndex = CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH.indexOf(
+    circle.connection.to as (typeof CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH)[number],
+  );
+  if (fromBranchIndex < 0 || toBranchIndex < 0 || Math.abs(fromBranchIndex - toBranchIndex) !== 1) {
+    return null;
+  }
+
+  const routePoints = fromBranchIndex < toBranchIndex ? circle.points : [...circle.points].reverse();
+  const routeDirection = getFirstSegmentDirection(routePoints);
+  if (!routeDirection) return null;
+
+  const positiveOffsetIsLeft = dotPoints(
+    getSegmentNormal(canonicalDirection),
+    getScreenLeftNormal(routeDirection),
+  ) > 0;
+  return positiveOffsetIsLeft
+    ? ["hammersmith-city", "circle"]
+    : ["circle", "hammersmith-city"];
+}
+
+function getCircleDistrictSharedPathOrder(
+  group: RenderedConnectionPath[],
+): readonly LineId[] | null {
+  if (!group.some((item) => item.connection.line === "circle") ||
+      !group.some((item) => item.connection.line === "district")) {
+    return null;
+  }
+
+  const circle = group.find((item) => item.connection.line === "circle");
+  if (!circle || !hasConnectionBetween(circle.connection, "south-kensington", "sloane-square")) {
+    return null;
+  }
+  const canonicalDirection = getFirstSegmentDirection(getCanonicalPath(circle.points));
+  if (!canonicalDirection) return null;
+
+  return getSharedPathOrderWithLineAbove(canonicalDirection, "circle", "district");
+}
+
+function getSharedPathOrderWithLineAbove(
+  canonicalDirection: Point,
+  upperLine: LineId,
+  lowerLine: LineId,
+): readonly LineId[] {
+  const positiveOffsetIsAbove = getSegmentNormal(canonicalDirection).y < 0;
+  return positiveOffsetIsAbove
+    ? [lowerLine, upperLine]
+    : [upperLine, lowerLine];
+}
+
+function compareRenderedConnectionPaths(a: RenderedConnectionPath, b: RenderedConnectionPath): number {
+  return compareLineIds(a.connection.line, b.connection.line) ||
+    a.connection.id.localeCompare(b.connection.id);
+}
+
+function hasConnectionBetween(connection: Connection, firstStationId: string, secondStationId: string): boolean {
+  return (
+    (connection.from === firstStationId && connection.to === secondStationId) ||
+    (connection.from === secondStationId && connection.to === firstStationId)
+  );
+}
+
+function getFirstSegmentDirection(points: readonly Point[]): Point | null {
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const direction = {
+      x: points[index + 1].x - points[index].x,
+      y: points[index + 1].y - points[index].y,
+    };
+    const length = Math.hypot(direction.x, direction.y);
+    if (length > 0) {
+      return { x: direction.x / length, y: direction.y / length };
+    }
+  }
+  return null;
+}
+
+function getSegmentNormal(direction: Point): Point {
+  return { x: -direction.y, y: direction.x };
+}
+
+function getScreenLeftNormal(direction: Point): Point {
+  return { x: direction.y, y: -direction.x };
+}
+
+function dotPoints(first: Point, second: Point): number {
+  return first.x * second.x + first.y * second.y;
 }
 
 export function getPointAlongPolyline(points: Point[], progress: number): Point {
