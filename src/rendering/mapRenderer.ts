@@ -767,11 +767,30 @@ function getCircleDistrictSharedPathOrder(
   }
 
   const circle = group.find((item) => item.connection.line === "circle");
-  if (!circle || !hasConnectionBetween(circle.connection, "south-kensington", "sloane-square")) {
-    return null;
-  }
+  if (!circle) return null;
+
   const canonicalDirection = getFirstSegmentDirection(getCanonicalPath(circle.points));
   if (!canonicalDirection) return null;
+
+  if (hasConnectionBetween(circle.connection, "notting-hill-gate", "bayswater")) {
+    const routePoints = circle.connection.from === "notting-hill-gate"
+      ? circle.points
+      : [...circle.points].reverse();
+    const routeDirection = getFirstSegmentDirection(routePoints);
+    if (!routeDirection) return null;
+
+    const positiveOffsetIsRight = dotPoints(
+      getSegmentNormal(canonicalDirection),
+      getScreenRightNormal(routeDirection),
+    ) > 0;
+    return positiveOffsetIsRight
+      ? ["circle", "district"]
+      : ["district", "circle"];
+  }
+
+  if (!hasConnectionBetween(circle.connection, "south-kensington", "sloane-square")) {
+    return null;
+  }
 
   return getSharedPathOrderWithLineAbove(canonicalDirection, "circle", "district");
 }
@@ -785,6 +804,10 @@ function getSharedPathOrderWithLineAbove(
   return positiveOffsetIsAbove
     ? [lowerLine, upperLine]
     : [upperLine, lowerLine];
+}
+
+function getScreenRightNormal(direction: Point): Point {
+  return { x: -direction.y, y: direction.x };
 }
 
 function compareRenderedConnectionPaths(a: RenderedConnectionPath, b: RenderedConnectionPath): number {
