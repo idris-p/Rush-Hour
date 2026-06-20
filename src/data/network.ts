@@ -122,6 +122,10 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["temple", { x: 72, y: 15 }],
   ["waterloo", { x: 62, y: 21 }],
   ["edgware-road-bakerloo", { x: 24, y: -24 }],
+  ["warwick-avenue", { x: 10, y: -20 }],
+  ["maida-vale", { x: 4, y: -22 }],
+  ["kilburn-park", { x: 0, y: -26 }],
+  ["queen-s-park", { x: -2, y: -30 }],
   ["holborn", { x: 72, y: -8 }],
   ["chancery-lane", { x: 77, y: -8 }],
   ["st-paul-s", { x: 83, y: -8 }],
@@ -226,11 +230,27 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("bakerloo", "edgware-road-bakerloo", "paddington"),
-    expandSchematicPath([{ x: 24, y: -24 }, { x: 20, y: -24 }, { x: 16, y: -20 }, { x: 18, y: -18 }]),
+    expandSchematicPath([{ x: 24, y: -24 }, { x: 22, y: -24 }, { x: 18, y: -20 }, { x: 16, y: -20 }, { x: 18, y: -18 }]),
   ],
   [
     createConnectionId("bakerloo", "paddington", "warwick-avenue"),
-    expandSchematicPath([{ x: 18, y: -18 }, { x: 16, y: -20 }, { x: 14, y: -20 }, { x: 10, y: -24 }, { x: 8, y: -24 }]),
+    expandSchematicPath([{ x: 18, y: -18 }, { x: 16, y: -20 }, { x: 10, y: -20 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "maida-vale", "warwick-avenue"),
+    expandSchematicPath([{ x: 4, y: -22 }, { x: 6, y: -20 }, { x: 10, y: -20 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "maida-vale", "kilburn-park"),
+    expandSchematicPath([{ x: 4, y: -22 }, { x: 0, y: -26 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "queen-s-park", "kilburn-park"),
+    expandSchematicPath([{ x: -2, y: -30 }, { x: -2, y: -28 }, { x: 0, y: -26 }]),
+  ],
+  [
+    createConnectionId("bakerloo", "kensal-green", "queen-s-park"),
+    expandSchematicPath([{ x: -2, y: -34 }, { x: -2, y: -30 }]),
   ],
   [
     createConnectionId("bakerloo", "charing-cross", "embankment"),

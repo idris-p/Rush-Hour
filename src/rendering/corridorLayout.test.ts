@@ -522,13 +522,21 @@ describe("shared corridor layout", () => {
     expect(renderedGridPoints(layout, "bakerloo", "marylebone", "edgware-road-bakerloo"))
       .toEqual([{ x: 32, y: -24 }, { x: 24, y: -24 }]);
     expect(renderedGridPoints(layout, "bakerloo", "edgware-road-bakerloo", "paddington"))
-      .toEqual([{ x: 24, y: -24 }, { x: 20, y: -24 }, { x: 16, y: -20 }]);
+      .toEqual([{ x: 24, y: -24 }, { x: 22, y: -24 }, { x: 18, y: -20 }, { x: 16, y: -20 }]);
     expect(renderedDirectionRuns(layout, "bakerloo", "edgware-road-bakerloo", "paddington"))
-      .toEqual(["-1,0", "-1,1"]);
+      .toEqual(["-1,0", "-1,1", "-1,0"]);
     expect(renderedGridPoints(layout, "bakerloo", "paddington", "warwick-avenue"))
-      .toEqual([{ x: 16, y: -20 }, { x: 14, y: -20 }, { x: 10, y: -24 }, { x: 8, y: -24 }]);
+      .toEqual([{ x: 16, y: -20 }, { x: 10, y: -20 }]);
     expect(renderedDirectionRuns(layout, "bakerloo", "paddington", "warwick-avenue"))
-      .toEqual(["-1,0", "-1,-1", "-1,0"]);
+      .toEqual(["-1,0"]);
+    expect(renderedGridPoints(layout, "bakerloo", "warwick-avenue", "maida-vale"))
+      .toEqual([{ x: 10, y: -20 }, { x: 6, y: -20 }, { x: 4, y: -22 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "maida-vale", "kilburn-park"))
+      .toEqual([{ x: 4, y: -22 }, { x: 0, y: -26 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "kilburn-park", "queen-s-park"))
+      .toEqual([{ x: 0, y: -26 }, { x: -2, y: -28 }, { x: -2, y: -30 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "queen-s-park", "kensal-green"))
+      .toEqual([{ x: -2, y: -30 }, { x: -2, y: -34 }]);
   });
 
   it("keeps every Tottenham Court Road exit visually clean after moving it east", () => {
