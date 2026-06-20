@@ -962,7 +962,7 @@ describe("network data validation", () => {
       ]);
 
     expect(findConnection("bakerloo", "edgware-road-bakerloo", "paddington")?.directionOverrides)
-      .toEqual({ from: { x: -1, y: 0 }, to: { x: 1, y: -1 } });
+      .toEqual({ from: { x: -1, y: 0 }, to: { x: 1, y: 0 } });
     expect(findConnection("bakerloo", "paddington", "warwick-avenue")?.directionOverrides)
       .toEqual({ from: { x: -1, y: 0 }, to: { x: 1, y: 0 } });
   });

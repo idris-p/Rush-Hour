@@ -876,7 +876,7 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
   ],
   [
     createConnectionId("bakerloo", "edgware-road-bakerloo", "paddington"),
-    { from: { x: -1, y: 0 }, to: { x: 1, y: -1 } },
+    { from: { x: -1, y: 0 }, to: { x: 1, y: 0 } },
   ],
   [
     createConnectionId("bakerloo", "paddington", "warwick-avenue"),

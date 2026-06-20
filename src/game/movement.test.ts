@@ -140,7 +140,7 @@ describe("movement", () => {
       .toBe("waterloo");
     expect(findDirectionalNeighbour(networkData, "edgware-road-bakerloo", "bakerloo", "west")?.id)
       .toBe("paddington");
-    expect(findDirectionalNeighbour(networkData, "paddington", "bakerloo", "northeast")?.id)
+    expect(findDirectionalNeighbour(networkData, "paddington", "bakerloo", "east")?.id)
       .toBe("edgware-road-bakerloo");
     expect(findDirectionalNeighbour(networkData, "paddington", "bakerloo", "west")?.id)
       .toBe("warwick-avenue");
