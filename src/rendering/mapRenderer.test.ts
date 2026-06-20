@@ -210,6 +210,14 @@ describe("revealed line grouping", () => {
     expect(circle.y).toBeLessThan(district.y);
   });
 
+  it("places District right of Circle between Notting Hill Gate and Bayswater", () => {
+    const group = getSharedLineGroup(["circle", "district"], "notting-hill-gate", "bayswater");
+    const circle = getOffsetMidpoint(group, "circle");
+    const district = getOffsetMidpoint(group, "district");
+
+    expect(district.x).toBeGreaterThan(circle.x);
+  });
+
   it("keeps Circle on the left between Hammersmith and Ladbroke Grove", () => {
     const stationPairs = [
       ["hammersmith-circle-and-hammersmith-and-city", "goldhawk-road"],
