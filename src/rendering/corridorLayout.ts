@@ -6,7 +6,7 @@ import { offsetPolylinePoints } from "./pathOffset";
 import { simplifyPolylinePoints } from "./roundedPath";
 
 const POINT_TOLERANCE = 0.01;
-const HIGH_STREET_KENSINGTON_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
+const CONDITIONAL_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
 
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
@@ -152,7 +152,8 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
+    return this.getGreenParkBranchSplitPath(connection, visibleConnectionIds) ??
+      this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
       this.getConnectionPoints(connection);
   }
 
@@ -323,11 +324,53 @@ export class CorridorLayout {
 
     const highStreetKensington = this.getStationLinePoint(startStationId, connection.line);
     const branchEnd = this.getStationLinePoint(endStationId, connection.line);
-    const splitX = highStreetKensington.x + horizontalSign * HIGH_STREET_KENSINGTON_VERTICAL_SPLIT;
+    const splitX = highStreetKensington.x + horizontalSign * CONDITIONAL_VERTICAL_SPLIT;
     return [
       { x: splitX, y: highStreetKensington.y },
       { x: splitX, y: gridPointToSvgPoint({ x: 18, y: 11 }).y },
       branchEnd,
+    ];
+  }
+
+  private getGreenParkBranchSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    const split = getGreenParkSplit(connection, visibleConnectionIds);
+    if (!split) return null;
+
+    const greenPark = this.getStationLinePoint("green-park", connection.line);
+    const splitX = greenPark.x + split.horizontalSign * CONDITIONAL_VERTICAL_SPLIT;
+    const splitY = gridPointToSvgPoint({ x: 44, y: split.verticalEndY }).y;
+    const offsetSplitPoint = { x: splitX, y: splitY };
+    const transitionY = gridPointToSvgPoint({ x: 44, y: split.transitionEndY }).y;
+    const centreTransitionPoint = { x: greenPark.x, y: transitionY };
+
+    if (connection.id === "victoria:green-park:victoria") {
+      return [
+        this.getStationLinePoint("victoria", connection.line),
+        centreTransitionPoint,
+        offsetSplitPoint,
+        { x: splitX, y: greenPark.y },
+      ];
+    }
+
+    const [startStationId, endStationId] = this.getPathEndpointStationIds(connection);
+    if (startStationId !== "green-park") return null;
+
+    if (connection.id === "victoria:green-park:oxford-circus") {
+      return [
+        { x: splitX, y: greenPark.y },
+        offsetSplitPoint,
+        this.getStationLinePoint(endStationId, connection.line),
+      ];
+    }
+
+    return [
+      { x: splitX, y: greenPark.y },
+      offsetSplitPoint,
+      ...(connection.id === "jubilee:bond-street:green-park" ? [centreTransitionPoint] : []),
+      this.getStationLinePoint(endStationId, connection.line),
     ];
   }
 
@@ -481,6 +524,43 @@ type GridEdge = {
   from: GridPoint;
   to: GridPoint;
 };
+
+type GreenParkSplit = {
+  horizontalSign: -1 | 1;
+  verticalEndY: number;
+  transitionEndY: number;
+};
+
+function getGreenParkSplit(
+  connection: Connection,
+  visibleConnectionIds: ReadonlySet<string>,
+): GreenParkSplit | null {
+  const southPairVisible =
+    visibleConnectionIds.has("jubilee:green-park:westminster") &&
+    visibleConnectionIds.has("victoria:green-park:victoria");
+  if (southPairVisible) {
+    if (connection.id === "victoria:green-park:victoria") {
+      return { horizontalSign: -1, verticalEndY: 3, transitionEndY: 4 };
+    }
+    if (connection.id === "jubilee:green-park:westminster") {
+      return { horizontalSign: 1, verticalEndY: 3, transitionEndY: 4 };
+    }
+  }
+
+  const northPairVisible =
+    visibleConnectionIds.has("jubilee:bond-street:green-park") &&
+    visibleConnectionIds.has("victoria:green-park:oxford-circus");
+  if (northPairVisible) {
+    if (connection.id === "jubilee:bond-street:green-park") {
+      return { horizontalSign: -1, verticalEndY: -2, transitionEndY: -3 };
+    }
+    if (connection.id === "victoria:green-park:oxford-circus") {
+      return { horizontalSign: 1, verticalEndY: -2, transitionEndY: -3 };
+    }
+  }
+
+  return null;
+}
 
 function getPathEdges(path: GridPoint[]): GridEdge[] {
   return path.slice(0, -1).map((from, index) => {

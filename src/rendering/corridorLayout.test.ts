@@ -638,6 +638,62 @@ describe("shared corridor layout", () => {
     }
   });
 
+  it("keeps a single explored Green Park branch centred", () => {
+    const layout = new CorridorLayout(networkData);
+    const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
+    const connectionIds = [
+      "jubilee:bond-street:green-park",
+      "jubilee:green-park:westminster",
+      "victoria:green-park:oxford-circus",
+      "victoria:green-park:victoria",
+    ];
+
+    for (const connectionId of connectionIds) {
+      const connection = findConnectionById(connectionId);
+      const points = layout.getConnectionRenderPoints(connection, new Set([connection.id]));
+      expect(points.some((point) => point.x === greenPark.x && point.y === greenPark.y), connectionId)
+        .toBe(true);
+    }
+  });
+
+  it("separates Victoria left and Jubilee right below Green Park once both are explored", () => {
+    const layout = new CorridorLayout(networkData);
+    const jubilee = findConnection("jubilee", "green-park", "westminster");
+    const victoria = findConnection("victoria", "green-park", "victoria");
+    const visibleConnectionIds = new Set([jubilee.id, victoria.id]);
+    const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
+    const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
+    const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
+    const verticalEndY = gridPointToSvgPoint({ x: 44, y: 3 }).y;
+    const transitionStartY = gridPointToSvgPoint({ x: 44, y: 4 }).y;
+
+    expect(jubileePoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
+    expect(jubileePoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: verticalEndY });
+    expect(jubileePoints).not.toContainEqual({ x: greenPark.x, y: transitionStartY });
+    expect(victoriaPoints.at(-1)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
+    expect(victoriaPoints.at(-2)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: verticalEndY });
+    expect(victoriaPoints.at(-3)).toEqual({ x: greenPark.x, y: transitionStartY });
+  });
+
+  it("separates Jubilee left and Victoria right above Green Park once both are explored", () => {
+    const layout = new CorridorLayout(networkData);
+    const jubilee = findConnection("jubilee", "green-park", "bond-street");
+    const victoria = findConnection("victoria", "green-park", "oxford-circus");
+    const visibleConnectionIds = new Set([jubilee.id, victoria.id]);
+    const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
+    const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
+    const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
+    const verticalEndY = gridPointToSvgPoint({ x: 44, y: -2 }).y;
+    const transitionEndY = gridPointToSvgPoint({ x: 44, y: -3 }).y;
+
+    expect(jubileePoints[0]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
+    expect(jubileePoints[1]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: verticalEndY });
+    expect(jubileePoints[2]).toEqual({ x: greenPark.x, y: transitionEndY });
+    expect(victoriaPoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
+    expect(victoriaPoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: verticalEndY });
+    expect(victoriaPoints).not.toContainEqual({ x: greenPark.x, y: transitionEndY });
+  });
+
   it("keeps the Acton branches on the requested geometry", () => {
     const layout = new CorridorLayout(networkData);
 
@@ -806,6 +862,12 @@ function findConnection(
         (candidate.from === to && candidate.to === from)),
   );
   if (!connection) throw new Error(`Missing ${line} connection ${from} -> ${to}`);
+  return connection;
+}
+
+function findConnectionById(connectionId: string) {
+  const connection = networkData.connections.find((candidate) => candidate.id === connectionId);
+  if (!connection) throw new Error(`Missing connection ${connectionId}`);
   return connection;
 }
 
