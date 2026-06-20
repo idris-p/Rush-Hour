@@ -3,6 +3,7 @@ import type { GridPoint, NetworkData } from "../data/types";
 import { networkData } from "../data/network";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { CorridorLayout, type SharedCorridor } from "./corridorLayout";
+import { LINE_STROKE_WIDTH } from "./lineStyles";
 
 const corridorNetwork: NetworkData = {
   temporary: true,
@@ -586,6 +587,57 @@ describe("shared corridor layout", () => {
       .toEqual(["1,-1", "0,-1"]);
   });
 
+  it("keeps a single explored High Street Kensington branch centred", () => {
+    const layout = new CorridorLayout(networkData);
+    const circle = findConnection("circle", "high-street-kensington", "gloucester-road");
+    const district = findConnection("district", "high-street-kensington", "earl-s-court");
+    const highStreetKensington = gridPointToSvgPoint({ x: 18, y: 4 });
+    const verticalEndY = gridPointToSvgPoint({ x: 18, y: 11 }).y;
+
+    for (const connection of [circle, district]) {
+      const points = layout.getConnectionRenderPoints(connection, new Set([connection.id]));
+      expect(points[0]).toEqual(highStreetKensington);
+      expect(points[1]).toEqual({ x: highStreetKensington.x, y: verticalEndY });
+    }
+  });
+
+  it("separates the District and Circle vertical approaches once both are explored", () => {
+    const layout = new CorridorLayout(networkData);
+    const circleConnection = findConnection("circle", "high-street-kensington", "gloucester-road");
+    const districtConnection = findConnection("district", "high-street-kensington", "earl-s-court");
+    const visibleConnectionIds = new Set([circleConnection.id, districtConnection.id]);
+    const circle = layout.getConnectionRenderPoints(circleConnection, visibleConnectionIds);
+    const district = layout.getConnectionRenderPoints(districtConnection, visibleConnectionIds);
+    const highStreetKensington = gridPointToSvgPoint({ x: 18, y: 4 });
+    const verticalEndY = gridPointToSvgPoint({ x: 18, y: 11 }).y;
+
+    expect(circle[0].x).toBeCloseTo(highStreetKensington.x + LINE_STROKE_WIDTH / 2);
+    expect(circle[0].y).toBe(highStreetKensington.y);
+    expect(circle[1].x).toBeCloseTo(circle[0].x);
+    expect(circle[1].y).toBe(verticalEndY);
+
+    expect(district[0].x).toBeCloseTo(highStreetKensington.x - LINE_STROKE_WIDTH / 2);
+    expect(district[0].y).toBe(highStreetKensington.y);
+    expect(district[1].x).toBeCloseTo(district[0].x);
+    expect(district[1].y).toBe(verticalEndY);
+
+    expect(circle[0].x - district[0].x).toBeCloseTo(LINE_STROKE_WIDTH);
+  });
+
+  it("keeps the High Street Kensington reveal camera on the centreline", () => {
+    const layout = new CorridorLayout(networkData);
+    const circle = findConnection("circle", "high-street-kensington", "gloucester-road");
+    const district = findConnection("district", "high-street-kensington", "earl-s-court");
+    const highStreetKensington = gridPointToSvgPoint({ x: 18, y: 4 });
+    const verticalEndY = gridPointToSvgPoint({ x: 18, y: 11 }).y;
+
+    for (const connection of [circle, district]) {
+      const points = layout.getConnectionCameraPoints(connection);
+      expect(points[0]).toEqual(highStreetKensington);
+      expect(points[1]).toEqual({ x: highStreetKensington.x, y: verticalEndY });
+    }
+  });
+
   it("keeps the Acton branches on the requested geometry", () => {
     const layout = new CorridorLayout(networkData);
 
@@ -740,6 +792,21 @@ function renderedGridPoints(
     x: (point.x - GRID_CELL_SIZE / 2) / GRID_CELL_SIZE,
     y: (point.y - GRID_CELL_SIZE / 2) / GRID_CELL_SIZE,
   }));
+}
+
+function findConnection(
+  line: string,
+  from: string,
+  to: string,
+) {
+  const connection = networkData.connections.find(
+    (candidate) =>
+      candidate.line === line &&
+      ((candidate.from === from && candidate.to === to) ||
+        (candidate.from === to && candidate.to === from)),
+  );
+  if (!connection) throw new Error(`Missing ${line} connection ${from} -> ${to}`);
+  return connection;
 }
 
 function gridPointFromSvgPoint(point: { x: number; y: number }): GridPoint {

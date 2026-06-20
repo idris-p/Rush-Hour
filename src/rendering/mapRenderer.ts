@@ -114,7 +114,8 @@ export class MapRenderer {
     const visibleConnections = this.getVisibleConnections(state);
     const visibleConnectionPaths = visibleConnections.map((connection) => ({
       connection,
-      points: this.corridorLayout.getConnectionPoints(connection),
+      points: this.corridorLayout.getConnectionRenderPoints(connection, state.revealedConnections),
+      cameraPoints: this.corridorLayout.getConnectionCameraPoints(connection),
     }));
     const currentStation = getStation(this.network, state.currentStationId);
     const currentPoint = getSelectedStationMarkerPoint(
@@ -367,8 +368,8 @@ export class MapRenderer {
       const revealIndex = group.findIndex(({ connection }) => connection.id === lineReveal.connectionId);
       if (revealIndex < 0) continue;
 
-      const { connection, points } = group[revealIndex];
-      const path = getCanonicalPath(points);
+      const { connection, points, cameraPoints } = group[revealIndex];
+      const path = getCanonicalPath(cameraPoints ?? points);
       const fromPoint = this.corridorLayout.getStationLinePoint(lineReveal.fromStationId, connection.line);
       const orientedPath = isCloserToPoint(path.at(-1)!, fromPoint, path[0])
         ? [...path].reverse()
@@ -785,6 +786,7 @@ function isMajorGridLine(value: number): boolean {
 type RenderedConnectionPath = {
   connection: Connection;
   points: Point[];
+  cameraPoints?: Point[];
 };
 
 export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]): RenderedConnectionPath[][] {

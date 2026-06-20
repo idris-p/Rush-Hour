@@ -1,10 +1,12 @@
 import { compareLineIds } from "../data/lines";
 import type { Connection, GridPoint, LineId, NetworkData, Point } from "../data/types";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
+import { LINE_STROKE_WIDTH } from "./lineStyles";
 import { offsetPolylinePoints } from "./pathOffset";
 import { simplifyPolylinePoints } from "./roundedPath";
 
 const POINT_TOLERANCE = 0.01;
+const HIGH_STREET_KENSINGTON_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
 
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
@@ -149,6 +151,15 @@ export class CorridorLayout {
     return simplified;
   }
 
+  getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
+    return this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
+      this.getConnectionPoints(connection);
+  }
+
+  getConnectionCameraPoints(connection: Connection): Point[] {
+    return this.getConnectionPoints(connection);
+  }
+
   getConnectionSegmentOffsets(connection: Connection): number[] {
     return getPathEdges(connection.path).map((edge) => {
       const corridorLanes = this.corridorLanesByEdge.get(edge.key) ?? [];
@@ -286,6 +297,38 @@ export class CorridorLayout {
     return pointsMatch(gridPointToSvgPoint(connection.path[0]), fromPoint)
       ? [connection.from, connection.to]
       : [connection.to, connection.from];
+  }
+
+  private getHighStreetKensingtonBranchSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    if (
+      !visibleConnectionIds.has("circle:gloucester-road:high-street-kensington") ||
+      !visibleConnectionIds.has("district:earl-s-court:high-street-kensington")
+    ) {
+      return null;
+    }
+
+    const horizontalSign =
+      connection.id === "circle:gloucester-road:high-street-kensington"
+        ? 1
+        : connection.id === "district:earl-s-court:high-street-kensington"
+          ? -1
+          : 0;
+    if (horizontalSign === 0) return null;
+
+    const [startStationId, endStationId] = this.getPathEndpointStationIds(connection);
+    if (startStationId !== "high-street-kensington") return null;
+
+    const highStreetKensington = this.getStationLinePoint(startStationId, connection.line);
+    const branchEnd = this.getStationLinePoint(endStationId, connection.line);
+    const splitX = highStreetKensington.x + horizontalSign * HIGH_STREET_KENSINGTON_VERTICAL_SPLIT;
+    return [
+      { x: splitX, y: highStreetKensington.y },
+      { x: splitX, y: gridPointToSvgPoint({ x: 18, y: 11 }).y },
+      branchEnd,
+    ];
   }
 
   private getBaseStationPoint(stationId: string): Point {
