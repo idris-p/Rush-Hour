@@ -93,7 +93,7 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["bakerloo:kilburn-park:queen-s-park", [{ x: -2, y: -30 }, { x: -2, y: -28 }, { x: 0, y: -26 }]],
   ["bakerloo:kensal-green:queen-s-park", [{ x: -2, y: -34 }, { x: -2, y: -30 }]],
   ["northern:angel:king-s-cross-st-pancras", [{ x: 82, y: -22 }, { x: 80, y: -22 }, { x: 77, y: -25 }]],
-  ["northern:euston:king-s-cross-st-pancras", [{ x: 64, y: -28 }, { x: 74, y: -28 }, { x: 77, y: -25 }]],
+  ["northern:euston:king-s-cross-st-pancras", [{ x: 65, y: -27 }, { x: 75, y: -27 }, { x: 77, y: -25 }]],
 ]);
 
 export type StationMarkerGroup = {

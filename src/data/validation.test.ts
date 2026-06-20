@@ -388,9 +388,11 @@ describe("network data validation", () => {
 
   it("moves Euston, Mornington Crescent and Old Street while preserving schematic Northern paths", () => {
     expect(networkData.stations.find((station) => station.id === "euston"))
-      .toMatchObject({ x: 64, y: -28 });
+      .toMatchObject({ x: 65, y: -27 });
+    expect(networkData.stations.find((station) => station.id === "euston-square"))
+      .toMatchObject({ x: 60, y: -22 });
     expect(networkData.stations.find((station) => station.id === "mornington-crescent"))
-      .toMatchObject({ x: 62, y: -31 });
+      .toMatchObject({ x: 63, y: -30 });
     expect(networkData.stations.find((station) => station.id === "old-street"))
       .toMatchObject({ x: 87, y: -21 });
 
@@ -398,18 +400,17 @@ describe("network data validation", () => {
       ...findConnectionPath("northern", "euston", "mornington-crescent"),
       ...findConnectionPath("northern", "mornington-crescent", "camden-town").slice(1),
     ]).toEqual([
-      { x: 64, y: -28 }, { x: 63, y: -29 }, { x: 62, y: -30 }, { x: 62, y: -31 },
-      { x: 62, y: -32 }, { x: 63, y: -33 }, { x: 64, y: -34 },
+      { x: 65, y: -27 }, { x: 64, y: -28 }, { x: 63, y: -29 }, { x: 63, y: -30 },
+      { x: 63, y: -31 }, { x: 64, y: -32 }, { x: 65, y: -33 },
     ]);
     expect(findConnectionPath("walk", "euston", "euston-square")).toEqual([
-      { x: 64, y: -28 }, { x: 63, y: -27 }, { x: 62, y: -26 },
-      { x: 61, y: -25 }, { x: 60, y: -24 }, { x: 59, y: -23 },
-      { x: 58, y: -22 },
+      { x: 65, y: -27 }, { x: 64, y: -26 }, { x: 63, y: -25 },
+      { x: 62, y: -24 }, { x: 61, y: -23 }, { x: 60, y: -22 },
     ]);
     expect(findConnectionPath("northern", "euston", "camden-town")).toEqual([
-      { x: 64, y: -28 }, { x: 65, y: -29 }, { x: 66, y: -30 },
-      { x: 66, y: -31 }, { x: 66, y: -32 }, { x: 65, y: -33 },
-      { x: 64, y: -34 },
+      { x: 65, y: -27 }, { x: 66, y: -28 }, { x: 67, y: -29 },
+      { x: 67, y: -30 },
+      { x: 67, y: -31 }, { x: 66, y: -32 }, { x: 65, y: -33 },
     ]);
     expect([
       ...findConnectionPath("northern", "moorgate", "old-street"),
@@ -425,16 +426,16 @@ describe("network data validation", () => {
 
   it("routes the Northern Edgware branch straight northwest from Camden Town", () => {
     const branchStations = [
-      ["camden-town", 64, -34],
-      ["chalk-farm", 62, -36],
-      ["belsize-park", 58, -40],
-      ["hampstead", 46, -52],
-      ["golders-green", 42, -56],
-      ["brent-cross", 38, -60],
-      ["hendon-central", 34, -64],
-      ["colindale", 28, -70],
-      ["burnt-oak", 24, -74],
-      ["edgware", 20, -78],
+      ["camden-town", 65, -33],
+      ["chalk-farm", 63, -35],
+      ["belsize-park", 59, -39],
+      ["hampstead", 47, -51],
+      ["golders-green", 43, -55],
+      ["brent-cross", 39, -59],
+      ["hendon-central", 35, -63],
+      ["colindale", 29, -69],
+      ["burnt-oak", 25, -73],
+      ["edgware", 21, -77],
     ] as const;
 
     for (const [stationId, x, y] of branchStations) {
@@ -449,6 +450,18 @@ describe("network data validation", () => {
         branchStations[index + 1][0],
       ))).toEqual(["-1,-1"]);
     }
+  });
+
+  it("routes Mill Hill East northwest then north from Finchley Central", () => {
+    expect(networkData.stations.find((station) => station.id === "mill-hill-east"))
+      .toMatchObject({ x: 70, y: -74 });
+    expect(findConnectionPath("northern", "finchley-central", "mill-hill-east"))
+      .toEqual([
+        { x: 73, y: -69 }, { x: 72, y: -70 }, { x: 71, y: -71 },
+        { x: 70, y: -72 }, { x: 70, y: -73 }, { x: 70, y: -74 },
+      ]);
+    expect(directionRuns(findConnectionPath("northern", "finchley-central", "mill-hill-east")))
+      .toEqual(["-1,-1", "0,-1"]);
   });
 
   it("moves Angel one cell right and keeps the Northern path through it", () => {

@@ -202,7 +202,7 @@ describe("shared corridor layout", () => {
     ]);
   });
 
-  it("makes Euston a northwest-to-southeast conjoined marker", () => {
+  it("keeps Euston's bottom-right marker fixed while shortening the conjoined marker", () => {
     const layout = new CorridorLayout(networkData);
     const groups = layout.getStationMarkerGroups("euston");
     const northern = groups.find((group) => group.lines.includes("northern"));
@@ -211,11 +211,11 @@ describe("shared corridor layout", () => {
     expect(groups).toHaveLength(2);
     expect(northern?.lines).toEqual(["northern"]);
     expect(victoria?.lines).toEqual(["victoria"]);
-    expect(gridPointFromSvgPoint(northern!.point)).toEqual({ x: 64, y: -28 });
-    expect(gridPointFromSvgPoint(layout.getStationLinePoint("euston", "walk"))).toEqual({ x: 64, y: -28 });
+    expect(gridPointFromSvgPoint(northern!.point)).toEqual({ x: 65, y: -27 });
+    expect(gridPointFromSvgPoint(layout.getStationLinePoint("euston", "walk"))).toEqual({ x: 65, y: -27 });
     expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 67, y: -25 });
-    expect(victoria!.point.x - northern!.point.x).toBe(GRID_CELL_SIZE * 3);
-    expect(victoria!.point.y - northern!.point.y).toBe(GRID_CELL_SIZE * 3);
+    expect(victoria!.point.x - northern!.point.x).toBe(GRID_CELL_SIZE * 2);
+    expect(victoria!.point.y - northern!.point.y).toBe(GRID_CELL_SIZE * 2);
   });
 
   it("renders Victoria straight northeast from Warren Street into the Euston Victoria marker", () => {
@@ -259,7 +259,7 @@ describe("shared corridor layout", () => {
     expect(renderedDirectionRuns(layout, "northern", "angel", "king-s-cross-st-pancras"))
       .toEqual(["-1,0", "-1,-1"]);
     expect(renderedGridPoints(layout, "northern", "king-s-cross-st-pancras", "euston"))
-      .toEqual([{ x: 77, y: -25 }, { x: 74, y: -28 }, { x: 64, y: -28 }]);
+      .toEqual([{ x: 77, y: -25 }, { x: 75, y: -27 }, { x: 65, y: -27 }]);
     expect(renderedDirectionRuns(layout, "northern", "king-s-cross-st-pancras", "euston"))
       .toEqual(["-1,-1", "-1,0"]);
   });
