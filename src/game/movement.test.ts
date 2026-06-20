@@ -138,6 +138,16 @@ describe("movement", () => {
       .toBe("oxford-circus");
     expect(findDirectionalNeighbour(networkData, "lambeth-north", "bakerloo", "northwest")?.id)
       .toBe("waterloo");
+    expect(findDirectionalNeighbour(networkData, "edgware-road-bakerloo", "bakerloo", "west")?.id)
+      .toBe("paddington");
+    expect(findDirectionalNeighbour(networkData, "paddington", "bakerloo", "northeast")?.id)
+      .toBe("edgware-road-bakerloo");
+    expect(findDirectionalNeighbour(networkData, "paddington", "bakerloo", "west")?.id)
+      .toBe("warwick-avenue");
+    expect(findDirectionalNeighbour(networkData, "warwick-avenue", "bakerloo", "east")?.id)
+      .toBe("paddington");
+    expect(findDirectionalNeighbour(networkData, "warwick-avenue", "bakerloo", "west")?.id)
+      .toBe("maida-vale");
   });
 
   it("matches clicks to the updated Russell Square and Westminster routes", () => {
@@ -203,6 +213,30 @@ describe("movement", () => {
       .toBe("king-s-cross-st-pancras");
     expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "victoria", "west")?.id)
       .toBe("euston");
+  });
+
+  it("matches clicks to the Northern route through Angel, King's Cross, and Euston", () => {
+    expect(findDirectionalNeighbour(networkData, "angel", "northern", "west")?.id)
+      .toBe("king-s-cross-st-pancras");
+    expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "northern", "southeast")?.id)
+      .toBe("angel");
+    expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "northern", "northwest")?.id)
+      .toBe("euston");
+    expect(findDirectionalNeighbour(networkData, "euston", "northern", "east")?.id)
+      .toBe("king-s-cross-st-pancras");
+  });
+
+  it("matches clicks to the Piccadilly and Victoria Finsbury Park corridor", () => {
+    expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "piccadilly", "north")?.id)
+      .toBe("caledonian-road");
+    expect(findDirectionalNeighbour(networkData, "finsbury-park", "piccadilly", "northeast")?.id)
+      .toBe("manor-house");
+    expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "northeast")?.id)
+      .toBe("seven-sisters");
+    expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "southwest")?.id)
+      .toBe("highbury-and-islington");
+    expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "south"))
+      .toBeNull();
   });
 
   it("uses southwest from Turnham Green onto the aligned Richmond branch", () => {

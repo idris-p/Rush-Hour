@@ -2,10 +2,12 @@ import { LINE_BY_ID } from "./lines";
 import type { LineId, NetworkData } from "./types";
 
 const ALLOWED_SHORT_ZIG_ZAG_CONNECTIONS = new Set([
+  "bakerloo:paddington:warwick-avenue",
   "metropolitan:baker-street:finchley-road",
 ]);
 
 const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
+  "bakerloo:edgware-road-bakerloo:paddington",
   "circle:aldgate:liverpool-street",
   "circle:aldgate:tower-hill",
   "district:aldgate-east:tower-hill",
@@ -17,6 +19,7 @@ const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
 ]);
 
 const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([
+  "bakerloo:edgware-road-bakerloo:paddington",
   "central:gants-hill:newbury-park",
   "central:grange-hill:hainault",
   "piccadilly:hatton-cross:heathrow-terminal-4",

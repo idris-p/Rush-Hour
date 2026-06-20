@@ -50,8 +50,11 @@ const STATION_LINE_POINT_OVERRIDES = new Map<string, GridPoint>([
   ["mile-end|hammersmith-city", { x: 132, y: -12 }],
   ["bond-street|elizabeth", { x: 45, y: -9 }],
   ["tottenham-court-road|elizabeth", { x: 63, y: -9 }],
+  ["paddington|bakerloo", { x: 16, y: -20 }],
   ["euston|victoria", { x: 67, y: -25 }],
+  ["king-s-cross-st-pancras|northern", { x: 77, y: -25 }],
   ["king-s-cross-st-pancras|victoria", { x: 77, y: -25 }],
+  ["finsbury-park|victoria", { x: 96, y: -44 }],
   ["stratford|central", { x: 148, y: -30 }],
   ["stratford|elizabeth", { x: 150, y: -30 }],
   ["stratford|jubilee", { x: 150, y: -30 }],
@@ -80,6 +83,13 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["victoria:euston:warren-street", [{ x: 62, y: -20 }, { x: 67, y: -25 }]],
   ["victoria:euston:king-s-cross-st-pancras", [{ x: 67, y: -25 }, { x: 77, y: -25 }]],
   ["victoria:highbury-and-islington:king-s-cross-st-pancras", [{ x: 77, y: -25 }, { x: 87, y: -35 }]],
+  ["victoria:finsbury-park:highbury-and-islington", [{ x: 87, y: -35 }, { x: 96, y: -44 }]],
+  ["victoria:finsbury-park:seven-sisters", [{ x: 96, y: -44 }, { x: 106, y: -54 }, { x: 120, y: -54 }]],
+  ["bakerloo:edgware-road-bakerloo:marylebone", [{ x: 32, y: -24 }, { x: 24, y: -24 }]],
+  ["bakerloo:edgware-road-bakerloo:paddington", [{ x: 24, y: -24 }, { x: 20, y: -24 }, { x: 16, y: -20 }]],
+  ["bakerloo:paddington:warwick-avenue", [{ x: 16, y: -20 }, { x: 14, y: -20 }, { x: 10, y: -24 }, { x: 8, y: -24 }]],
+  ["northern:angel:king-s-cross-st-pancras", [{ x: 82, y: -22 }, { x: 80, y: -22 }, { x: 77, y: -25 }]],
+  ["northern:euston:king-s-cross-st-pancras", [{ x: 64, y: -28 }, { x: 74, y: -28 }, { x: 77, y: -25 }]],
 ]);
 
 export type StationMarkerGroup = {

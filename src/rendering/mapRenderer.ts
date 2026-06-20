@@ -506,8 +506,21 @@ export class MapRenderer {
   }
 
   private positionCurrentStationLabel(label: SVGTextElement, state: GameState): void {
+    const station = getStation(this.network, state.currentStationId);
+    const stationPoint = gridPointToSvgPoint(station);
+    const labelAnchor = subtractPoints(
+      getSelectedStationMarkerPoint(
+        this.corridorLayout.getStationMarkerGroups(state.currentStationId),
+        state.selectedLineId,
+        stationPoint,
+      ),
+      stationPoint,
+    );
     const cacheKey = [
       state.currentStationId,
+      state.selectedLineId,
+      labelAnchor.x,
+      labelAnchor.y,
       this.zoom,
       this.svg.clientWidth,
       this.svg.clientHeight,
@@ -518,9 +531,9 @@ export class MapRenderer {
       return;
     }
 
-    let best = getCurrentStationLabelPlacements()[0];
+    let best = getCurrentStationLabelPlacements(labelAnchor)[0];
     let bestCollisionCount = Number.POSITIVE_INFINITY;
-    for (const placement of getCurrentStationLabelPlacements()) {
+    for (const placement of getCurrentStationLabelPlacements(labelAnchor)) {
       applyCurrentStationLabelPlacement(label, placement);
       const collisionCount = countLabelCollisions(label);
       if (collisionCount < bestCollisionCount) {
@@ -575,7 +588,9 @@ export function getStubArrowHeadPoints(end: Point, unit: Point, normal: Point): 
   ];
 }
 
-export function getCurrentStationLabelPlacements(): CurrentStationLabelPlacement[] {
+export function getCurrentStationLabelPlacements(
+  anchor: Point = { x: 0, y: 0 },
+): CurrentStationLabelPlacement[] {
   const directions = [
     { x: 1, y: 0 },
     diagonal(1, -1),
@@ -588,8 +603,8 @@ export function getCurrentStationLabelPlacements(): CurrentStationLabelPlacement
   ];
   return LABEL_RADII.flatMap((radius) =>
     directions.map((direction) => ({
-      x: direction.x * radius,
-      y: direction.y * radius + getLabelBaselineAdjustment(direction.y),
+      x: anchor.x + direction.x * radius,
+      y: anchor.y + direction.y * radius + getLabelBaselineAdjustment(direction.y),
       textAnchor: direction.x > 0.35 ? "start" : direction.x < -0.35 ? "end" : "middle",
     })),
   );
@@ -604,6 +619,10 @@ function getLabelBaselineAdjustment(verticalDirection: number): number {
 function diagonal(x: number, y: number): Point {
   const length = Math.SQRT2;
   return { x: x / length, y: y / length };
+}
+
+function subtractPoints(first: Point, second: Point): Point {
+  return { x: first.x - second.x, y: first.y - second.y };
 }
 
 function applyCurrentStationLabelPlacement(

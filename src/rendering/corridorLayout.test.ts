@@ -230,16 +230,16 @@ describe("shared corridor layout", () => {
   it("makes King's Cross St Pancras a southwest-to-northeast conjoined marker", () => {
     const layout = new CorridorLayout(networkData);
     const groups = layout.getStationMarkerGroups("king-s-cross-st-pancras");
-    const existing = groups.find((group) => !group.lines.includes("victoria"));
-    const victoria = groups.find((group) => group.lines.includes("victoria"));
+    const existing = groups.find((group) => !group.lines.includes("victoria") && !group.lines.includes("northern"));
+    const top = groups.find((group) => group.lines.includes("victoria"));
 
     expect(groups).toHaveLength(2);
-    expect(existing?.lines).toEqual(["circle", "hammersmith-city", "metropolitan", "northern", "piccadilly"]);
-    expect(victoria?.lines).toEqual(["victoria"]);
+    expect(existing?.lines).toEqual(["circle", "hammersmith-city", "metropolitan", "piccadilly"]);
+    expect(top?.lines).toEqual(["northern", "victoria"]);
     expect(gridPointFromSvgPoint(existing!.point)).toEqual({ x: 74, y: -22 });
-    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 77, y: -25 });
-    expect(victoria!.point.x - existing!.point.x).toBe(GRID_CELL_SIZE * 3);
-    expect(victoria!.point.y - existing!.point.y).toBe(-GRID_CELL_SIZE * 3);
+    expect(gridPointFromSvgPoint(top!.point)).toEqual({ x: 77, y: -25 });
+    expect(top!.point.x - existing!.point.x).toBe(GRID_CELL_SIZE * 3);
+    expect(top!.point.y - existing!.point.y).toBe(-GRID_CELL_SIZE * 3);
   });
 
   it("renders Victoria horizontally from Euston to King's Cross St Pancras", () => {
@@ -249,6 +249,60 @@ describe("shared corridor layout", () => {
       .toEqual([{ x: 67, y: -25 }, { x: 77, y: -25 }]);
     expect(renderedDirectionRuns(layout, "victoria", "euston", "king-s-cross-st-pancras"))
       .toEqual(["1,0"]);
+  });
+
+  it("renders Northern into the King's Cross top marker and then left to Euston", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "northern", "angel", "king-s-cross-st-pancras"))
+      .toEqual([{ x: 82, y: -22 }, { x: 80, y: -22 }, { x: 77, y: -25 }]);
+    expect(renderedDirectionRuns(layout, "northern", "angel", "king-s-cross-st-pancras"))
+      .toEqual(["-1,0", "-1,-1"]);
+    expect(renderedGridPoints(layout, "northern", "king-s-cross-st-pancras", "euston"))
+      .toEqual([{ x: 77, y: -25 }, { x: 74, y: -28 }, { x: 64, y: -28 }]);
+    expect(renderedDirectionRuns(layout, "northern", "king-s-cross-st-pancras", "euston"))
+      .toEqual(["-1,-1", "-1,0"]);
+  });
+
+  it("makes Finsbury Park a northwest-to-southeast Piccadilly and Victoria marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("finsbury-park");
+    const piccadilly = groups.find((group) => group.lines.includes("piccadilly"));
+    const victoria = groups.find((group) => group.lines.includes("victoria"));
+
+    expect(groups).toHaveLength(2);
+    expect(piccadilly?.lines).toEqual(["piccadilly"]);
+    expect(victoria?.lines).toEqual(["victoria"]);
+    expect(gridPointFromSvgPoint(piccadilly!.point)).toEqual({ x: 94, y: -46 });
+    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 96, y: -44 });
+    expect(victoria!.point.x - piccadilly!.point.x).toBe(GRID_CELL_SIZE * 2);
+    expect(victoria!.point.y - piccadilly!.point.y).toBe(GRID_CELL_SIZE * 2);
+  });
+
+  it("renders the Piccadilly corridor diagonally from Caledonian Road to Finsbury Park", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "piccadilly", "king-s-cross-st-pancras", "caledonian-road"))
+      .toEqual([{ x: 74, y: -22 }, { x: 74, y: -26 }, { x: 76, y: -28 }]);
+    expect(renderedDirectionRuns(layout, "piccadilly", "caledonian-road", "holloway-road"))
+      .toEqual(["1,-1"]);
+    expect(renderedDirectionRuns(layout, "piccadilly", "holloway-road", "arsenal"))
+      .toEqual(["1,-1"]);
+    expect(renderedDirectionRuns(layout, "piccadilly", "arsenal", "finsbury-park"))
+      .toEqual(["1,-1"]);
+  });
+
+  it("renders Piccadilly and Victoria outward from the Finsbury Park split marker", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "piccadilly", "finsbury-park", "manor-house"))
+      .toEqual([{ x: 94, y: -46 }, { x: 100, y: -52 }, { x: 100, y: -56 }]);
+    expect(renderedDirectionRuns(layout, "piccadilly", "finsbury-park", "manor-house"))
+      .toEqual(["1,-1", "0,-1"]);
+    expect(renderedGridPoints(layout, "victoria", "finsbury-park", "seven-sisters"))
+      .toEqual([{ x: 96, y: -44 }, { x: 106, y: -54 }, { x: 120, y: -54 }]);
+    expect(renderedDirectionRuns(layout, "victoria", "finsbury-park", "seven-sisters"))
+      .toEqual(["1,-1", "1,0"]);
   });
 
   it("places Elizabeth above the other lines at Liverpool Street and Whitechapel", () => {
@@ -445,6 +499,36 @@ describe("shared corridor layout", () => {
       "bond-street",
       "paddington",
     )).toEqual(["-1,0", "-1,-1", "-1,0"]);
+  });
+
+  it("makes Paddington a northwest-to-southeast Bakerloo and subsurface marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("paddington");
+    const bakerloo = groups.find((group) => group.lines.includes("bakerloo"));
+    const other = groups.find((group) => !group.lines.includes("bakerloo"));
+
+    expect(groups).toHaveLength(2);
+    expect(bakerloo?.lines).toEqual(["bakerloo"]);
+    expect(other?.lines).toEqual(["circle", "district", "hammersmith-city", "elizabeth"]);
+    expect(gridPointFromSvgPoint(bakerloo!.point)).toEqual({ x: 16, y: -20 });
+    expect(gridPointFromSvgPoint(other!.point)).toEqual({ x: 18, y: -18 });
+    expect(other!.point.x - bakerloo!.point.x).toBe(GRID_CELL_SIZE * 2);
+    expect(other!.point.y - bakerloo!.point.y).toBe(GRID_CELL_SIZE * 2);
+  });
+
+  it("renders Bakerloo into the upper Paddington marker and onward to Warwick Avenue", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "bakerloo", "marylebone", "edgware-road-bakerloo"))
+      .toEqual([{ x: 32, y: -24 }, { x: 24, y: -24 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "edgware-road-bakerloo", "paddington"))
+      .toEqual([{ x: 24, y: -24 }, { x: 20, y: -24 }, { x: 16, y: -20 }]);
+    expect(renderedDirectionRuns(layout, "bakerloo", "edgware-road-bakerloo", "paddington"))
+      .toEqual(["-1,0", "-1,1"]);
+    expect(renderedGridPoints(layout, "bakerloo", "paddington", "warwick-avenue"))
+      .toEqual([{ x: 16, y: -20 }, { x: 14, y: -20 }, { x: 10, y: -24 }, { x: 8, y: -24 }]);
+    expect(renderedDirectionRuns(layout, "bakerloo", "paddington", "warwick-avenue"))
+      .toEqual(["-1,0", "-1,-1", "-1,0"]);
   });
 
   it("keeps every Tottenham Court Road exit visually clean after moving it east", () => {

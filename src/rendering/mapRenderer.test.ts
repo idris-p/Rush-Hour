@@ -131,6 +131,14 @@ describe("current station label placement", () => {
     expect(Math.hypot(placements[7].x, placements[7].y - 12)).toBeCloseTo(26);
     expect(Math.hypot(placements[8].x, placements[8].y - 5)).toBeCloseTo(32);
   });
+
+  it("centres candidate positions around the focused conjoined marker", () => {
+    const placements = getCurrentStationLabelPlacements({ x: 96, y: -96 });
+
+    expect(placements[0]).toEqual({ x: 122, y: -91, textAnchor: "start" });
+    expect(Math.hypot(placements[7].x - 96, placements[7].y - 12 + 96)).toBeCloseTo(26);
+    expect(Math.hypot(placements[8].x - 96, placements[8].y - 5 + 96)).toBeCloseTo(32);
+  });
 });
 
 describe("current station camera anchor", () => {
