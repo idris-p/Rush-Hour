@@ -152,7 +152,8 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getGreenParkBranchSplitPath(connection, visibleConnectionIds) ??
+    return this.getEalingBroadwayBranchSplitPath(connection, visibleConnectionIds) ??
+      this.getGreenParkBranchSplitPath(connection, visibleConnectionIds) ??
       this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
       this.getConnectionPoints(connection);
   }
@@ -372,6 +373,42 @@ export class CorridorLayout {
       ...(connection.id === "jubilee:bond-street:green-park" ? [centreTransitionPoint] : []),
       this.getStationLinePoint(endStationId, connection.line),
     ];
+  }
+
+  private getEalingBroadwayBranchSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    if (
+      !visibleConnectionIds.has("central:ealing-broadway:west-acton") ||
+      !visibleConnectionIds.has("elizabeth:acton-main-line:ealing-broadway")
+    ) {
+      return null;
+    }
+
+    const ealingBroadway = this.getStationLinePoint("ealing-broadway", connection.line);
+    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
+    const centralReturn = gridPointToSvgPoint({ x: -30, y: 0 });
+    const split = CONDITIONAL_VERTICAL_SPLIT;
+
+    if (connection.id === "central:ealing-broadway:west-acton") {
+      return [
+        this.getStationLinePoint("west-acton", connection.line),
+        centralReturn,
+        { x: sharedBranch.x, y: sharedBranch.y + split },
+        { x: ealingBroadway.x, y: ealingBroadway.y + split },
+      ];
+    }
+
+    if (connection.id === "elizabeth:acton-main-line:ealing-broadway") {
+      return [
+        this.getStationLinePoint("acton-main-line", connection.line),
+        { x: sharedBranch.x, y: sharedBranch.y - split },
+        { x: ealingBroadway.x, y: ealingBroadway.y - split },
+      ];
+    }
+
+    return null;
   }
 
   private getBaseStationPoint(stationId: string): Point {

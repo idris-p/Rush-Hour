@@ -696,6 +696,41 @@ describe("shared corridor layout", () => {
     expect(victoriaPoints).not.toContainEqual({ x: greenPark.x, y: gridPointToSvgPoint({ x: 44, y: -3 }).y });
   });
 
+  it("keeps a single explored Ealing Broadway east branch centred", () => {
+    const layout = new CorridorLayout(networkData);
+    const ealingBroadway = gridPointToSvgPoint({ x: -42, y: 0 });
+    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
+    const central = findConnection("central", "ealing-broadway", "west-acton");
+    const elizabeth = findConnection("elizabeth", "ealing-broadway", "acton-main-line");
+
+    const centralPoints = layout.getConnectionRenderPoints(central, new Set([central.id]));
+    expect(centralPoints).toContainEqual(ealingBroadway);
+    expect(centralPoints.every((point) => point.y === ealingBroadway.y)).toBe(true);
+
+    const elizabethPoints = layout.getConnectionRenderPoints(elizabeth, new Set([elizabeth.id]));
+    expect(elizabethPoints).toContainEqual(ealingBroadway);
+    expect(elizabethPoints).toContainEqual(sharedBranch);
+  });
+
+  it("separates Elizabeth above and Central below east of Ealing Broadway once both are explored", () => {
+    const layout = new CorridorLayout(networkData);
+    const central = findConnection("central", "ealing-broadway", "west-acton");
+    const elizabeth = findConnection("elizabeth", "ealing-broadway", "acton-main-line");
+    const visibleConnectionIds = new Set([central.id, elizabeth.id]);
+    const centralPoints = layout.getConnectionRenderPoints(central, visibleConnectionIds);
+    const elizabethPoints = layout.getConnectionRenderPoints(elizabeth, visibleConnectionIds);
+    const ealingBroadway = gridPointToSvgPoint({ x: -42, y: 0 });
+    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
+    const centralReturn = gridPointToSvgPoint({ x: -30, y: 0 });
+
+    expect(elizabethPoints.at(-1)).toEqual({ x: ealingBroadway.x, y: ealingBroadway.y - LINE_STROKE_WIDTH / 2 });
+    expect(elizabethPoints.at(-2)).toEqual({ x: sharedBranch.x, y: sharedBranch.y - LINE_STROKE_WIDTH / 2 });
+
+    expect(centralPoints.at(-1)).toEqual({ x: ealingBroadway.x, y: ealingBroadway.y + LINE_STROKE_WIDTH / 2 });
+    expect(centralPoints.at(-2)).toEqual({ x: sharedBranch.x, y: sharedBranch.y + LINE_STROKE_WIDTH / 2 });
+    expect(centralPoints.at(-3)).toEqual(centralReturn);
+  });
+
   it("keeps the Acton branches on the requested geometry", () => {
     const layout = new CorridorLayout(networkData);
 
