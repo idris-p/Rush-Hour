@@ -664,15 +664,16 @@ describe("shared corridor layout", () => {
     const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
     const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
     const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
-    const verticalEndY = gridPointToSvgPoint({ x: 44, y: 3 }).y;
-    const transitionStartY = gridPointToSvgPoint({ x: 44, y: 4 }).y;
+    const jubileeVerticalEndY = gridPointToSvgPoint({ x: 44, y: 3 }).y;
+    const victoriaVerticalEndY = gridPointToSvgPoint({ x: 44, y: 8 }).y;
+    const victoriaTransitionStartY = gridPointToSvgPoint({ x: 44, y: 9 }).y;
 
     expect(jubileePoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(jubileePoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: verticalEndY });
-    expect(jubileePoints).not.toContainEqual({ x: greenPark.x, y: transitionStartY });
+    expect(jubileePoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: jubileeVerticalEndY });
+    expect(jubileePoints).not.toContainEqual({ x: greenPark.x, y: gridPointToSvgPoint({ x: 44, y: 4 }).y });
     expect(victoriaPoints.at(-1)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(victoriaPoints.at(-2)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: verticalEndY });
-    expect(victoriaPoints.at(-3)).toEqual({ x: greenPark.x, y: transitionStartY });
+    expect(victoriaPoints.at(-2)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: victoriaVerticalEndY });
+    expect(victoriaPoints.at(-3)).toEqual({ x: greenPark.x, y: victoriaTransitionStartY });
   });
 
   it("separates Jubilee left and Victoria right above Green Park once both are explored", () => {
@@ -683,15 +684,16 @@ describe("shared corridor layout", () => {
     const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
     const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
     const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
-    const verticalEndY = gridPointToSvgPoint({ x: 44, y: -2 }).y;
-    const transitionEndY = gridPointToSvgPoint({ x: 44, y: -3 }).y;
+    const jubileeVerticalEndY = gridPointToSvgPoint({ x: 44, y: -5 }).y;
+    const jubileeTransitionEndY = gridPointToSvgPoint({ x: 44, y: -6 }).y;
+    const victoriaVerticalEndY = gridPointToSvgPoint({ x: 44, y: -2 }).y;
 
     expect(jubileePoints[0]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(jubileePoints[1]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: verticalEndY });
-    expect(jubileePoints[2]).toEqual({ x: greenPark.x, y: transitionEndY });
+    expect(jubileePoints[1]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: jubileeVerticalEndY });
+    expect(jubileePoints[2]).toEqual({ x: greenPark.x, y: jubileeTransitionEndY });
     expect(victoriaPoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(victoriaPoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: verticalEndY });
-    expect(victoriaPoints).not.toContainEqual({ x: greenPark.x, y: transitionEndY });
+    expect(victoriaPoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: victoriaVerticalEndY });
+    expect(victoriaPoints).not.toContainEqual({ x: greenPark.x, y: gridPointToSvgPoint({ x: 44, y: -3 }).y });
   });
 
   it("keeps the Acton branches on the requested geometry", () => {

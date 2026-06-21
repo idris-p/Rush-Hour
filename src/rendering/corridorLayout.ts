@@ -540,7 +540,7 @@ function getGreenParkSplit(
     visibleConnectionIds.has("victoria:green-park:victoria");
   if (southPairVisible) {
     if (connection.id === "victoria:green-park:victoria") {
-      return { horizontalSign: -1, verticalEndY: 3, transitionEndY: 4 };
+      return { horizontalSign: -1, verticalEndY: 8, transitionEndY: 9 };
     }
     if (connection.id === "jubilee:green-park:westminster") {
       return { horizontalSign: 1, verticalEndY: 3, transitionEndY: 4 };
@@ -552,7 +552,7 @@ function getGreenParkSplit(
     visibleConnectionIds.has("victoria:green-park:oxford-circus");
   if (northPairVisible) {
     if (connection.id === "jubilee:bond-street:green-park") {
-      return { horizontalSign: -1, verticalEndY: -2, transitionEndY: -3 };
+      return { horizontalSign: -1, verticalEndY: -5, transitionEndY: -6 };
     }
     if (connection.id === "victoria:green-park:oxford-circus") {
       return { horizontalSign: 1, verticalEndY: -2, transitionEndY: -3 };
