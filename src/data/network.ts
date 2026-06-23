@@ -528,7 +528,7 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("northern", "warren-street", "euston"),
-    expandSchematicPath([{ x: 62, y: -20 }, { x: 62, y: -24 }, { x: 65, y: -27 }]),
+    expandSchematicPath([{ x: 62, y: -20 }, { x: 62, y: -22 }, { x: 65, y: -25 }, { x: 65, y: -27 }]),
   ],
   [
     createConnectionId("circle", "euston-square", "great-portland-street"),

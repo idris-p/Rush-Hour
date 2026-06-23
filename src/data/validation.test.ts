@@ -412,6 +412,13 @@ describe("network data validation", () => {
       { x: 67, y: -30 },
       { x: 67, y: -31 }, { x: 66, y: -32 }, { x: 65, y: -33 },
     ]);
+    expect(findConnectionPath("northern", "warren-street", "euston")).toEqual([
+      { x: 62, y: -20 }, { x: 62, y: -21 }, { x: 62, y: -22 },
+      { x: 63, y: -23 }, { x: 64, y: -24 }, { x: 65, y: -25 },
+      { x: 65, y: -26 }, { x: 65, y: -27 },
+    ]);
+    expect(directionRuns(findConnectionPath("northern", "warren-street", "euston")))
+      .toEqual(["0,-1", "1,-1", "0,-1"]);
     expect([
       ...findConnectionPath("northern", "moorgate", "old-street"),
       ...findConnectionPath("northern", "old-street", "angel").slice(1),
