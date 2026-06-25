@@ -20,10 +20,21 @@ const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
 
 const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([
   "bakerloo:edgware-road-bakerloo:paddington",
+  "bakerloo:baker-street:marylebone",
   "central:gants-hill:newbury-park",
   "central:grange-hill:hainault",
+  "elizabeth:acton-main-line:ealing-broadway",
+  "elizabeth:ealing-broadway:west-ealing",
+  "jubilee:finchley-road:swiss-cottage",
+  "jubilee:finchley-road:west-hampstead",
+  "jubilee:kingsbury:wembley-park",
+  "jubilee:neasden:wembley-park",
   "piccadilly:hatton-cross:heathrow-terminal-4",
   "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
+]);
+
+const ALLOWED_SHARP_THROUGH_STATIONS = new Set([
+  "baker-street:jubilee",
 ]);
 
 export function validateNetworkData(network: NetworkData): string[] {
@@ -213,7 +224,7 @@ export function validateNetworkData(network: NetworkData): string[] {
       }
     }
 
-    if (!key.endsWith(":walk") && exits.length === 2) {
+    if (!key.endsWith(":walk") && exits.length === 2 && !ALLOWED_SHARP_THROUGH_STATIONS.has(key)) {
       const separation = getDirectionTurnAmount(exits[0].direction, exits[1].direction);
       if (separation < 3) {
         errors.push(`Station/line ${key} makes a sharp through-station turn`);

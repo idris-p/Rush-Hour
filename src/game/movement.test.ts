@@ -102,11 +102,33 @@ describe("movement", () => {
     expect(attemptMove(state, testNetwork, 0, 100).targetStationId).toBe("b");
   });
 
-  it("requires west to travel from Baker Street to St John's Wood", () => {
-    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "west")?.id)
+  it("requires north to travel from Baker Street to St John's Wood", () => {
+    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "north")?.id)
       .toBe("st-john-s-wood");
-    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "northwest"))
+    expect(findDirectionalNeighbour(networkData, "baker-street", "jubilee", "west"))
       .toBeNull();
+  });
+
+  it("requires northwest from Baker Street to Finchley Road on the Metropolitan line", () => {
+    expect(findDirectionalNeighbour(networkData, "baker-street", "metropolitan", "northwest")?.id)
+      .toBe("finchley-road");
+    expect(findDirectionalNeighbour(networkData, "baker-street", "metropolitan", "west"))
+      .toBeNull();
+  });
+
+  it("requires northwest from Canary Wharf to Whitechapel on the Elizabeth line", () => {
+    expect(findDirectionalNeighbour(
+      networkData,
+      "canary-wharf-elizabeth-line",
+      "elizabeth",
+      "northwest",
+    )?.id).toBe("whitechapel");
+    expect(findDirectionalNeighbour(
+      networkData,
+      "canary-wharf-elizabeth-line",
+      "elizabeth",
+      "west",
+    )).toBeNull();
   });
 
   it("matches Tottenham Court Road clicks to the displayed line exits", () => {
@@ -132,6 +154,8 @@ describe("movement", () => {
   });
 
   it("matches clicks to the updated Bakerloo geometry", () => {
+    expect(findDirectionalNeighbour(networkData, "baker-street", "bakerloo", "southeast")?.id)
+      .toBe("regent-s-park");
     expect(findDirectionalNeighbour(networkData, "regent-s-park", "bakerloo", "northwest")?.id)
       .toBe("baker-street");
     expect(findDirectionalNeighbour(networkData, "regent-s-park", "bakerloo", "southeast")?.id)

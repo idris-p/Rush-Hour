@@ -7,6 +7,7 @@ import { simplifyPolylinePoints } from "./roundedPath";
 
 const POINT_TOLERANCE = 0.01;
 const CONDITIONAL_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
+const BAKER_STREET_SUBSURFACE_LINES = ["circle", "hammersmith-city", "metropolitan"] as const;
 
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
@@ -46,17 +47,25 @@ const MERGED_CORRIDOR_STATIONS = new Set(["baker-street"]);
 
 const STATION_LINE_POINT_OVERRIDES = new Map<string, GridPoint>([
   ["liverpool-street|elizabeth", { x: 92, y: -13 }],
-  ["whitechapel|elizabeth", { x: 118, y: -13 }],
+  ["whitechapel|elizabeth", { x: 119, y: -13 }],
   ["mile-end|central", { x: 130, y: -14 }],
   ["mile-end|district", { x: 132, y: -12 }],
   ["mile-end|hammersmith-city", { x: 132, y: -12 }],
-  ["bond-street|elizabeth", { x: 45, y: -9 }],
+  ["bond-street|elizabeth", { x: 43, y: -9 }],
+  ["ealing-broadway|elizabeth", { x: -42, y: -1 }],
   ["tottenham-court-road|elizabeth", { x: 63, y: -9 }],
+  ["baker-street|bakerloo", { x: 42, y: -20 }],
+  ["baker-street|circle", { x: 44, y: -22 }],
+  ["baker-street|hammersmith-city", { x: 44, y: -22 }],
+  ["baker-street|jubilee", { x: 42, y: -20 }],
+  ["baker-street|metropolitan", { x: 44, y: -22 }],
   ["paddington|bakerloo", { x: 16, y: -20 }],
   ["euston|victoria", { x: 67, y: -25 }],
-  ["king-s-cross-st-pancras|northern", { x: 77, y: -25 }],
+  ["finchley-road|jubilee", { x: 33, y: -33 }],
+  ["king-s-cross-st-pancras|northern", { x: 76, y: -24 }],
   ["king-s-cross-st-pancras|victoria", { x: 77, y: -25 }],
   ["finsbury-park|victoria", { x: 96, y: -44 }],
+  ["wembley-park|jubilee", { x: 15, y: -51 }],
   ["stratford|central", { x: 148, y: -30 }],
   ["stratford|elizabeth", { x: 150, y: -30 }],
   ["stratford|jubilee", { x: 150, y: -30 }],
@@ -68,8 +77,10 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["hammersmith-city:mile-end:stepney-green", [{ x: 128, y: -12 }, { x: 132, y: -12 }]],
   ["district:bow-road:mile-end", [{ x: 132, y: -12 }, { x: 136, y: -12 }]],
   ["hammersmith-city:bow-road:mile-end", [{ x: 132, y: -12 }, { x: 136, y: -12 }]],
-  ["elizabeth:bond-street:paddington", [{ x: 18, y: -18 }, { x: 27, y: -18 }, { x: 36, y: -9 }, { x: 45, y: -9 }]],
-  ["elizabeth:bond-street:tottenham-court-road", [{ x: 63, y: -9 }, { x: 45, y: -9 }]],
+  ["elizabeth:bond-street:paddington", [{ x: 18, y: -18 }, { x: 25, y: -18 }, { x: 34, y: -9 }, { x: 43, y: -9 }]],
+  ["elizabeth:bond-street:tottenham-court-road", [{ x: 63, y: -9 }, { x: 43, y: -9 }]],
+  ["elizabeth:acton-main-line:ealing-broadway", [{ x: -20, y: -14 }, { x: -33, y: -1 }, { x: -42, y: -1 }]],
+  ["elizabeth:ealing-broadway:west-ealing", [{ x: -42, y: -1 }, { x: -46, y: -1 }]],
   [
     "elizabeth:farringdon:tottenham-court-road",
     [{ x: 80, y: -18 }, { x: 77, y: -18 }, { x: 68, y: -9 }, { x: 63, y: -9 }],
@@ -82,6 +93,17 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
     "central:leyton:stratford",
     [{ x: 148, y: -30 }, { x: 153, y: -35 }],
   ],
+  ["bakerloo:baker-street:marylebone", [{ x: 42, y: -20 }, { x: 38, y: -24 }, { x: 32, y: -24 }]],
+  ["bakerloo:baker-street:regent-s-park", [{ x: 42, y: -20 }, { x: 46, y: -16 }]],
+  ["metropolitan:baker-street:finchley-road", [{ x: 44, y: -22 }, { x: 42, y: -24 }, { x: 40, y: -24 }, { x: 32, y: -32 }]],
+  ["metropolitan:baker-street:great-portland-street", [{ x: 50, y: -22 }, { x: 44, y: -22 }]],
+  ["jubilee:finchley-road:swiss-cottage", [{ x: 33, y: -33 }, { x: 37, y: -29 }]],
+  ["jubilee:finchley-road:west-hampstead", [{ x: 33, y: -33 }, { x: 31, y: -35 }]],
+  ["jubilee:neasden:wembley-park", [{ x: 17, y: -49 }, { x: 15, y: -51 }]],
+  ["jubilee:kingsbury:wembley-park", [{ x: 15, y: -51 }, { x: 12, y: -54 }, { x: 12, y: -58 }]],
+  ["elizabeth:canary-wharf-elizabeth-line:whitechapel", [{ x: 119, y: -13 }, { x: 142, y: 10 }]],
+  ["elizabeth:liverpool-street:whitechapel", [{ x: 119, y: -13 }, { x: 92, y: -13 }]],
+  ["elizabeth:stratford:whitechapel", [{ x: 150, y: -30 }, { x: 138, y: -18 }, { x: 124, y: -18 }, { x: 119, y: -13 }]],
   ["victoria:euston:warren-street", [{ x: 62, y: -20 }, { x: 67, y: -25 }]],
   ["victoria:euston:king-s-cross-st-pancras", [{ x: 67, y: -25 }, { x: 77, y: -25 }]],
   ["victoria:highbury-and-islington:king-s-cross-st-pancras", [{ x: 77, y: -25 }, { x: 87, y: -35 }]],
@@ -94,8 +116,8 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["bakerloo:kilburn-park:maida-vale", [{ x: 4, y: -22 }, { x: 0, y: -26 }]],
   ["bakerloo:kilburn-park:queen-s-park", [{ x: -2, y: -30 }, { x: -2, y: -28 }, { x: 0, y: -26 }]],
   ["bakerloo:kensal-green:queen-s-park", [{ x: -2, y: -34 }, { x: -2, y: -30 }]],
-  ["northern:angel:king-s-cross-st-pancras", [{ x: 82, y: -22 }, { x: 80, y: -22 }, { x: 77, y: -25 }]],
-  ["northern:euston:king-s-cross-st-pancras", [{ x: 65, y: -27 }, { x: 75, y: -27 }, { x: 77, y: -25 }]],
+  ["northern:angel:king-s-cross-st-pancras", [{ x: 82, y: -22 }, { x: 78, y: -22 }, { x: 76, y: -24 }]],
+  ["northern:euston:king-s-cross-st-pancras", [{ x: 65, y: -27 }, { x: 73, y: -27 }, { x: 76, y: -24 }]],
 ]);
 
 export type StationMarkerGroup = {
@@ -152,8 +174,7 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getEalingBroadwayBranchSplitPath(connection, visibleConnectionIds) ??
-      this.getGreenParkBranchSplitPath(connection, visibleConnectionIds) ??
+    return this.getBakerStreetSubsurfaceSplitPath(connection, visibleConnectionIds) ??
       this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
       this.getConnectionPoints(connection);
   }
@@ -188,14 +209,14 @@ export class CorridorLayout {
       return this.getBaseStationPoint(stationId);
     }
 
-    if (MERGED_CORRIDOR_STATIONS.has(stationId)) {
-      return this.getBaseStationPoint(stationId);
-    }
-
     const key = getStationLineKey(stationId, lineId);
     const override = STATION_LINE_POINT_OVERRIDES.get(key);
     if (override) {
       return gridPointToSvgPoint(override);
+    }
+
+    if (MERGED_CORRIDOR_STATIONS.has(stationId)) {
+      return this.getBaseStationPoint(stationId);
     }
     const cached = this.stationLinePoints.get(key);
     if (cached) return cached;
@@ -333,82 +354,35 @@ export class CorridorLayout {
     ];
   }
 
-  private getGreenParkBranchSplitPath(
-    connection: Connection,
-    visibleConnectionIds: ReadonlySet<string>,
-  ): Point[] | null {
-    const split = getGreenParkSplit(connection, visibleConnectionIds);
-    if (!split) return null;
-
-    const greenPark = this.getStationLinePoint("green-park", connection.line);
-    const splitX = greenPark.x + split.horizontalSign * CONDITIONAL_VERTICAL_SPLIT;
-    const splitY = gridPointToSvgPoint({ x: 44, y: split.verticalEndY }).y;
-    const offsetSplitPoint = { x: splitX, y: splitY };
-    const transitionY = gridPointToSvgPoint({ x: 44, y: split.transitionEndY }).y;
-    const centreTransitionPoint = { x: greenPark.x, y: transitionY };
-
-    if (connection.id === "victoria:green-park:victoria") {
-      return [
-        this.getStationLinePoint("victoria", connection.line),
-        centreTransitionPoint,
-        offsetSplitPoint,
-        { x: splitX, y: greenPark.y },
-      ];
-    }
-
-    const [startStationId, endStationId] = this.getPathEndpointStationIds(connection);
-    if (startStationId !== "green-park") return null;
-
-    if (connection.id === "victoria:green-park:oxford-circus") {
-      return [
-        { x: splitX, y: greenPark.y },
-        offsetSplitPoint,
-        this.getStationLinePoint(endStationId, connection.line),
-      ];
-    }
-
-    return [
-      { x: splitX, y: greenPark.y },
-      offsetSplitPoint,
-      ...(connection.id === "jubilee:bond-street:green-park" ? [centreTransitionPoint] : []),
-      this.getStationLinePoint(endStationId, connection.line),
-    ];
-  }
-
-  private getEalingBroadwayBranchSplitPath(
+  private getBakerStreetSubsurfaceSplitPath(
     connection: Connection,
     visibleConnectionIds: ReadonlySet<string>,
   ): Point[] | null {
     if (
-      !visibleConnectionIds.has("central:ealing-broadway:west-acton") ||
-      !visibleConnectionIds.has("elizabeth:acton-main-line:ealing-broadway")
+      connection.from !== "great-portland-street" ||
+      connection.to !== "baker-street" ||
+      !isBakerStreetSubsurfaceLine(connection.line)
     ) {
       return null;
     }
 
-    const ealingBroadway = this.getStationLinePoint("ealing-broadway", connection.line);
-    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
-    const centralReturn = gridPointToSvgPoint({ x: -30, y: 0 });
-    const split = CONDITIONAL_VERTICAL_SPLIT;
-
-    if (connection.id === "central:ealing-broadway:west-acton") {
-      return [
-        this.getStationLinePoint("west-acton", connection.line),
-        centralReturn,
-        { x: sharedBranch.x, y: sharedBranch.y + split },
-        { x: ealingBroadway.x, y: ealingBroadway.y + split },
-      ];
+    const visibleLines = BAKER_STREET_SUBSURFACE_LINES.filter((line) =>
+      visibleConnectionIds.has(`${line}:baker-street:great-portland-street`),
+    );
+    if (visibleLines.length < 2 || !visibleLines.includes(connection.line)) {
+      return null;
     }
 
-    if (connection.id === "elizabeth:acton-main-line:ealing-broadway") {
-      return [
-        this.getStationLinePoint("acton-main-line", connection.line),
-        { x: sharedBranch.x, y: sharedBranch.y - split },
-        { x: ealingBroadway.x, y: ealingBroadway.y - split },
-      ];
-    }
-
-    return null;
+    const lineIndex = visibleLines.indexOf(connection.line);
+    const offset = visibleLines.length === 3
+      ? (lineIndex - 1) * LINE_STROKE_WIDTH
+      : (lineIndex === 0 ? -CONDITIONAL_VERTICAL_SPLIT : CONDITIONAL_VERTICAL_SPLIT);
+    const from = gridPointToSvgPoint({ x: 50, y: -22 });
+    const to = gridPointToSvgPoint({ x: 44, y: -22 });
+    return [
+      { x: from.x, y: from.y + offset },
+      { x: to.x, y: to.y + offset },
+    ];
   }
 
   private getBaseStationPoint(stationId: string): Point {
@@ -457,6 +431,12 @@ function getMarkerAdjustedTwoLegPath(path: GridPoint[], start: Point, end: Point
     return null;
   }
   return [start, corner, end];
+}
+
+function isBakerStreetSubsurfaceLine(
+  line: LineId,
+): line is (typeof BAKER_STREET_SUBSURFACE_LINES)[number] {
+  return BAKER_STREET_SUBSURFACE_LINES.some((candidate) => candidate === line);
 }
 
 function getDirectionRuns(path: GridPoint[]): Point[] {
@@ -561,43 +541,6 @@ type GridEdge = {
   from: GridPoint;
   to: GridPoint;
 };
-
-type GreenParkSplit = {
-  horizontalSign: -1 | 1;
-  verticalEndY: number;
-  transitionEndY: number;
-};
-
-function getGreenParkSplit(
-  connection: Connection,
-  visibleConnectionIds: ReadonlySet<string>,
-): GreenParkSplit | null {
-  const southPairVisible =
-    visibleConnectionIds.has("jubilee:green-park:westminster") &&
-    visibleConnectionIds.has("victoria:green-park:victoria");
-  if (southPairVisible) {
-    if (connection.id === "victoria:green-park:victoria") {
-      return { horizontalSign: -1, verticalEndY: 8, transitionEndY: 9 };
-    }
-    if (connection.id === "jubilee:green-park:westminster") {
-      return { horizontalSign: 1, verticalEndY: 3, transitionEndY: 4 };
-    }
-  }
-
-  const northPairVisible =
-    visibleConnectionIds.has("jubilee:bond-street:green-park") &&
-    visibleConnectionIds.has("victoria:green-park:oxford-circus");
-  if (northPairVisible) {
-    if (connection.id === "jubilee:bond-street:green-park") {
-      return { horizontalSign: -1, verticalEndY: -5, transitionEndY: -6 };
-    }
-    if (connection.id === "victoria:green-park:oxford-circus") {
-      return { horizontalSign: 1, verticalEndY: -2, transitionEndY: -3 };
-    }
-  }
-
-  return null;
-}
 
 function getPathEdges(path: GridPoint[]): GridEdge[] {
   return path.slice(0, -1).map((from, index) => {

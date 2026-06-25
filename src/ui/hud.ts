@@ -156,7 +156,7 @@ export class Hud {
       this.lineIndicator.style.setProperty("--line-color", "#ffffff");
       this.lineIndicator.style.setProperty("--line-text-color", "#111111");
       this.completionOverlay.hidden = false;
-      this.completionTitle.textContent = "Tube Speedrun";
+      this.completionTitle.textContent = "Rush Hour";
       this.completionMeta.textContent = `Seed ${this.seedInput.value}`;
       this.completionStats.hidden = true;
       this.completionCloseButton.hidden = true;

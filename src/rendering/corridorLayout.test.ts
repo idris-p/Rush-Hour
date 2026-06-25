@@ -127,6 +127,20 @@ describe("shared corridor layout", () => {
       jubilee!.point.y - metropolitan!.point.y,
     )).toBeCloseTo(GRID_CELL_SIZE * Math.SQRT2);
     expect(groups.every((group) => isCellCentre(group.point))).toBe(true);
+    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 14, y: -50 });
+    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 15, y: -51 });
+  });
+
+  it("keeps Metropolitan fixed and places Jubilee on the other side at Finchley Road", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("finchley-road");
+    const jubilee = groups.find((group) => group.lines.includes("jubilee"));
+    const metropolitan = groups.find((group) => group.lines.includes("metropolitan"));
+
+    expect(jubilee).toBeDefined();
+    expect(metropolitan).toBeDefined();
+    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 32, y: -32 });
+    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 33, y: -33 });
   });
 
   it("does not add a Piccadilly marker at skipped District stations", () => {
@@ -176,10 +190,17 @@ describe("shared corridor layout", () => {
       .toEqual(["-1,1"]);
   });
 
-  it("keeps ordinary interchanges outside the declared corridors joined", () => {
+  it("puts Jubilee and Bakerloo on the lower Baker Street marker", () => {
     const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("baker-street");
+    const lower = groups.find((group) => group.lines.includes("bakerloo"));
+    const upper = groups.find((group) => group.lines.includes("metropolitan"));
 
-    expect(layout.getStationMarkerGroups("baker-street")).toHaveLength(1);
+    expect(groups).toHaveLength(2);
+    expect(lower?.lines).toEqual(["bakerloo", "jubilee"]);
+    expect(upper?.lines).toEqual(["circle", "hammersmith-city", "metropolitan"]);
+    expect(gridPointFromSvgPoint(lower!.point)).toEqual({ x: 42, y: -20 });
+    expect(gridPointFromSvgPoint(upper!.point)).toEqual({ x: 44, y: -22 });
   });
 
   it("uses the requested line groupings at the additional conjoined stations", () => {
@@ -228,19 +249,24 @@ describe("shared corridor layout", () => {
       .toEqual(["1,-1"]);
   });
 
-  it("makes King's Cross St Pancras a southwest-to-northeast conjoined marker", () => {
+  it("makes King's Cross St Pancras a three-marker southwest-to-northeast interchange", () => {
     const layout = new CorridorLayout(networkData);
     const groups = layout.getStationMarkerGroups("king-s-cross-st-pancras");
     const existing = groups.find((group) => !group.lines.includes("victoria") && !group.lines.includes("northern"));
-    const top = groups.find((group) => group.lines.includes("victoria"));
+    const northern = groups.find((group) => group.lines.includes("northern"));
+    const victoria = groups.find((group) => group.lines.includes("victoria"));
 
-    expect(groups).toHaveLength(2);
+    expect(groups).toHaveLength(3);
     expect(existing?.lines).toEqual(["circle", "hammersmith-city", "metropolitan", "piccadilly"]);
-    expect(top?.lines).toEqual(["northern", "victoria"]);
+    expect(northern?.lines).toEqual(["northern"]);
+    expect(victoria?.lines).toEqual(["victoria"]);
     expect(gridPointFromSvgPoint(existing!.point)).toEqual({ x: 74, y: -22 });
-    expect(gridPointFromSvgPoint(top!.point)).toEqual({ x: 77, y: -25 });
-    expect(top!.point.x - existing!.point.x).toBe(GRID_CELL_SIZE * 3);
-    expect(top!.point.y - existing!.point.y).toBe(-GRID_CELL_SIZE * 3);
+    expect(gridPointFromSvgPoint(northern!.point)).toEqual({ x: 76, y: -24 });
+    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 77, y: -25 });
+    expect(northern!.point.x - existing!.point.x).toBe(GRID_CELL_SIZE * 2);
+    expect(northern!.point.y - existing!.point.y).toBe(-GRID_CELL_SIZE * 2);
+    expect(victoria!.point.x - northern!.point.x).toBe(GRID_CELL_SIZE);
+    expect(victoria!.point.y - northern!.point.y).toBe(-GRID_CELL_SIZE);
   });
 
   it("renders Victoria horizontally from Euston to King's Cross St Pancras", () => {
@@ -252,15 +278,15 @@ describe("shared corridor layout", () => {
       .toEqual(["1,0"]);
   });
 
-  it("renders Northern into the King's Cross top marker and then left to Euston", () => {
+  it("renders Northern from Angel to Euston through the King's Cross middle marker", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedGridPoints(layout, "northern", "angel", "king-s-cross-st-pancras"))
-      .toEqual([{ x: 82, y: -22 }, { x: 80, y: -22 }, { x: 77, y: -25 }]);
+      .toEqual([{ x: 82, y: -22 }, { x: 78, y: -22 }, { x: 76, y: -24 }]);
     expect(renderedDirectionRuns(layout, "northern", "angel", "king-s-cross-st-pancras"))
       .toEqual(["-1,0", "-1,-1"]);
     expect(renderedGridPoints(layout, "northern", "king-s-cross-st-pancras", "euston"))
-      .toEqual([{ x: 77, y: -25 }, { x: 75, y: -27 }, { x: 65, y: -27 }]);
+      .toEqual([{ x: 76, y: -24 }, { x: 73, y: -27 }, { x: 65, y: -27 }]);
     expect(renderedDirectionRuns(layout, "northern", "king-s-cross-st-pancras", "euston"))
       .toEqual(["-1,-1", "-1,0"]);
   });
@@ -332,11 +358,11 @@ describe("shared corridor layout", () => {
       "aldgate-east",
     );
 
-    expect(elizabeth).toEqual([{ x: 92, y: -13 }, { x: 118, y: -13 }]);
+    expect(elizabeth).toEqual([{ x: 92, y: -13 }, { x: 119, y: -13 }]);
     expect(hammersmithCity.every((point) => point.y === -12)).toBe(true);
   });
 
-  it("renders Elizabeth west then diagonally from Canary Wharf to Whitechapel", () => {
+  it("renders Elizabeth diagonally from Canary Wharf to Whitechapel", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedDirectionRuns(
@@ -344,7 +370,7 @@ describe("shared corridor layout", () => {
       "elizabeth",
       "canary-wharf-elizabeth-line",
       "whitechapel",
-    )).toEqual(["-1,0", "-1,-1"]);
+    )).toEqual(["-1,-1"]);
   });
 
   it("makes Mile End a three-cell northwest-to-southeast conjoined marker", () => {
@@ -370,6 +396,12 @@ describe("shared corridor layout", () => {
 
     expect(renderedDirectionRuns(layout, "elizabeth", "whitechapel", "stratford"))
       .toEqual(["1,-1", "1,0", "1,-1"]);
+    expect(points).toEqual([
+      { x: 119, y: -13 },
+      { x: 124, y: -18 },
+      { x: 138, y: -18 },
+      { x: 150, y: -30 },
+    ]);
     expect(points.slice(1).some((point, index) => {
       const previous = points[index];
       return previous.y === -18 && point.y === -18 && previous.x <= 130 && point.x >= 130;
@@ -469,7 +501,7 @@ describe("shared corridor layout", () => {
       "bond-street",
       "tottenham-court-road",
     )).toEqual([
-      { x: 45, y: -9 },
+      { x: 43, y: -9 },
       { x: 63, y: -9 },
     ]);
     expect(renderedDirectionRuns(
@@ -489,9 +521,9 @@ describe("shared corridor layout", () => {
       "bond-street",
       "paddington",
     )).toEqual([
-      { x: 45, y: -9 },
-      { x: 36, y: -9 },
-      { x: 27, y: -18 },
+      { x: 43, y: -9 },
+      { x: 34, y: -9 },
+      { x: 25, y: -18 },
       { x: 18, y: -18 },
     ]);
     expect(renderedDirectionRuns(
@@ -520,6 +552,12 @@ describe("shared corridor layout", () => {
   it("renders Bakerloo into the upper Paddington marker and onward to Warwick Avenue", () => {
     const layout = new CorridorLayout(networkData);
 
+    expect(renderedGridPoints(layout, "bakerloo", "baker-street", "regent-s-park"))
+      .toEqual([{ x: 42, y: -20 }, { x: 46, y: -16 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "baker-street", "marylebone"))
+      .toEqual([{ x: 42, y: -20 }, { x: 38, y: -24 }, { x: 32, y: -24 }]);
+    expect(renderedGridPoints(layout, "bakerloo", "regent-s-park", "oxford-circus"))
+      .toEqual([{ x: 46, y: -16 }, { x: 50, y: -12 }, { x: 50, y: -8 }]);
     expect(renderedGridPoints(layout, "bakerloo", "marylebone", "edgware-road-bakerloo"))
       .toEqual([{ x: 32, y: -24 }, { x: 24, y: -24 }]);
     expect(renderedGridPoints(layout, "bakerloo", "edgware-road-bakerloo", "paddington"))
@@ -538,6 +576,60 @@ describe("shared corridor layout", () => {
       .toEqual([{ x: 0, y: -26 }, { x: -2, y: -28 }, { x: -2, y: -30 }]);
     expect(renderedGridPoints(layout, "bakerloo", "queen-s-park", "kensal-green"))
       .toEqual([{ x: -2, y: -30 }, { x: -2, y: -34 }]);
+  });
+
+  it("renders Metropolitan through the upper Baker Street marker", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(renderedGridPoints(layout, "metropolitan", "great-portland-street", "baker-street"))
+      .toEqual([{ x: 50, y: -22 }, { x: 44, y: -22 }]);
+    expect(renderedGridPoints(layout, "metropolitan", "baker-street", "finchley-road"))
+      .toEqual([{ x: 44, y: -22 }, { x: 42, y: -24 }, { x: 40, y: -24 }, { x: 32, y: -32 }]);
+    expect(renderedDirectionRuns(layout, "metropolitan", "baker-street", "finchley-road"))
+      .toEqual(["-1,-1", "-1,0", "-1,-1"]);
+  });
+
+  it("renders Baker Street to Great Portland Street with ordered subsurface offsets", () => {
+    const layout = new CorridorLayout(networkData);
+    const circle = findConnection("circle", "great-portland-street", "baker-street");
+    const hammersmithCity = findConnection("hammersmith-city", "great-portland-street", "baker-street");
+    const metropolitan = findConnection("metropolitan", "great-portland-street", "baker-street");
+    const visibleConnectionIds = new Set([circle.id, hammersmithCity.id, metropolitan.id]);
+    const centreY = gridPointToSvgPoint({ x: 50, y: -22 }).y;
+
+    const circlePoints = layout.getConnectionRenderPoints(circle, visibleConnectionIds);
+    const hammersmithCityPoints = layout.getConnectionRenderPoints(hammersmithCity, visibleConnectionIds);
+    const metropolitanPoints = layout.getConnectionRenderPoints(metropolitan, visibleConnectionIds);
+
+    expect(circlePoints.every((point) => point.y === centreY - LINE_STROKE_WIDTH)).toBe(true);
+    expect(hammersmithCityPoints.every((point) => point.y === centreY)).toBe(true);
+    expect(metropolitanPoints.every((point) => point.y === centreY + LINE_STROKE_WIDTH)).toBe(true);
+    for (const points of [circlePoints, hammersmithCityPoints, metropolitanPoints]) {
+      expect(points).toHaveLength(2);
+      expect(points[0].x).toBe(gridPointToSvgPoint({ x: 50, y: -22 }).x);
+      expect(points[1].x).toBe(gridPointToSvgPoint({ x: 44, y: -22 }).x);
+    }
+  });
+
+  it("uses Circle H&C Metropolitan order when two Baker Street subsurface lines are explored", () => {
+    const layout = new CorridorLayout(networkData);
+    const orderedPairs = [
+      ["circle", "hammersmith-city"],
+      ["circle", "metropolitan"],
+      ["hammersmith-city", "metropolitan"],
+    ] as const;
+    const centreY = gridPointToSvgPoint({ x: 50, y: -22 }).y;
+
+    for (const [upperLine, lowerLine] of orderedPairs) {
+      const upper = findConnection(upperLine, "great-portland-street", "baker-street");
+      const lower = findConnection(lowerLine, "great-portland-street", "baker-street");
+      const visibleConnectionIds = new Set([upper.id, lower.id]);
+
+      expect(layout.getConnectionRenderPoints(upper, visibleConnectionIds)
+        .every((point) => point.y === centreY - LINE_STROKE_WIDTH / 2)).toBe(true);
+      expect(layout.getConnectionRenderPoints(lower, visibleConnectionIds)
+        .every((point) => point.y === centreY + LINE_STROKE_WIDTH / 2)).toBe(true);
+    }
   });
 
   it("keeps every Tottenham Court Road exit visually clean after moving it east", () => {
@@ -656,79 +748,63 @@ describe("shared corridor layout", () => {
     }
   });
 
-  it("separates Victoria left and Jubilee right below Green Park once both are explored", () => {
+  it("keeps Victoria and Jubilee on their fixed paths below Green Park once both are explored", () => {
     const layout = new CorridorLayout(networkData);
     const jubilee = findConnection("jubilee", "green-park", "westminster");
     const victoria = findConnection("victoria", "green-park", "victoria");
     const visibleConnectionIds = new Set([jubilee.id, victoria.id]);
     const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
     const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
-    const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
-    const jubileeVerticalEndY = gridPointToSvgPoint({ x: 44, y: 3 }).y;
-    const victoriaVerticalEndY = gridPointToSvgPoint({ x: 44, y: 8 }).y;
-    const victoriaTransitionStartY = gridPointToSvgPoint({ x: 44, y: 9 }).y;
 
-    expect(jubileePoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(jubileePoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: jubileeVerticalEndY });
-    expect(jubileePoints).not.toContainEqual({ x: greenPark.x, y: gridPointToSvgPoint({ x: 44, y: 4 }).y });
-    expect(victoriaPoints.at(-1)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(victoriaPoints.at(-2)).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: victoriaVerticalEndY });
-    expect(victoriaPoints.at(-3)).toEqual({ x: greenPark.x, y: victoriaTransitionStartY });
+    expect(jubileePoints).toEqual(layout.getConnectionCameraPoints(jubilee));
+    expect(victoriaPoints).toEqual(layout.getConnectionCameraPoints(victoria));
+    expect(renderedGridPoints(layout, "jubilee", "westminster", "green-park"))
+      .toEqual([{ x: 56, y: 15 }, { x: 50, y: 9 }, { x: 50, y: 6 }, { x: 44, y: 0 }]);
   });
 
-  it("separates Jubilee left and Victoria right above Green Park once both are explored", () => {
+  it("keeps Jubilee and Victoria on their fixed paths above Green Park once both are explored", () => {
     const layout = new CorridorLayout(networkData);
     const jubilee = findConnection("jubilee", "green-park", "bond-street");
     const victoria = findConnection("victoria", "green-park", "oxford-circus");
     const visibleConnectionIds = new Set([jubilee.id, victoria.id]);
     const jubileePoints = layout.getConnectionRenderPoints(jubilee, visibleConnectionIds);
     const victoriaPoints = layout.getConnectionRenderPoints(victoria, visibleConnectionIds);
-    const greenPark = gridPointToSvgPoint({ x: 44, y: 0 });
-    const jubileeVerticalEndY = gridPointToSvgPoint({ x: 44, y: -5 }).y;
-    const jubileeTransitionEndY = gridPointToSvgPoint({ x: 44, y: -6 }).y;
-    const victoriaVerticalEndY = gridPointToSvgPoint({ x: 44, y: -2 }).y;
 
-    expect(jubileePoints[0]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(jubileePoints[1]).toEqual({ x: greenPark.x - LINE_STROKE_WIDTH / 2, y: jubileeVerticalEndY });
-    expect(jubileePoints[2]).toEqual({ x: greenPark.x, y: jubileeTransitionEndY });
-    expect(victoriaPoints[0]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: greenPark.y });
-    expect(victoriaPoints[1]).toEqual({ x: greenPark.x + LINE_STROKE_WIDTH / 2, y: victoriaVerticalEndY });
-    expect(victoriaPoints).not.toContainEqual({ x: greenPark.x, y: gridPointToSvgPoint({ x: 44, y: -3 }).y });
+    expect(jubileePoints).toEqual(layout.getConnectionCameraPoints(jubilee));
+    expect(victoriaPoints).toEqual(layout.getConnectionCameraPoints(victoria));
+    expect(renderedGridPoints(layout, "jubilee", "green-park", "bond-street"))
+      .toEqual([{ x: 44, y: 0 }, { x: 42, y: -2 }, { x: 42, y: -8 }]);
   });
 
-  it("keeps a single explored Ealing Broadway east branch centred", () => {
+  it("makes Ealing Broadway a vertical Central/District and Elizabeth marker", () => {
     const layout = new CorridorLayout(networkData);
-    const ealingBroadway = gridPointToSvgPoint({ x: -42, y: 0 });
-    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
-    const central = findConnection("central", "ealing-broadway", "west-acton");
-    const elizabeth = findConnection("elizabeth", "ealing-broadway", "acton-main-line");
+    const groups = layout.getStationMarkerGroups("ealing-broadway");
+    const elizabeth = groups.find((group) => group.lines.includes("elizabeth"));
+    const other = groups.find((group) => group.lines.includes("central"));
 
-    const centralPoints = layout.getConnectionRenderPoints(central, new Set([central.id]));
-    expect(centralPoints).toContainEqual(ealingBroadway);
-    expect(centralPoints.every((point) => point.y === ealingBroadway.y)).toBe(true);
-
-    const elizabethPoints = layout.getConnectionRenderPoints(elizabeth, new Set([elizabeth.id]));
-    expect(elizabethPoints).toContainEqual(ealingBroadway);
-    expect(elizabethPoints).toContainEqual(sharedBranch);
+    expect(groups).toHaveLength(2);
+    expect(elizabeth?.lines).toEqual(["elizabeth"]);
+    expect(other?.lines).toEqual(["central", "district"]);
+    expect(gridPointFromSvgPoint(elizabeth!.point)).toEqual({ x: -42, y: -1 });
+    expect(gridPointFromSvgPoint(other!.point)).toEqual({ x: -42, y: 0 });
   });
 
-  it("separates Elizabeth above and Central below east of Ealing Broadway once both are explored", () => {
+  it("keeps Elizabeth and Central on their fixed paths east of Ealing Broadway once both are explored", () => {
     const layout = new CorridorLayout(networkData);
     const central = findConnection("central", "ealing-broadway", "west-acton");
     const elizabeth = findConnection("elizabeth", "ealing-broadway", "acton-main-line");
     const visibleConnectionIds = new Set([central.id, elizabeth.id]);
     const centralPoints = layout.getConnectionRenderPoints(central, visibleConnectionIds);
     const elizabethPoints = layout.getConnectionRenderPoints(elizabeth, visibleConnectionIds);
-    const ealingBroadway = gridPointToSvgPoint({ x: -42, y: 0 });
-    const sharedBranch = gridPointToSvgPoint({ x: -34, y: 0 });
-    const centralReturn = gridPointToSvgPoint({ x: -30, y: 0 });
 
-    expect(elizabethPoints.at(-1)).toEqual({ x: ealingBroadway.x, y: ealingBroadway.y - LINE_STROKE_WIDTH / 2 });
-    expect(elizabethPoints.at(-2)).toEqual({ x: sharedBranch.x, y: sharedBranch.y - LINE_STROKE_WIDTH / 2 });
-
-    expect(centralPoints.at(-1)).toEqual({ x: ealingBroadway.x, y: ealingBroadway.y + LINE_STROKE_WIDTH / 2 });
-    expect(centralPoints.at(-2)).toEqual({ x: sharedBranch.x, y: sharedBranch.y + LINE_STROKE_WIDTH / 2 });
-    expect(centralPoints.at(-3)).toEqual(centralReturn);
+    expect(elizabethPoints).toEqual(layout.getConnectionCameraPoints(elizabeth));
+    expect(centralPoints).toEqual(layout.getConnectionCameraPoints(central));
+    expect(renderedGridPoints(layout, "elizabeth", "ealing-broadway", "acton-main-line"))
+      .toEqual([{ x: -42, y: -1 }, { x: -33, y: -1 }, { x: -20, y: -14 }]);
+    expect(renderedDirectionRuns(layout, "elizabeth", "ealing-broadway", "acton-main-line"))
+      .toEqual(["1,0", "1,-1"]);
+    expect(renderedGridPoints(layout, "elizabeth", "ealing-broadway", "west-ealing"))
+      .toEqual([{ x: -42, y: -1 }, { x: -46, y: -1 }]);
   });
 
   it("keeps the Acton branches on the requested geometry", () => {
