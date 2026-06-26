@@ -284,6 +284,65 @@ describe("network data validation", () => {
       .toEqual(["1,-1", "-1,-1", "0,-1"]);
   });
 
+  it("moves the Earl's Court Olympia and Wimbledon branches onto the requested geometry", () => {
+    expect(stationByName("Kensington (Olympia)")).toMatchObject({ x: 10, y: 5 });
+    expect(stationByName("West Brompton")).toMatchObject({ x: 10, y: 21 });
+
+    expect(findConnectionPath("district", "earl-s-court", "kensington-olympia")).toEqual([
+      { x: 14, y: 14 },
+      { x: 13, y: 13 },
+      { x: 12, y: 12 },
+      { x: 11, y: 11 },
+      { x: 10, y: 10 },
+      { x: 10, y: 9 },
+      { x: 10, y: 8 },
+      { x: 10, y: 7 },
+      { x: 10, y: 6 },
+      { x: 10, y: 5 },
+    ]);
+    expect(findConnectionPath("district", "earl-s-court", "west-brompton")).toEqual([
+      { x: 14, y: 14 },
+      { x: 13, y: 15 },
+      { x: 12, y: 16 },
+      { x: 11, y: 17 },
+      { x: 10, y: 18 },
+      { x: 10, y: 19 },
+      { x: 10, y: 20 },
+      { x: 10, y: 21 },
+    ]);
+
+    const wimbledonBranch = [
+      ["Fulham Broadway", 10, 26],
+      ["Parsons Green", 10, 30],
+      ["Putney Bridge", 10, 32],
+      ["East Putney", 10, 36],
+      ["Southfields", 10, 40],
+      ["Wimbledon Park", 10, 44],
+      ["Wimbledon", 10, 48],
+    ] as const;
+    for (const [name, x, y] of wimbledonBranch) {
+      expect(stationByName(name)).toMatchObject({ x, y });
+    }
+    expect(stationByName("Putney Bridge")!.y).toBeLessThan(34);
+    for (const name of ["East Putney", "Southfields", "Wimbledon Park", "Wimbledon"]) {
+      expect(stationByName(name)!.y).toBeGreaterThan(34);
+    }
+
+    for (const pair of [
+      ["west-brompton", "fulham-broadway"],
+      ["fulham-broadway", "parsons-green"],
+      ["parsons-green", "putney-bridge"],
+      ["putney-bridge", "east-putney"],
+      ["east-putney", "southfields"],
+      ["southfields", "wimbledon-park"],
+      ["wimbledon-park", "wimbledon"],
+    ] as const) {
+      const path = findConnectionPath("district", pair[0], pair[1]);
+      expect(path.every((point) => point.x === 10)).toBe(true);
+      expect(directionRuns(path).every((run) => run === "0,1" || run === "0,-1")).toBe(true);
+    }
+  });
+
   it("moves Piccadilly stations from South Ealing to Hounslow West southwest two cells", () => {
     for (const [name, x, y] of [
       ["South Ealing", -48, 16],
@@ -1296,7 +1355,7 @@ describe("network data validation", () => {
       ["st-james-s-park", 50],
       ["westminster", 56],
       ["embankment", 62],
-      ["temple", 72],
+      ["temple", 71],
     ] as const;
 
     for (const [stationId, x] of corridorStations) {

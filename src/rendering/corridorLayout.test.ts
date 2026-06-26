@@ -4,6 +4,7 @@ import { networkData } from "../data/network";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { CorridorLayout, type SharedCorridor } from "./corridorLayout";
 import { LINE_STROKE_WIDTH } from "./lineStyles";
+import { offsetPolylinePoints } from "./pathOffset";
 
 const corridorNetwork: NetworkData = {
   temporary: true,
@@ -129,6 +130,51 @@ describe("shared corridor layout", () => {
     expect(groups.every((group) => isCellCentre(group.point))).toBe(true);
     expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 14, y: -52 });
     expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 15, y: -53 });
+  });
+
+  it("renders Metropolitan above Piccadilly from Rayners Lane to Uxbridge without moving paths or markers", () => {
+    const layout = new CorridorLayout(networkData);
+    const stationPairs = [
+      ["rayners-lane", "eastcote"],
+      ["eastcote", "ruislip-manor"],
+      ["ruislip-manor", "ruislip"],
+      ["ruislip", "ickenham"],
+      ["ickenham", "hillingdon"],
+      ["hillingdon", "uxbridge"],
+    ] as const;
+
+    for (const [from, to] of stationPairs) {
+      const metropolitan = findConnection("metropolitan", from, to);
+      const piccadilly = findConnection("piccadilly", from, to);
+      const visibleConnectionIds = new Set([metropolitan.id, piccadilly.id]);
+
+      expect(layout.getConnectionRenderPoints(metropolitan, new Set([metropolitan.id])))
+        .toEqual(layout.getConnectionCameraPoints(metropolitan));
+      expect(layout.getConnectionRenderPoints(piccadilly, new Set([piccadilly.id])))
+        .toEqual(layout.getConnectionCameraPoints(piccadilly));
+      expect(layout.getConnectionPoints(metropolitan)).toEqual(layout.getConnectionCameraPoints(metropolitan));
+      expect(layout.getConnectionPoints(piccadilly)).toEqual(layout.getConnectionCameraPoints(piccadilly));
+
+      const metropolitanPoints = layout.getConnectionRenderPoints(metropolitan, visibleConnectionIds);
+      const piccadillyPoints = layout.getConnectionRenderPoints(piccadilly, visibleConnectionIds);
+      const metropolitanCameraPoints = layout.getConnectionCameraPoints(metropolitan);
+      const piccadillyCameraPoints = layout.getConnectionCameraPoints(piccadilly);
+      const expectedMetropolitanPoints = offsetPolylinePoints(metropolitanCameraPoints, LINE_STROKE_WIDTH / 2);
+      const expectedPiccadillyPoints = offsetPolylinePoints(piccadillyCameraPoints, -LINE_STROKE_WIDTH / 2);
+
+      expect(metropolitanPoints, `${from} -> ${to}`).toEqual(expectedMetropolitanPoints);
+      expect(piccadillyPoints, `${from} -> ${to}`).toEqual(expectedPiccadillyPoints);
+      expect(midpoint(metropolitanPoints[0], metropolitanPoints.at(-1)!).y, `${from} -> ${to}`)
+        .toBeLessThan(midpoint(piccadillyPoints[0], piccadillyPoints.at(-1)!).y);
+    }
+
+    for (const stationId of ["rayners-lane", "eastcote", "ruislip-manor", "ruislip", "ickenham", "hillingdon", "uxbridge"]) {
+      const station = networkData.stations.find((candidate) => candidate.id === stationId);
+      if (!station) throw new Error(`Missing station ${stationId}`);
+      const basePoint = gridPointToSvgPoint(station);
+      expect(layout.getStationLinePoint(stationId, "metropolitan")).toEqual(basePoint);
+      expect(layout.getStationLinePoint(stationId, "piccadilly")).toEqual(basePoint);
+    }
   });
 
   it("keeps Jubilee mirrored from Metropolitan at Finchley Road", () => {
@@ -977,6 +1023,24 @@ describe("shared corridor layout", () => {
         layout.getStationMarkerGroups(station.id).every((group) => isCellCentre(group.point)),
         station.name,
       ).toBe(true);
+    }
+  });
+
+  it("moves Temple one cell left while keeping the Circle and District route shape aligned", () => {
+    const layout = new CorridorLayout(networkData);
+
+    expect(layout.getStationMarkerGroups("temple").map((group) => gridPointFromSvgPoint(group.point)))
+      .toEqual([{ x: 71, y: 15 }]);
+    expect(gridPointFromSvgPoint(layout.getStationLinePoint("temple", "circle")))
+      .toEqual({ x: 71, y: 15 });
+    expect(gridPointFromSvgPoint(layout.getStationLinePoint("temple", "district")))
+      .toEqual({ x: 71, y: 15 });
+
+    for (const line of ["circle", "district"] as const) {
+      expect(renderedGridPoints(layout, line, "embankment", "temple"))
+        .toEqual([{ x: 62, y: 15 }, { x: 71, y: 15 }]);
+      expect(renderedGridPoints(layout, line, "temple", "blackfriars"))
+        .toEqual([{ x: 71, y: 15 }, { x: 73, y: 15 }, { x: 78, y: 10 }]);
     }
   });
 

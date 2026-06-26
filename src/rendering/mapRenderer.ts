@@ -51,11 +51,6 @@ const LABEL_OBSTACLE_SELECTOR = [
   ".current-station-highlight",
   ".river-thames-outline",
   ".river-thames-fill",
-  ".hud-panel",
-  ".line-indicator",
-  ".seed-controls",
-  ".zoom-controls",
-  ".completion-overlay:not([hidden])",
 ].join(",");
 const CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH = [
   "hammersmith-circle-and-hammersmith-and-city",
@@ -231,6 +226,7 @@ export class MapRenderer {
         stubLayer,
         directionStubs,
         !isInterchangeStation(currentStation),
+        state.selectedLineId,
       );
     }
 
@@ -472,17 +468,19 @@ export class MapRenderer {
       }
 
       const linePoint = this.corridorLayout.getStationLinePoint(stationId, connection.line);
-      const start = getDirectionStubStart(
-        this.corridorLayout.getStationMarkerGroups(stationId).map((group) => group.point),
-        linePoint,
-        unit,
-      );
+      const start = getStationSpecificDirectionStubStart(stationId, connection.line, linePoint) ??
+        getDirectionStubStart(
+          this.corridorLayout.getStationMarkerGroups(stationId).map((group) => group.point),
+          linePoint,
+          unit,
+        );
 
       return [
         {
           connection,
           key: `${unit.x},${unit.y}|${start.x},${start.y}`,
           start,
+          linePoint,
           unit,
           normal: { x: -unit.y, y: unit.x },
         },
@@ -494,6 +492,7 @@ export class MapRenderer {
     layer: SVGGElement,
     stubs: ReturnType<MapRenderer["getDirectionStubs"]>,
     showArrowHeads: boolean,
+    selectedLineId: LineId,
   ): void {
 
     const groups = new Map<string, typeof stubs>();
@@ -504,49 +503,63 @@ export class MapRenderer {
     }
 
     for (const group of groups.values()) {
-      group.sort((a, b) => compareLineIds(a.connection.line, b.connection.line) || a.connection.id.localeCompare(b.connection.id));
-      group.forEach((stub, index) => {
-        const offset = getCenteredOffset(index, group.length, PARALLEL_STUB_SPACING);
-        const start = {
-          x: stub.start.x + stub.normal.x * offset,
-          y: stub.start.y + stub.normal.y * offset,
-        };
-        const arrowTip = {
-          x: stub.start.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
-          y: stub.start.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
-        };
-        const lineEnd = showArrowHeads
-          ? {
-              x: arrowTip.x - stub.unit.x * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
-              y: arrowTip.y - stub.unit.y * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
-            }
-          : arrowTip;
-        const line = document.createElementNS(SVG_NS, "line");
-        line.setAttribute("x1", String(start.x));
-        line.setAttribute("y1", String(start.y));
-        line.setAttribute("x2", String(lineEnd.x));
-        line.setAttribute("y2", String(lineEnd.y));
-        line.setAttribute("stroke", LINE_BY_ID[stub.connection.line].color);
-        line.setAttribute("stroke-width", String(STUB_STROKE_WIDTH));
-        line.setAttribute("class", "direction-stub");
-        if (stub.connection.line === "walk") {
-          line.setAttribute("stroke-dasharray", "8 6");
-        }
-        layer.append(line);
+      group.sort((a, b) =>
+        compareDirectionStubsByRenderedOffset(a, b, group, this.corridorLayout) ||
+        compareLineIds(a.connection.line, b.connection.line) ||
+        a.connection.id.localeCompare(b.connection.id)
+      );
+    }
 
-        if (showArrowHeads) {
-          const arrow = document.createElementNS(SVG_NS, "polygon");
-          arrow.setAttribute(
-            "points",
-            getStubArrowHeadPoints(arrowTip, stub.unit, stub.normal)
-              .map((point) => `${point.x},${point.y}`)
-              .join(" "),
-          );
-          arrow.setAttribute("fill", LINE_BY_ID[stub.connection.line].color);
-          arrow.setAttribute("class", "direction-stub-arrow");
-          layer.append(arrow);
-        }
-      });
+    const renderItems = [...groups.values()].flatMap((group) =>
+      group.map((stub, index) => ({
+        stub,
+        offset: getCenteredOffset(index, group.length, PARALLEL_STUB_SPACING),
+      }))
+    );
+    renderItems.sort((a, b) =>
+      compareDirectionStubsBySelectedLine(a.stub, b.stub, selectedLineId)
+    );
+
+    for (const { stub, offset } of renderItems) {
+      const start = {
+        x: stub.start.x + stub.normal.x * offset,
+        y: stub.start.y + stub.normal.y * offset,
+      };
+      const arrowTip = {
+        x: stub.start.x + stub.unit.x * STUB_LENGTH + stub.normal.x * offset,
+        y: stub.start.y + stub.unit.y * STUB_LENGTH + stub.normal.y * offset,
+      };
+      const lineEnd = showArrowHeads
+        ? {
+            x: arrowTip.x - stub.unit.x * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
+            y: arrowTip.y - stub.unit.y * (STUB_ARROW_LENGTH - STUB_ARROW_OVERLAP),
+          }
+        : arrowTip;
+      const line = document.createElementNS(SVG_NS, "line");
+      line.setAttribute("x1", String(start.x));
+      line.setAttribute("y1", String(start.y));
+      line.setAttribute("x2", String(lineEnd.x));
+      line.setAttribute("y2", String(lineEnd.y));
+      line.setAttribute("stroke", LINE_BY_ID[stub.connection.line].color);
+      line.setAttribute("stroke-width", String(STUB_STROKE_WIDTH));
+      line.setAttribute("class", "direction-stub");
+      if (stub.connection.line === "walk") {
+        line.setAttribute("stroke-dasharray", "8 6");
+      }
+      layer.append(line);
+
+      if (showArrowHeads) {
+        const arrow = document.createElementNS(SVG_NS, "polygon");
+        arrow.setAttribute(
+          "points",
+          getStubArrowHeadPoints(arrowTip, stub.unit, stub.normal)
+            .map((point) => `${point.x},${point.y}`)
+            .join(" "),
+        );
+        arrow.setAttribute("fill", LINE_BY_ID[stub.connection.line].color);
+        arrow.setAttribute("class", "direction-stub-arrow");
+        layer.append(arrow);
+      }
     }
   }
 
@@ -782,11 +795,15 @@ function countLabelCollisions(label: SVGTextElement): number | null {
     for (let column = 0; column < LABEL_SAMPLE_COLUMNS; column += 1) {
       const x = left + ((right - left) * column) / (LABEL_SAMPLE_COLUMNS - 1);
       for (const element of document.elementsFromPoint(x, y)) {
-        if (element !== label && element.matches(LABEL_OBSTACLE_SELECTOR)) collisions.add(element);
+        if (element !== label && isCurrentStationLabelObstacle(element)) collisions.add(element);
       }
     }
   }
   return collisions.size;
+}
+
+export function isCurrentStationLabelObstacle(element: Element): boolean {
+  return element.matches(LABEL_OBSTACLE_SELECTOR);
 }
 
 function areDocumentFontsLoading(): boolean {
@@ -822,6 +839,98 @@ type RenderedConnectionPath = {
   points: Point[];
   cameraPoints?: Point[];
 };
+
+export type DirectionStubLike = {
+  connection: Connection;
+  linePoint: Point;
+  normal: Point;
+};
+
+export function compareDirectionStubsByRenderedOffset(
+  first: DirectionStubLike,
+  second: DirectionStubLike,
+  group: readonly DirectionStubLike[],
+  corridorLayout: CorridorLayout,
+): number {
+  return getDirectionStubRenderedOffsetProjection(first, group, corridorLayout) -
+    getDirectionStubRenderedOffsetProjection(second, group, corridorLayout);
+}
+
+export function compareDirectionStubsBySelectedLine(
+  first: DirectionStubLike,
+  second: DirectionStubLike,
+  selectedLineId: LineId,
+): number {
+  return Number(first.connection.line === selectedLineId) - Number(second.connection.line === selectedLineId);
+}
+
+function getDirectionStubRenderedOffsetProjection(
+  stub: DirectionStubLike,
+  group: readonly DirectionStubLike[],
+  corridorLayout: CorridorLayout,
+): number {
+  const visibleConnectionIds = new Set(group.map((candidate) => candidate.connection.id));
+  const cameraPoints = corridorLayout.getConnectionCameraPoints(stub.connection);
+  const renderedPoints = corridorLayout.getConnectionRenderPoints(stub.connection, visibleConnectionIds);
+  const directRenderDelta = getEndpointDelta(cameraPoints, renderedPoints, stub.linePoint);
+  const directProjection = dotPoints(directRenderDelta, stub.normal);
+  if (Math.abs(directProjection) > 0.01) {
+    return directProjection;
+  }
+
+  const renderedPathGroups = groupConnectionsByRenderedPath(
+    group.map((candidate) => ({
+      connection: candidate.connection,
+      points: corridorLayout.getConnectionCameraPoints(candidate.connection),
+    })),
+  );
+  const sharedPathGroup = renderedPathGroups.find((candidate) =>
+    candidate.some((item) => item.connection.id === stub.connection.id)
+  );
+  if (!sharedPathGroup || sharedPathGroup.length < 2) {
+    return 0;
+  }
+
+  const itemIndex = sharedPathGroup.findIndex((item) => item.connection.id === stub.connection.id);
+  const item = sharedPathGroup[itemIndex];
+  if (!item) return 0;
+
+  const endpointNormal = getCanonicalEndpointNormal(item.points, stub.linePoint);
+  if (!endpointNormal) return 0;
+
+  return getCenteredOffset(itemIndex, sharedPathGroup.length, PARALLEL_LINE_SPACING) *
+    dotPoints(endpointNormal, stub.normal);
+}
+
+function getEndpointDelta(cameraPoints: Point[], renderedPoints: Point[], linePoint: Point): Point {
+  const cameraEndpointIndex = isCloserToPoint(cameraPoints[0], linePoint, cameraPoints.at(-1)!)
+    ? 0
+    : cameraPoints.length - 1;
+  const renderedPoint = cameraEndpointIndex === 0 ? renderedPoints[0] : renderedPoints.at(-1)!;
+  const cameraPoint = cameraPoints[cameraEndpointIndex];
+  return subtractPoints(renderedPoint, cameraPoint);
+}
+
+function getCanonicalEndpointNormal(points: Point[], linePoint: Point): Point | null {
+  const canonicalPoints = getCanonicalPath(points);
+  if (canonicalPoints.length < 2) return null;
+
+  const start = canonicalPoints[0];
+  const end = canonicalPoints.at(-1)!;
+  const direction = isCloserToPoint(start, linePoint, end)
+    ? {
+        x: canonicalPoints[1].x - start.x,
+        y: canonicalPoints[1].y - start.y,
+      }
+    : {
+        x: end.x - canonicalPoints.at(-2)!.x,
+        y: end.y - canonicalPoints.at(-2)!.y,
+      };
+  const length = Math.hypot(direction.x, direction.y);
+  return length > 0
+    ? getSegmentNormal({ x: direction.x / length, y: direction.y / length })
+    : null;
+}
 
 export function groupConnectionsByRenderedPath(items: RenderedConnectionPath[]): RenderedConnectionPath[][] {
   const groups = new Map<string, RenderedConnectionPath[]>();
@@ -1144,7 +1253,8 @@ export function getDirectionStubStart(
   linePoint: Point,
   unit: Point,
 ): Point {
-  if (markerPoints.length < 2) return linePoint;
+  if (markerPoints.length === 0) return linePoint;
+  if (markerPoints.length === 1) return markerPoints[0];
 
   const minX = Math.min(...markerPoints.map((point) => point.x));
   const maxX = Math.max(...markerPoints.map((point) => point.x));
@@ -1162,6 +1272,17 @@ export function getDirectionStubStart(
     return markerPoints.find((point) => Math.abs(point.x - targetX) < 0.01) ?? linePoint;
   }
   return linePoint;
+}
+
+export function getStationSpecificDirectionStubStart(
+  stationId: string,
+  lineId: LineId,
+  linePoint: Point,
+): Point | null {
+  if (stationId === "stratford" && (lineId === "central" || lineId === "elizabeth")) {
+    return linePoint;
+  }
+  return null;
 }
 
 function snapUnitComponent(value: number): number {

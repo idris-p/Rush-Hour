@@ -23,6 +23,15 @@ const LIVERPOOL_STREET_ALDGATE_LINE_ORDER = [
   { connectionId: METROPOLITAN_LIVERPOOL_STREET_ALDGATE, pathSign: -1 },
 ] as const;
 
+const RAYNERS_LANE_UXBRIDGE_EDGES = new Set([
+  getStationEdgeKey("rayners-lane", "eastcote"),
+  getStationEdgeKey("eastcote", "ruislip-manor"),
+  getStationEdgeKey("ruislip-manor", "ruislip"),
+  getStationEdgeKey("ruislip", "ickenham"),
+  getStationEdgeKey("ickenham", "hillingdon"),
+  getStationEdgeKey("hillingdon", "uxbridge"),
+]);
+
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
   from: string;
@@ -204,7 +213,8 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getLiverpoolStreetAldgateSplitPath(connection, visibleConnectionIds) ??
+    return this.getRaynersLaneUxbridgeSplitPath(connection, visibleConnectionIds) ??
+      this.getLiverpoolStreetAldgateSplitPath(connection, visibleConnectionIds) ??
       this.getTowerHillAldgateSplitPath(connection, visibleConnectionIds) ??
       this.getHeathrowLoopSplitPath(connection, visibleConnectionIds) ??
       this.getBakerStreetSubsurfaceSplitPath(connection, visibleConnectionIds) ??
@@ -356,6 +366,32 @@ export class CorridorLayout {
     return pointsMatch(gridPointToSvgPoint(connection.path[0]), fromPoint)
       ? [connection.from, connection.to]
       : [connection.to, connection.from];
+  }
+
+  private getRaynersLaneUxbridgeSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    if (
+      connection.line !== "metropolitan" &&
+      connection.line !== "piccadilly"
+    ) {
+      return null;
+    }
+    if (!RAYNERS_LANE_UXBRIDGE_EDGES.has(getStationEdgeKey(connection.from, connection.to))) {
+      return null;
+    }
+
+    const otherLine = connection.line === "metropolitan" ? "piccadilly" : "metropolitan";
+    const otherConnectionId = `${otherLine}:${[connection.from, connection.to].sort().join(":")}`;
+    if (!visibleConnectionIds.has(connection.id) || !visibleConnectionIds.has(otherConnectionId)) {
+      return null;
+    }
+
+    const offset = connection.line === "metropolitan"
+      ? CONDITIONAL_VERTICAL_SPLIT
+      : -CONDITIONAL_VERTICAL_SPLIT;
+    return simplifyPolylinePoints(offsetPolylinePoints(this.getConnectionPoints(connection), offset));
   }
 
   private getLiverpoolStreetAldgateSplitPath(
@@ -736,6 +772,10 @@ function getEdgeKey(first: GridPoint, second: GridPoint): string {
 
 function getStationLineKey(stationId: string, lineId: LineId): string {
   return `${stationId}|${lineId}`;
+}
+
+function getStationEdgeKey(first: string, second: string): string {
+  return [first, second].sort().join("|");
 }
 
 function getPointKey(point: GridPoint): string {

@@ -91,8 +91,12 @@ export function renderStationMarker(
       contentGroup.append(createTranslatedMarker(createFilledCircle(INTERCHANGE_RADIUS, "#ffffff"), offset));
     }
   } else if (isInterchange) {
-    if (isCurrent) contentGroup.append(createCurrentHighlight(selectedLineId));
-    contentGroup.append(createInterchangeMarker());
+    const markerPoint = markerGroups[0]?.point ?? point;
+    const markerOffset = subtract(markerPoint, point);
+    if (isCurrent) {
+      contentGroup.append(createTranslatedMarker(createCurrentHighlight(selectedLineId), markerOffset));
+    }
+    contentGroup.append(createTranslatedMarker(createInterchangeMarker(), markerOffset));
   } else {
     const markerLineId = station.lines.find((line) => line !== "walk") ?? selectedLineId;
     const markerPoint = markerGroups[0]?.point ?? point;

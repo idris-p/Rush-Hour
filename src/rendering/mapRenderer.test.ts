@@ -3,18 +3,29 @@ import { networkData } from "../data/network";
 import type { Connection, LineId, Point } from "../data/types";
 import {
   clampViewCenter,
+  compareDirectionStubsBySelectedLine,
+  compareDirectionStubsByRenderedOffset,
+  type DirectionStubLike,
   getCurrentStationLabelPlacements,
   getDirectionStubStart,
   getDirectionStubUnit,
   getPointAlongPolyline,
   getSelectedStationMarkerPoint,
+  getStationSpecificDirectionStubStart,
   getStubArrowHeadPoints,
   groupConnectionsByRenderedPath,
+  isCurrentStationLabelObstacle,
 } from "./mapRenderer";
 import { CorridorLayout } from "./corridorLayout";
 import { getOneWayArrowLineSegments } from "./lineRenderer";
 import { STUB_STROKE_WIDTH } from "./lineStyles";
-import { getCanonicalPath, getCenteredOffset, offsetPolylinePoints, PARALLEL_LINE_SPACING } from "./pathOffset";
+import {
+  getCanonicalPath,
+  getCenteredOffset,
+  offsetPolylinePoints,
+  PARALLEL_LINE_SPACING,
+  PARALLEL_STUB_SPACING,
+} from "./pathOffset";
 
 describe("direction stub arrows", () => {
   it("aligns an arrow head with the outgoing route direction", () => {
@@ -79,6 +90,70 @@ describe("direction stub arrows", () => {
     expect(getDirectionStubStart([{ x: 100, y: 100 }, { x: 132, y: 132 }], linePoint, { x: 0, y: -1 }))
       .toEqual(linePoint);
   });
+
+  it("anchors single-marker stubs to a displaced marker instead of the path point", () => {
+    expect(getDirectionStubStart([{ x: 100, y: 100 }], { x: 132, y: 100 }, { x: 1, y: 0 }))
+      .toEqual({ x: 100, y: 100 });
+  });
+
+  it("orders stubs to match render-only line offsets", () => {
+    const positions = getSortedDirectionStubPositions(
+      "rayners-lane",
+      ["metropolitan", "piccadilly"],
+      "eastcote",
+    );
+    const metropolitan = positions.find((position) => position.line === "metropolitan");
+    const piccadilly = positions.find((position) => position.line === "piccadilly");
+
+    expect(metropolitan?.point.y).toBeLessThan(piccadilly!.point.y);
+  });
+
+  it("orders stubs to match shared-path line offsets", () => {
+    const positions = getSortedDirectionStubPositions(
+      "baker-street",
+      ["hammersmith-city", "circle", "metropolitan"],
+      "great-portland-street",
+    );
+    const hammersmithCity = positions.find((position) => position.line === "hammersmith-city");
+    const circle = positions.find((position) => position.line === "circle");
+    const metropolitan = positions.find((position) => position.line === "metropolitan");
+
+    expect(hammersmithCity?.point.y).toBeLessThan(circle!.point.y);
+    expect(circle?.point.y).toBeLessThan(metropolitan!.point.y);
+  });
+
+  it("anchors Stratford Central stubs left and Elizabeth stubs right", () => {
+    const layout = new CorridorLayout(networkData);
+    const centralMarker = layout.getStationLinePoint("stratford", "central");
+    const elizabethMarker = layout.getStationLinePoint("stratford", "elizabeth");
+
+    expect(centralMarker.x).toBeLessThan(elizabethMarker.x);
+
+    for (const line of ["central", "elizabeth"] as const) {
+      const marker = layout.getStationLinePoint("stratford", line);
+      expect(getStationSpecificDirectionStubStart("stratford", line, marker)).toEqual(marker);
+    }
+  });
+
+  it("renders the selected line's stub after overlapping alternatives", () => {
+    const stubs = (["central", "district", "piccadilly"] as const).map((line) => ({
+      connection: {
+        id: `${line}:a:b`,
+        from: "a",
+        to: "b",
+        line,
+        path: [{ x: 0, y: 0 }, { x: 1, y: 0 }],
+      },
+      linePoint: { x: 16, y: 16 },
+      normal: { x: 0, y: 1 },
+    })) satisfies DirectionStubLike[];
+
+    const ordered = [...stubs].sort((first, second) =>
+      compareDirectionStubsBySelectedLine(first, second, "district")
+    );
+
+    expect(ordered.at(-1)?.connection.line).toBe("district");
+  });
 });
 
 describe("one-way line arrows", () => {
@@ -138,6 +213,16 @@ describe("current station label placement", () => {
     expect(placements[0]).toEqual({ x: 122, y: -91, textAnchor: "start" });
     expect(Math.hypot(placements[7].x - 96, placements[7].y - 12 + 96)).toBeCloseTo(26);
     expect(Math.hypot(placements[8].x - 96, placements[8].y - 5 + 96)).toBeCloseTo(32);
+  });
+
+  it("does not move labels away from HUD controls", () => {
+    const mapLine = { matches: (selector: string) => selector.includes(".map-line") };
+    const hudPanel = { matches: (selector: string) => selector.includes(".hud-panel") };
+    const lineIndicator = { matches: (selector: string) => selector.includes(".line-indicator") };
+
+    expect(isCurrentStationLabelObstacle(mapLine as Element)).toBe(true);
+    expect(isCurrentStationLabelObstacle(hudPanel as Element)).toBe(false);
+    expect(isCurrentStationLabelObstacle(lineIndicator as Element)).toBe(false);
   });
 });
 
@@ -326,6 +411,47 @@ function getSharedLineGroup(
   const groups = groupConnectionsByRenderedPath(items);
   expect(groups).toHaveLength(1);
   return groups[0];
+}
+
+function getSortedDirectionStubPositions(
+  stationId: string,
+  lineIds: readonly LineId[],
+  neighbourStationId: string,
+): { line: LineId; point: Point }[] {
+  const layout = new CorridorLayout(networkData);
+  const stubs = lineIds.map((line) => {
+    const connection = networkData.connections.find(
+      (candidate) =>
+        candidate.line === line &&
+        ((candidate.from === stationId && candidate.to === neighbourStationId) ||
+          (candidate.from === neighbourStationId && candidate.to === stationId)),
+    );
+    if (!connection) throw new Error(`Missing ${line} connection ${stationId} -> ${neighbourStationId}`);
+
+    const unit = getDirectionStubUnit(connection, stationId);
+    if (!unit) throw new Error(`Missing stub unit for ${line} ${stationId} -> ${neighbourStationId}`);
+    return {
+      connection,
+      linePoint: layout.getStationLinePoint(stationId, line),
+      normal: { x: -unit.y, y: unit.x },
+    } satisfies DirectionStubLike;
+  });
+
+  return [...stubs]
+    .sort((first, second) =>
+      compareDirectionStubsByRenderedOffset(first, second, stubs, layout) ||
+      first.connection.line.localeCompare(second.connection.line)
+    )
+    .map((stub, index, group) => {
+      const offset = getCenteredOffset(index, group.length, PARALLEL_STUB_SPACING);
+      return {
+        line: stub.connection.line,
+        point: {
+          x: stub.linePoint.x + stub.normal.x * offset,
+          y: stub.linePoint.y + stub.normal.y * offset,
+        },
+      };
+    });
 }
 
 function getOffsetMidpoint(group: RenderedConnectionPathGroup, line: LineId): Point {
