@@ -335,9 +335,15 @@ describe("shared corridor layout", () => {
     expect(renderedDirectionRuns(layout, "piccadilly", "finsbury-park", "manor-house"))
       .toEqual(["1,-1", "0,-1"]);
     expect(renderedGridPoints(layout, "victoria", "finsbury-park", "seven-sisters"))
-      .toEqual([{ x: 95, y: -45 }, { x: 104, y: -54 }, { x: 120, y: -54 }]);
+      .toEqual([{ x: 95, y: -45 }, { x: 101, y: -51 }, { x: 117, y: -51 }]);
     expect(renderedDirectionRuns(layout, "victoria", "finsbury-park", "seven-sisters"))
       .toEqual(["1,-1", "1,0"]);
+    expect(renderedGridPoints(layout, "victoria", "seven-sisters", "tottenham-hale"))
+      .toEqual([{ x: 117, y: -51 }, { x: 123, y: -51 }]);
+    expect(renderedGridPoints(layout, "victoria", "tottenham-hale", "blackhorse-road"))
+      .toEqual([{ x: 123, y: -51 }, { x: 129, y: -51 }]);
+    expect(renderedGridPoints(layout, "victoria", "blackhorse-road", "walthamstow-central"))
+      .toEqual([{ x: 129, y: -51 }, { x: 139, y: -51 }]);
   });
 
   it("places Elizabeth above the other lines at Liverpool Street and Whitechapel", () => {
@@ -544,7 +550,7 @@ describe("shared corridor layout", () => {
     )).toEqual(["1,0"]);
   });
 
-  it("renders Elizabeth west then northwest from Bond Street to Paddington", () => {
+  it("renders Elizabeth west then northwest then west from Bond Street to Paddington", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedGridPoints(
@@ -554,8 +560,8 @@ describe("shared corridor layout", () => {
       "paddington",
     )).toEqual([
       { x: 43, y: -9 },
-      { x: 34, y: -9 },
-      { x: 25, y: -18 },
+      { x: 36, y: -9 },
+      { x: 27, y: -18 },
       { x: 18, y: -18 },
     ]);
     expect(renderedDirectionRuns(
@@ -803,7 +809,7 @@ describe("shared corridor layout", () => {
     expect(jubileePoints).toEqual(layout.getConnectionCameraPoints(jubilee));
     expect(victoriaPoints).toEqual(layout.getConnectionCameraPoints(victoria));
     expect(renderedGridPoints(layout, "jubilee", "westminster", "green-park"))
-      .toEqual([{ x: 56, y: 15 }, { x: 50, y: 9 }, { x: 50, y: 6 }, { x: 44, y: 0 }]);
+      .toEqual([{ x: 56, y: 15 }, { x: 56, y: 12 }, { x: 44, y: 0 }]);
   });
 
   it("keeps Jubilee and Victoria on their fixed paths above Green Park once both are explored", () => {

@@ -583,17 +583,30 @@ describe("network data validation", () => {
       { x: 94, y: -45 },
       { x: 94, y: -46 },
     ]);
+    expect(networkData.stations.find((station) => station.id === "seven-sisters"))
+      .toMatchObject({ x: 117, y: -51 });
+    expect(networkData.stations.find((station) => station.id === "tottenham-hale"))
+      .toMatchObject({ x: 123, y: -51 });
+    expect(networkData.stations.find((station) => station.id === "blackhorse-road"))
+      .toMatchObject({ x: 129, y: -51 });
+    expect(networkData.stations.find((station) => station.id === "walthamstow-central"))
+      .toMatchObject({ x: 139, y: -51 });
     expect(findConnectionPath("victoria", "finsbury-park", "seven-sisters")).toEqual([
       { x: 94, y: -46 }, { x: 95, y: -47 }, { x: 96, y: -48 },
       { x: 97, y: -49 }, { x: 98, y: -50 }, { x: 99, y: -51 },
-      { x: 100, y: -52 }, { x: 101, y: -53 }, { x: 102, y: -54 },
-      { x: 103, y: -54 }, { x: 104, y: -54 }, { x: 105, y: -54 },
-      { x: 106, y: -54 }, { x: 107, y: -54 }, { x: 108, y: -54 },
-      { x: 109, y: -54 }, { x: 110, y: -54 }, { x: 111, y: -54 },
-      { x: 112, y: -54 }, { x: 113, y: -54 }, { x: 114, y: -54 },
-      { x: 115, y: -54 }, { x: 116, y: -54 }, { x: 117, y: -54 },
-      { x: 118, y: -54 }, { x: 119, y: -54 }, { x: 120, y: -54 },
+      { x: 100, y: -51 }, { x: 101, y: -51 }, { x: 102, y: -51 },
+      { x: 103, y: -51 }, { x: 104, y: -51 }, { x: 105, y: -51 },
+      { x: 106, y: -51 }, { x: 107, y: -51 }, { x: 108, y: -51 },
+      { x: 109, y: -51 }, { x: 110, y: -51 }, { x: 111, y: -51 },
+      { x: 112, y: -51 }, { x: 113, y: -51 }, { x: 114, y: -51 },
+      { x: 115, y: -51 }, { x: 116, y: -51 }, { x: 117, y: -51 },
     ]);
+    expect(directionRuns(findConnectionPath("victoria", "seven-sisters", "tottenham-hale")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("victoria", "tottenham-hale", "blackhorse-road")))
+      .toEqual(["1,0"]);
+    expect(directionRuns(findConnectionPath("victoria", "blackhorse-road", "walthamstow-central")))
+      .toEqual(["1,0"]);
   });
 
   it("moves Bethnal Green down to the same row as Mile End", () => {
@@ -849,6 +862,58 @@ describe("network data validation", () => {
         candidate.to === "whitechapel",
     );
     expect(connection?.directionOverrides?.to).toEqual({ x: 1, y: -1 });
+  });
+
+  it("routes the Elizabeth line cleanly from Maryland to Shenfield", () => {
+    for (const [name, x, y] of [
+      ["Forest Gate", 160, -37],
+      ["Manor Park", 166, -37],
+      ["Ilford", 170, -37],
+      ["Seven Kings", 174, -37],
+      ["Goodmayes", 180, -41],
+      ["Chadwell Heath", 184, -45],
+      ["Romford", 190, -51],
+      ["Gidea Park", 194, -55],
+      ["Harold Wood", 198, -59],
+      ["Brentwood", 202, -63],
+      ["Shenfield", 206, -67],
+    ] as const) {
+      expect(stationByName(name)).toMatchObject({ x, y });
+    }
+
+    expect(directionRuns(findConnectionPath("elizabeth", "maryland", "forest-gate")))
+      .toEqual(["1,-1", "1,0"]);
+    expect(findConnectionPath("elizabeth", "maryland", "forest-gate"))
+      .toEqual([
+        { x: 154, y: -34 },
+        { x: 155, y: -35 },
+        { x: 156, y: -36 },
+        { x: 157, y: -37 },
+        { x: 158, y: -37 },
+        { x: 159, y: -37 },
+        { x: 160, y: -37 },
+      ]);
+
+    for (const [from, to] of [
+      ["forest-gate", "manor-park"],
+      ["manor-park", "ilford"],
+      ["ilford", "seven-kings"],
+    ] as const) {
+      expect(directionRuns(findConnectionPath("elizabeth", from, to))).toEqual(["1,0"]);
+    }
+
+    expect(directionRuns(findConnectionPath("elizabeth", "seven-kings", "goodmayes")))
+      .toEqual(["1,0", "1,-1"]);
+    for (const [from, to] of [
+      ["goodmayes", "chadwell-heath"],
+      ["chadwell-heath", "romford"],
+      ["romford", "gidea-park"],
+      ["gidea-park", "harold-wood"],
+      ["harold-wood", "brentwood"],
+      ["brentwood", "shenfield"],
+    ] as const) {
+      expect(directionRuns(findConnectionPath("elizabeth", from, to))).toEqual(["1,-1"]);
+    }
   });
 
   it("keeps Central loop stations off path vertices except Leytonstone and Woodford", () => {
@@ -1181,16 +1246,28 @@ describe("network data validation", () => {
     expect(stations.every((station) => station?.x === 62)).toBe(true);
   });
 
-  it("routes Jubilee northwest, north, then northwest from Westminster to Green Park", () => {
+  it("routes Jubilee north then northwest from Westminster to Green Park", () => {
     const path = findConnectionPath("jubilee", "westminster", "green-park");
 
-    expect(directionRuns(path)).toEqual(["-1,-1", "0,-1", "-1,-1"]);
-    expect(path).toEqual(expect.arrayContaining([
+    expect(directionRuns(path)).toEqual(["0,-1", "-1,-1"]);
+    expect(path).toEqual([
       { x: 56, y: 15 },
-      { x: 50, y: 9 },
+      { x: 56, y: 14 },
+      { x: 56, y: 13 },
+      { x: 56, y: 12 },
+      { x: 55, y: 11 },
+      { x: 54, y: 10 },
+      { x: 53, y: 9 },
+      { x: 52, y: 8 },
+      { x: 51, y: 7 },
       { x: 50, y: 6 },
+      { x: 49, y: 5 },
+      { x: 48, y: 4 },
+      { x: 47, y: 3 },
+      { x: 46, y: 2 },
+      { x: 45, y: 1 },
       { x: 44, y: 0 },
-    ]));
+    ]);
   });
 
   it("moves the Circle and District corridor from Sloane Square through Temple down one cell", () => {

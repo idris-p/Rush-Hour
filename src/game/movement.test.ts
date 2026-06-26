@@ -157,6 +157,27 @@ describe("movement", () => {
       .toBe("bond-street");
     expect(findDirectionalNeighbour(networkData, "tottenham-court-road", "elizabeth", "east")?.id)
       .toBe("farringdon");
+    expect(findDirectionalNeighbour(networkData, "bond-street", "elizabeth", "west")?.id)
+      .toBe("paddington");
+  });
+
+  it("matches clicks to the Elizabeth line branch from Maryland to Shenfield", () => {
+    expect(findDirectionalNeighbour(networkData, "maryland", "elizabeth", "northeast")?.id)
+      .toBe("forest-gate");
+    expect(findDirectionalNeighbour(networkData, "forest-gate", "elizabeth", "east")?.id)
+      .toBe("manor-park");
+    expect(findDirectionalNeighbour(networkData, "manor-park", "elizabeth", "east")?.id)
+      .toBe("ilford");
+    expect(findDirectionalNeighbour(networkData, "ilford", "elizabeth", "east")?.id)
+      .toBe("seven-kings");
+    expect(findDirectionalNeighbour(networkData, "seven-kings", "elizabeth", "east")?.id)
+      .toBe("goodmayes");
+    expect(findDirectionalNeighbour(networkData, "goodmayes", "elizabeth", "northeast")?.id)
+      .toBe("chadwell-heath");
+    expect(findDirectionalNeighbour(networkData, "chadwell-heath", "elizabeth", "northeast")?.id)
+      .toBe("romford");
+    expect(findDirectionalNeighbour(networkData, "brentwood", "elizabeth", "northeast")?.id)
+      .toBe("shenfield");
   });
 
   it("uses northwest from Camden Town toward the Edgware branch", () => {
@@ -192,8 +213,10 @@ describe("movement", () => {
       .toBe("holborn");
     expect(findDirectionalNeighbour(networkData, "russell-square", "piccadilly", "north")?.id)
       .toBe("king-s-cross-st-pancras");
-    expect(findDirectionalNeighbour(networkData, "westminster", "jubilee", "northwest")?.id)
+    expect(findDirectionalNeighbour(networkData, "westminster", "jubilee", "north")?.id)
       .toBe("green-park");
+    expect(findDirectionalNeighbour(networkData, "westminster", "jubilee", "northwest"))
+      .toBeNull();
   });
 
   it("matches clicks to the conjoined Central marker at Stratford", () => {
@@ -300,6 +323,14 @@ describe("movement", () => {
       .toBe("manor-house");
     expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "northeast")?.id)
       .toBe("seven-sisters");
+    expect(findDirectionalNeighbour(networkData, "seven-sisters", "victoria", "west")?.id)
+      .toBe("finsbury-park");
+    expect(findDirectionalNeighbour(networkData, "seven-sisters", "victoria", "east")?.id)
+      .toBe("tottenham-hale");
+    expect(findDirectionalNeighbour(networkData, "tottenham-hale", "victoria", "east")?.id)
+      .toBe("blackhorse-road");
+    expect(findDirectionalNeighbour(networkData, "blackhorse-road", "victoria", "east")?.id)
+      .toBe("walthamstow-central");
     expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "southwest")?.id)
       .toBe("highbury-and-islington");
     expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "south"))
