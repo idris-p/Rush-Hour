@@ -951,6 +951,65 @@ describe("shared corridor layout", () => {
       }
     }
   });
+
+  it("applies Heathrow loop overlap rules based on visible services", () => {
+    const layout = new CorridorLayout(networkData);
+    const elizabethT5 = findConnection("elizabeth", "heathrow-terminal-2-and-3", "heathrow-terminal-5");
+    const piccadillyT5 = findConnection("piccadilly", "heathrow-terminal-2-and-3", "heathrow-terminal-5");
+    const piccadillyT4 = findConnection("piccadilly", "heathrow-terminal-4", "heathrow-terminal-2-and-3");
+
+    expect(layout.getConnectionRenderPoints(elizabethT5, new Set([elizabethT5.id])))
+      .toEqual(layout.getConnectionCameraPoints(elizabethT5));
+    expect(layout.getConnectionRenderPoints(piccadillyT5, new Set([piccadillyT5.id])))
+      .toEqual(layout.getConnectionCameraPoints(piccadillyT5));
+    expect(layout.getConnectionRenderPoints(piccadillyT4, new Set([piccadillyT4.id])))
+      .toEqual(layout.getConnectionCameraPoints(piccadillyT4));
+
+    const t5Pair = new Set([elizabethT5.id, piccadillyT5.id]);
+    expect(segmentDelta(layout, elizabethT5, t5Pair, 0)).toMatchObject({ x: expect.any(Number), y: expect.any(Number) });
+    expect(segmentDelta(layout, elizabethT5, t5Pair, 0).x).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, t5Pair, 0).y).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, t5Pair, 1).x).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, t5Pair, 1).y).toBeLessThan(0);
+    expect(segmentDelta(layout, piccadillyT5, t5Pair, 0).x).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT5, t5Pair, 0).y).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT5, t5Pair, 1).x).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT5, t5Pair, 1).y).toBeGreaterThan(0);
+
+    const elizabethAndT4 = new Set([elizabethT5.id, piccadillyT4.id]);
+    expect(segmentDelta(layout, elizabethT5, elizabethAndT4, 0).x).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, elizabethAndT4, 0).y).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, elizabethAndT4, 1).x).toBeCloseTo(0);
+    expectSegmentIsVertical(layout.getConnectionRenderPoints(elizabethT5, elizabethAndT4), 1);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 0).x).toBeCloseTo(0);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 0).y).toBeCloseTo(0);
+    expect(layout.getConnectionRenderPoints(piccadillyT4, elizabethAndT4))
+      .not.toContainEqual(layout.getConnectionCameraPoints(piccadillyT4)[2]);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 1).x).toBeCloseTo(0);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 1).y).toBeGreaterThan(0);
+    expectSegmentIsVertical(layout.getConnectionRenderPoints(piccadillyT4, elizabethAndT4), 1);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 2, 2).x).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT4, elizabethAndT4, 2, 2).y).toBeGreaterThan(0);
+
+    const piccadillyLoop = new Set([piccadillyT5.id, piccadillyT4.id]);
+    expect(layout.getConnectionRenderPoints(piccadillyT5, piccadillyLoop))
+      .toEqual(layout.getConnectionCameraPoints(piccadillyT5));
+    expect(layout.getConnectionRenderPoints(piccadillyT4, piccadillyLoop))
+      .toEqual(layout.getConnectionCameraPoints(piccadillyT4));
+
+    const allLoop = new Set([elizabethT5.id, piccadillyT5.id, piccadillyT4.id]);
+    expect(segmentDelta(layout, elizabethT5, allLoop, 0).x).toBeLessThan(0);
+    expect(segmentDelta(layout, elizabethT5, allLoop, 0).y).toBeLessThan(0);
+    expect(segmentDelta(layout, piccadillyT5, allLoop, 0).x).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT5, allLoop, 0).y).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT4, allLoop, 0).x).toBeCloseTo(0);
+    expect(segmentDelta(layout, piccadillyT4, allLoop, 0).y).toBeCloseTo(0);
+    expect(layout.getConnectionRenderPoints(piccadillyT4, allLoop))
+      .not.toContainEqual(layout.getConnectionCameraPoints(piccadillyT4)[2]);
+    expectSegmentIsVertical(layout.getConnectionRenderPoints(piccadillyT4, allLoop), 1);
+    expect(segmentDelta(layout, piccadillyT4, allLoop, 2, 2).x).toBeGreaterThan(0);
+    expect(segmentDelta(layout, piccadillyT4, allLoop, 2, 2).y).toBeGreaterThan(0);
+  });
 });
 
 function horizontalPath(fromX: number, toX: number): GridPoint[] {
@@ -1032,6 +1091,35 @@ function findConnectionById(connectionId: string) {
   const connection = networkData.connections.find((candidate) => candidate.id === connectionId);
   if (!connection) throw new Error(`Missing connection ${connectionId}`);
   return connection;
+}
+
+function segmentDelta(
+  layout: CorridorLayout,
+  connection: ReturnType<typeof findConnection>,
+  visibleConnectionIds: ReadonlySet<string>,
+  segmentIndex: number,
+  centredSegmentIndex = segmentIndex,
+) {
+  const rendered = layout.getConnectionRenderPoints(connection, visibleConnectionIds);
+  const centred = layout.getConnectionCameraPoints(connection);
+  const renderedMidpoint = midpoint(rendered[segmentIndex], rendered[segmentIndex + 1]);
+  const centredMidpoint = midpoint(centred[centredSegmentIndex], centred[centredSegmentIndex + 1]);
+  return {
+    x: renderedMidpoint.x - centredMidpoint.x,
+    y: renderedMidpoint.y - centredMidpoint.y,
+  };
+}
+
+function midpoint(first: { x: number; y: number }, second: { x: number; y: number }) {
+  return {
+    x: (first.x + second.x) / 2,
+    y: (first.y + second.y) / 2,
+  };
+}
+
+function expectSegmentIsVertical(points: { x: number; y: number }[], segmentIndex: number) {
+  expect(points[segmentIndex].x).toBeCloseTo(points[segmentIndex + 1].x);
+  expect(points[segmentIndex].y).not.toBeCloseTo(points[segmentIndex + 1].y);
 }
 
 function gridPointFromSvgPoint(point: { x: number; y: number }): GridPoint {

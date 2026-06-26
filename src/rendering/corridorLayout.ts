@@ -8,6 +8,9 @@ import { simplifyPolylinePoints } from "./roundedPath";
 const POINT_TOLERANCE = 0.01;
 const CONDITIONAL_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
 const BAKER_STREET_SUBSURFACE_LINES = ["circle", "hammersmith-city", "metropolitan"] as const;
+const HEATHROW_ELIZABETH_T5 = "elizabeth:heathrow-terminal-2-and-3:heathrow-terminal-5";
+const HEATHROW_PICCADILLY_T5 = "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-5";
+const HEATHROW_PICCADILLY_T4 = "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4";
 
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
@@ -190,7 +193,8 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getBakerStreetSubsurfaceSplitPath(connection, visibleConnectionIds) ??
+    return this.getHeathrowLoopSplitPath(connection, visibleConnectionIds) ??
+      this.getBakerStreetSubsurfaceSplitPath(connection, visibleConnectionIds) ??
       this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
       this.getConnectionPoints(connection);
   }
@@ -341,6 +345,47 @@ export class CorridorLayout {
       : [connection.to, connection.from];
   }
 
+  private getHeathrowLoopSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    if (!isHeathrowLoopConnection(connection.id)) return null;
+
+    const hasElizabethT5 = visibleConnectionIds.has(HEATHROW_ELIZABETH_T5);
+    const hasPiccadillyT5 = visibleConnectionIds.has(HEATHROW_PICCADILLY_T5);
+    const hasPiccadillyT4 = visibleConnectionIds.has(HEATHROW_PICCADILLY_T4);
+    const points = this.getConnectionPoints(connection);
+    const offsets = points.slice(0, -1).map(() => 0);
+
+    if (connection.id === HEATHROW_ELIZABETH_T5) {
+      if (hasPiccadillyT5) {
+        offsets.fill(CONDITIONAL_VERTICAL_SPLIT);
+      } else if (hasPiccadillyT4) {
+        return offsetOnlyPathSegments(points, new Set([0]), CONDITIONAL_VERTICAL_SPLIT);
+      } else {
+        return null;
+      }
+    } else if (connection.id === HEATHROW_PICCADILLY_T5) {
+      if (hasElizabethT5) {
+        offsets.fill(-CONDITIONAL_VERTICAL_SPLIT);
+      } else {
+        return null;
+      }
+    } else if (connection.id === HEATHROW_PICCADILLY_T4) {
+      if (hasElizabethT5 && !hasPiccadillyT5) {
+        return offsetOnlyPathSegments(points, new Set([offsets.length - 1]), CONDITIONAL_VERTICAL_SPLIT);
+      } else if (hasElizabethT5 && hasPiccadillyT5) {
+        return offsetOnlyPathSegments(points, new Set([offsets.length - 1]), CONDITIONAL_VERTICAL_SPLIT);
+      } else {
+        return null;
+      }
+    }
+
+    return offsets.some((offset) => offset !== 0)
+      ? simplifyPolylinePoints(offsetPolylinePointsBySegment(points, offsets))
+      : null;
+  }
+
   private getHighStreetKensingtonBranchSplitPath(
     connection: Connection,
     visibleConnectionIds: ReadonlySet<string>,
@@ -458,6 +503,12 @@ function isBakerStreetSubsurfaceLine(
   return BAKER_STREET_SUBSURFACE_LINES.some((candidate) => candidate === line);
 }
 
+function isHeathrowLoopConnection(connectionId: string): boolean {
+  return connectionId === HEATHROW_ELIZABETH_T5 ||
+    connectionId === HEATHROW_PICCADILLY_T5 ||
+    connectionId === HEATHROW_PICCADILLY_T4;
+}
+
 function getDirectionRuns(path: GridPoint[]): Point[] {
   return path.slice(1)
     .map((point, index) => ({
@@ -540,6 +591,37 @@ function offsetPolylinePointsBySegment(points: Point[], offsets: number[]): Poin
       y: (previousSegment[1].y + nextSegment[0].y) / 2,
     };
   });
+}
+
+function offsetOnlyPathSegments(points: Point[], segmentIndexes: ReadonlySet<number>, offset: number): Point[] {
+  if (points.length < 2) return points;
+
+  const segments = points.slice(0, -1).map((point, index) =>
+    offsetPolylinePoints(
+      [point, points[index + 1]],
+      segmentIndexes.has(index) ? offset : 0,
+    ),
+  );
+  const result: Point[] = [];
+  for (let index = 0; index < segments.length; index += 1) {
+    const segment = segments[index];
+    if (index === 0) {
+      result.push(segment[0]);
+    } else if (segmentIndexes.has(index) !== segmentIndexes.has(index - 1)) {
+      const previousSegment = segments[index - 1];
+      const transition = getLineIntersection(previousSegment[0], previousSegment[1], segment[0], segment[1]);
+      if (transition) {
+        result[result.length - 1] = transition;
+      } else if (!pointsMatch(result.at(-1)!, segment[0])) {
+        result.push(segment[0]);
+      }
+    } else if (!pointsMatch(result.at(-1)!, segment[0])) {
+      result.push(segment[0]);
+    }
+    result.push(segment[1]);
+  }
+
+  return simplifyPolylinePoints(result);
 }
 
 function getLineIntersection(firstStart: Point, firstEnd: Point, secondStart: Point, secondEnd: Point): Point | null {

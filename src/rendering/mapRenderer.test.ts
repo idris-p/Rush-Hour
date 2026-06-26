@@ -92,8 +92,8 @@ describe("one-way line arrows", () => {
       oneWay: true,
     })).toEqual([
       [
-        { from: { x: -1981, y: 1219 }, to: { x: -1968, y: 1232 } },
-        { from: { x: -1955, y: 1219 }, to: { x: -1968, y: 1232 } },
+        { from: { x: -1978, y: 1222 }, to: { x: -1968, y: 1232 } },
+        { from: { x: -1958, y: 1222 }, to: { x: -1968, y: 1232 } },
       ],
     ]);
 
@@ -106,8 +106,8 @@ describe("one-way line arrows", () => {
       oneWay: true,
     })).toEqual([
       [
-        { from: { x: -2237, y: 1341 }, to: { x: -2224, y: 1328 } },
-        { from: { x: -2211, y: 1341 }, to: { x: -2224, y: 1328 } },
+        { from: { x: -2234, y: 1338 }, to: { x: -2224, y: 1328 } },
+        { from: { x: -2214, y: 1338 }, to: { x: -2224, y: 1328 } },
       ],
     ]);
   });

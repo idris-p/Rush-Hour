@@ -7,7 +7,7 @@ import { createRoundedPathData, simplifyPolylinePoints } from "./roundedPath";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const LINE_CORNER_RADIUS = 20;
-const LOOP_ARROW_ARM_LENGTH = 13;
+const LOOP_ARROW_ARM_LENGTH = 10;
 export const LINE_REVEAL_ANIMATION_SPEED = 1 / 160;
 const WALK_LINE_DASH_PATTERN = [12, 10] as const;
 
