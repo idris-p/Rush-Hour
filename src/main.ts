@@ -45,6 +45,9 @@ let state: GameState | null = null;
 let pointerPoint: Point | null = null;
 let mouseIntent = createMouseIntentState();
 let pendingSeed = generateSeed();
+let activeMovePointerId: number | null = null;
+let heldMoveConsumed = false;
+let lastHeldMoveAttemptDirection: MovementDirection | null = null;
 let panPointerId: number | null = null;
 let lastPanPoint: Point | null = null;
 let lineRevealAnimation: {
@@ -76,6 +79,9 @@ const hud = new Hud(root, networkData, {
     stationWipeAnimation = null;
     cameraPanAnimation = null;
     pointerPoint = null;
+    activeMovePointerId = null;
+    heldMoveConsumed = false;
+    lastHeldMoveAttemptDirection = null;
     mouseIntent = createMouseIntentState();
     hud.setSeed(pendingSeed);
     render();
@@ -98,6 +104,9 @@ function startRun(seed: string): void {
   state = createGameState(seed, networkData, performance.now());
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
+  activeMovePointerId = null;
+  heldMoveConsumed = false;
+  lastHeldMoveAttemptDirection = null;
   lineRevealAnimation = null;
   stationWipeAnimation = null;
   cameraPanAnimation = null;
@@ -232,6 +241,7 @@ bindKeyboardControls((direction) => {
   } else {
     cameraPanAnimation = null;
   }
+  tryHeldPointerMove(performance.now(), true);
   render();
 });
 
@@ -252,13 +262,17 @@ renderer.svg.addEventListener("pointermove", (event) => {
   }
 
   const currentMousePosition = { x: event.clientX, y: event.clientY };
+  const previousDirection = mouseIntent.direction;
   mouseIntent = updateMouseIntent(mouseIntent, currentMousePosition, performance.now());
   pointerPoint = currentMousePosition;
+  if (activeMovePointerId === event.pointerId) {
+    tryHeldPointerMove(performance.now(), mouseIntent.direction !== previousDirection);
+  }
   render();
 });
 
 renderer.svg.addEventListener("pointerleave", () => {
-  if (panPointerId !== null) {
+  if (panPointerId !== null || activeMovePointerId !== null) {
     return;
   }
   pointerPoint = null;
@@ -266,12 +280,11 @@ renderer.svg.addEventListener("pointerleave", () => {
   render();
 });
 
-renderer.svg.addEventListener("click", () => {
+function attemptMoveFromCurrentIntent(now: number): boolean {
   if (!state || state.completed) {
-    return;
+    return false;
   }
 
-  const now = performance.now();
   const previousState = state;
   const fromStationId = state.currentStationId;
   const selectedLineId = state.selectedLineId;
@@ -314,8 +327,21 @@ renderer.svg.addEventListener("click", () => {
     }, REJECTED_MOVE_FLASH_MS);
   }
 
-  render();
-});
+  return result.moved;
+}
+
+function tryHeldPointerMove(now: number, forceAttempt = false): void {
+  if (activeMovePointerId === null || heldMoveConsumed || !state || state.completed) {
+    return;
+  }
+
+  if (!forceAttempt && lastHeldMoveAttemptDirection === mouseIntent.direction) {
+    return;
+  }
+
+  lastHeldMoveAttemptDirection = mouseIntent.direction;
+  heldMoveConsumed = attemptMoveFromCurrentIntent(now);
+}
 
 renderer.svg.addEventListener("wheel", (event) => {
   if (!state) {
@@ -328,15 +354,30 @@ renderer.svg.addEventListener("wheel", (event) => {
 }, { passive: false });
 
 renderer.svg.addEventListener("pointerdown", (event) => {
-  if (!state?.completed || event.button !== 0) {
+  if (event.button !== 0) {
     return;
   }
 
-  panPointerId = event.pointerId;
-  lastPanPoint = { x: event.clientX, y: event.clientY };
-  renderer.svg.setPointerCapture(event.pointerId);
-  renderer.svg.classList.add("tube-map-panning");
-  event.preventDefault();
+  if (state && !state.completed) {
+    activeMovePointerId = event.pointerId;
+    heldMoveConsumed = false;
+    lastHeldMoveAttemptDirection = null;
+    pointerPoint = { x: event.clientX, y: event.clientY };
+    mouseIntent = updateMouseIntent(mouseIntent, pointerPoint, performance.now());
+    renderer.svg.setPointerCapture(event.pointerId);
+    event.preventDefault();
+    tryHeldPointerMove(performance.now(), true);
+    render();
+    return;
+  }
+
+  if (state?.completed) {
+    panPointerId = event.pointerId;
+    lastPanPoint = { x: event.clientX, y: event.clientY };
+    renderer.svg.setPointerCapture(event.pointerId);
+    renderer.svg.classList.add("tube-map-panning");
+    event.preventDefault();
+  }
 });
 
 function endPan(event: PointerEvent): void {
@@ -352,8 +393,27 @@ function endPan(event: PointerEvent): void {
   renderer.svg.classList.remove("tube-map-panning");
 }
 
-renderer.svg.addEventListener("pointerup", endPan);
-renderer.svg.addEventListener("pointercancel", endPan);
+function endMovePointer(event: PointerEvent): void {
+  if (activeMovePointerId !== event.pointerId) {
+    return;
+  }
+
+  if (renderer.svg.hasPointerCapture(event.pointerId)) {
+    renderer.svg.releasePointerCapture(event.pointerId);
+  }
+  activeMovePointerId = null;
+  heldMoveConsumed = false;
+  lastHeldMoveAttemptDirection = null;
+}
+
+renderer.svg.addEventListener("pointerup", (event) => {
+  endMovePointer(event);
+  endPan(event);
+});
+renderer.svg.addEventListener("pointercancel", (event) => {
+  endMovePointer(event);
+  endPan(event);
+});
 
 render();
 requestAnimationFrame(tick);

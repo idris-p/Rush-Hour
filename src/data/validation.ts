@@ -25,6 +25,7 @@ const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([
   "central:grange-hill:hainault",
   "elizabeth:acton-main-line:ealing-broadway",
   "elizabeth:ealing-broadway:west-ealing",
+  "elizabeth:farringdon:liverpool-street",
   "jubilee:finchley-road:swiss-cottage",
   "jubilee:finchley-road:west-hampstead",
   "jubilee:kingsbury:wembley-park",

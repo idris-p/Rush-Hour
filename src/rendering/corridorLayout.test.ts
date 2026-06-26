@@ -127,11 +127,11 @@ describe("shared corridor layout", () => {
       jubilee!.point.y - metropolitan!.point.y,
     )).toBeCloseTo(GRID_CELL_SIZE * Math.SQRT2);
     expect(groups.every((group) => isCellCentre(group.point))).toBe(true);
-    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 14, y: -50 });
-    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 15, y: -51 });
+    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 14, y: -52 });
+    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 15, y: -53 });
   });
 
-  it("keeps Metropolitan fixed and places Jubilee on the other side at Finchley Road", () => {
+  it("keeps Jubilee mirrored from Metropolitan at Finchley Road", () => {
     const layout = new CorridorLayout(networkData);
     const groups = layout.getStationMarkerGroups("finchley-road");
     const jubilee = groups.find((group) => group.lines.includes("jubilee"));
@@ -139,8 +139,8 @@ describe("shared corridor layout", () => {
 
     expect(jubilee).toBeDefined();
     expect(metropolitan).toBeDefined();
-    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 32, y: -32 });
-    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 33, y: -33 });
+    expect(gridPointFromSvgPoint(metropolitan!.point)).toEqual({ x: 32, y: -34 });
+    expect(gridPointFromSvgPoint(jubilee!.point)).toEqual({ x: 33, y: -35 });
   });
 
   it("does not add a Piccadilly marker at skipped District stations", () => {
@@ -584,9 +584,9 @@ describe("shared corridor layout", () => {
     expect(renderedGridPoints(layout, "metropolitan", "great-portland-street", "baker-street"))
       .toEqual([{ x: 50, y: -22 }, { x: 44, y: -22 }]);
     expect(renderedGridPoints(layout, "metropolitan", "baker-street", "finchley-road"))
-      .toEqual([{ x: 44, y: -22 }, { x: 42, y: -24 }, { x: 40, y: -24 }, { x: 32, y: -32 }]);
+      .toEqual([{ x: 44, y: -22 }, { x: 32, y: -34 }]);
     expect(renderedDirectionRuns(layout, "metropolitan", "baker-street", "finchley-road"))
-      .toEqual(["-1,-1", "-1,0", "-1,-1"]);
+      .toEqual(["-1,-1"]);
   });
 
   it("renders Baker Street to Great Portland Street with ordered subsurface offsets", () => {
@@ -653,6 +653,10 @@ describe("shared corridor layout", () => {
       .toEqual(["1,0"]);
     expect(renderedDirectionRuns(layout, "elizabeth", "farringdon", "tottenham-court-road"))
       .toEqual(["-1,0", "-1,1", "-1,0"]);
+    expect(renderedGridPoints(layout, "elizabeth", "farringdon", "liverpool-street"))
+      .toEqual([{ x: 80, y: -18 }, { x: 85, y: -18 }, { x: 90, y: -13 }, { x: 92, y: -13 }]);
+    expect(renderedDirectionRuns(layout, "elizabeth", "farringdon", "liverpool-street"))
+      .toEqual(["1,0", "1,1", "1,0"]);
   });
 
   it("places the Ealing Common markers left and right", () => {
