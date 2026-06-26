@@ -402,12 +402,31 @@ describe("network data validation", () => {
       .toEqual(["1,0", "1,-1", "0,-1", "1,-1"]);
 
     const towerHillToAldgate = findConnectionPath("circle", "tower-hill", "aldgate");
+    const towerHillToAldgateEast = findConnectionPath("district", "tower-hill", "aldgate-east");
     expect(towerHillToAldgate.slice(0, 5)).toEqual([
       { x: 104, y: 0 },
       { x: 105, y: 0 },
       { x: 106, y: 0 },
       { x: 107, y: 0 },
       { x: 108, y: -1 },
+    ]);
+    expect(towerHillToAldgateEast).toEqual([
+      { x: 104, y: 0 },
+      { x: 105, y: 0 },
+      { x: 106, y: 0 },
+      { x: 107, y: 0 },
+      { x: 108, y: -1 },
+      { x: 108, y: -2 },
+      { x: 108, y: -3 },
+      { x: 108, y: -4 },
+      { x: 109, y: -5 },
+      { x: 110, y: -6 },
+      { x: 111, y: -7 },
+      { x: 112, y: -8 },
+      { x: 113, y: -9 },
+      { x: 114, y: -10 },
+      { x: 115, y: -11 },
+      { x: 116, y: -12 },
     ]);
   });
 

@@ -494,8 +494,8 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
     expandSchematicPath([
       { x: 104, y: 0 },
       { x: 107, y: 0 },
-      { x: 111, y: -4 },
-      { x: 111, y: -7 },
+      { x: 108, y: -1 },
+      { x: 108, y: -4 },
       { x: 116, y: -12 },
     ]),
   ],

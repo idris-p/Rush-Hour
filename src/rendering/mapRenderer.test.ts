@@ -194,12 +194,12 @@ describe("revealed line grouping", () => {
     expect(groups[0].map((item) => item.connection.line)).toEqual(["bakerloo", "northern"]);
   });
 
-  it("places Circle above Hammersmith & City between Edgware Road and Baker Street", () => {
+  it("places Hammersmith & City above Circle between Edgware Road and Baker Street", () => {
     const group = getSharedLineGroup(["circle", "hammersmith-city"], "edgware-road", "baker-street");
     const circle = getOffsetMidpoint(group, "circle");
     const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
 
-    expect(circle.y).toBeLessThan(hammersmithCity.y);
+    expect(hammersmithCity.y).toBeLessThan(circle.y);
   });
 
   it("places Circle above District between South Kensington and Sloane Square", () => {
@@ -210,39 +210,97 @@ describe("revealed line grouping", () => {
     expect(circle.y).toBeLessThan(district.y);
   });
 
-  it("places District right of Circle between Notting Hill Gate and Bayswater", () => {
-    const group = getSharedLineGroup(["circle", "district"], "notting-hill-gate", "bayswater");
-    const circle = getOffsetMidpoint(group, "circle");
-    const district = getOffsetMidpoint(group, "district");
-
-    expect(district.x).toBeGreaterThan(circle.x);
-  });
-
-  it("keeps Circle on the left between Hammersmith and Ladbroke Grove", () => {
+  it("keeps Hammersmith & City left/up between Hammersmith and Paddington", () => {
     const stationPairs = [
       ["hammersmith-circle-and-hammersmith-and-city", "goldhawk-road"],
       ["goldhawk-road", "shepherd-s-bush-market"],
       ["shepherd-s-bush-market", "wood-lane"],
       ["wood-lane", "latimer-road"],
       ["latimer-road", "ladbroke-grove"],
+      ["ladbroke-grove", "westbourne-park"],
+      ["westbourne-park", "royal-oak"],
+      ["royal-oak", "paddington"],
     ] as const;
 
     for (const [from, to] of stationPairs) {
       const group = getSharedLineGroup(["circle", "hammersmith-city"], from, to);
       const circle = getOffsetMidpoint(group, "circle");
       const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
-      const routeDirection = getRouteDirection(group, "circle", from);
-      const leftNormal = { x: routeDirection.y, y: -routeDirection.x };
-      const circleRelativeToHammersmithCity = {
-        x: circle.x - hammersmithCity.x,
-        y: circle.y - hammersmithCity.y,
-      };
 
-      expect(
-        circleRelativeToHammersmithCity.x * leftNormal.x +
-          circleRelativeToHammersmithCity.y * leftNormal.y,
-        `${from} -> ${to}`,
-      ).toBeGreaterThan(0);
+      expectPointOnRouteSide(hammersmithCity, circle, group, "circle", from, "left", `${from} -> ${to}`);
+    }
+  });
+
+  it("keeps District left and Circle right between High Street Kensington and Paddington", () => {
+    const stationPairs = [
+      ["high-street-kensington", "notting-hill-gate"],
+      ["notting-hill-gate", "bayswater"],
+      ["bayswater", "paddington"],
+    ] as const;
+
+    for (const [from, to] of stationPairs) {
+      const group = getSharedLineGroup(["circle", "district"], from, to);
+      const circle = getOffsetMidpoint(group, "circle");
+      const district = getOffsetMidpoint(group, "district");
+
+      expectPointOnRouteSide(district, circle, group, "circle", from, "left", `${from} -> ${to}`);
+    }
+  });
+
+  it("orders Paddington to Edgware Road as H&C, Circle, District from top to bottom", () => {
+    const group = getSharedLineGroup(["hammersmith-city", "circle", "district"], "paddington", "edgware-road");
+    const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
+    const circle = getOffsetMidpoint(group, "circle");
+    const district = getOffsetMidpoint(group, "district");
+
+    expect(hammersmithCity.y).toBeLessThan(circle.y);
+    expect(circle.y).toBeLessThan(district.y);
+  });
+
+  it("orders the Baker Street east trunk as H&C, Circle, Metropolitan from top to bottom", () => {
+    const stationPairs = [
+      ["great-portland-street", "euston-square"],
+      ["euston-square", "king-s-cross-st-pancras"],
+      ["king-s-cross-st-pancras", "farringdon"],
+      ["farringdon", "barbican"],
+      ["barbican", "moorgate"],
+      ["moorgate", "liverpool-street"],
+    ] as const;
+
+    for (const [from, to] of stationPairs) {
+      const group = getSharedLineGroup(["hammersmith-city", "circle", "metropolitan"], from, to);
+      const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
+      const circle = getOffsetMidpoint(group, "circle");
+      const metropolitan = getOffsetMidpoint(group, "metropolitan");
+
+      expect(hammersmithCity.y, `${from} -> ${to}`).toBeLessThan(circle.y);
+      expect(circle.y, `${from} -> ${to}`).toBeLessThan(metropolitan.y);
+    }
+
+    const aldgateGroup = getSharedLineGroup(["circle", "metropolitan"], "liverpool-street", "aldgate");
+    expect(getOffsetMidpoint(aldgateGroup, "circle").y).toBeLessThan(getOffsetMidpoint(aldgateGroup, "metropolitan").y);
+  });
+
+  it("orders Aldgate East to Barking with H&C above District", () => {
+    const stationPairs = [
+      ["aldgate-east", "whitechapel"],
+      ["whitechapel", "stepney-green"],
+      ["stepney-green", "mile-end"],
+      ["mile-end", "bow-road"],
+      ["bow-road", "bromley-by-bow"],
+      ["bromley-by-bow", "west-ham"],
+      ["west-ham", "plaistow"],
+      ["plaistow", "upton-park"],
+      ["upton-park", "east-ham"],
+      ["east-ham", "barking"],
+    ] as const;
+
+    for (const [from, to] of stationPairs) {
+      const group = getSharedLineGroup(["hammersmith-city", "district"], from, to);
+      const hammersmithCity = getOffsetMidpoint(group, "hammersmith-city");
+      const district = getOffsetMidpoint(group, "district");
+
+      expect(hammersmithCity.y, `${from} -> ${to}`).toBeLessThan(district.y);
     }
   });
 });
@@ -306,6 +364,30 @@ function getRouteDirection(
     }
   }
   throw new Error(`Missing route direction for ${line}`);
+}
+
+function expectPointOnRouteSide(
+  point: Point,
+  reference: Point,
+  group: RenderedConnectionPathGroup,
+  line: LineId,
+  routeFromStationId: string,
+  side: "left" | "right",
+  message: string,
+) {
+  const routeDirection = getRouteDirection(group, line, routeFromStationId);
+  const sideNormal = side === "left"
+    ? { x: routeDirection.y, y: -routeDirection.x }
+    : { x: -routeDirection.y, y: routeDirection.x };
+  const relativeToReference = {
+    x: point.x - reference.x,
+    y: point.y - reference.y,
+  };
+
+  expect(
+    relativeToReference.x * sideNormal.x + relativeToReference.y * sideNormal.y,
+    message,
+  ).toBeGreaterThan(0);
 }
 
 describe("line reveal camera", () => {

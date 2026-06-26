@@ -2,15 +2,26 @@ import { compareLineIds } from "../data/lines";
 import type { Connection, GridPoint, LineId, NetworkData, Point } from "../data/types";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { LINE_STROKE_WIDTH } from "./lineStyles";
-import { offsetPolylinePoints } from "./pathOffset";
+import { getCenteredOffset, offsetPolylinePoints } from "./pathOffset";
 import { simplifyPolylinePoints } from "./roundedPath";
 
 const POINT_TOLERANCE = 0.01;
 const CONDITIONAL_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
-const BAKER_STREET_SUBSURFACE_LINES = ["circle", "hammersmith-city", "metropolitan"] as const;
+const BAKER_STREET_SUBSURFACE_LINES = ["hammersmith-city", "circle", "metropolitan"] as const;
+const HAMMERSMITH_CITY_LIVERPOOL_STREET_ALDGATE_EAST = "hammersmith-city:aldgate-east:liverpool-street";
+const CIRCLE_LIVERPOOL_STREET_ALDGATE = "circle:aldgate:liverpool-street";
+const METROPOLITAN_LIVERPOOL_STREET_ALDGATE = "metropolitan:aldgate:liverpool-street";
+const CIRCLE_TOWER_HILL_ALDGATE = "circle:aldgate:tower-hill";
+const DISTRICT_TOWER_HILL_ALDGATE_EAST = "district:aldgate-east:tower-hill";
 const HEATHROW_ELIZABETH_T5 = "elizabeth:heathrow-terminal-2-and-3:heathrow-terminal-5";
 const HEATHROW_PICCADILLY_T5 = "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-5";
 const HEATHROW_PICCADILLY_T4 = "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4";
+
+const LIVERPOOL_STREET_ALDGATE_LINE_ORDER = [
+  { connectionId: HAMMERSMITH_CITY_LIVERPOOL_STREET_ALDGATE_EAST, pathSign: 1 },
+  { connectionId: CIRCLE_LIVERPOOL_STREET_ALDGATE, pathSign: -1 },
+  { connectionId: METROPOLITAN_LIVERPOOL_STREET_ALDGATE, pathSign: -1 },
+] as const;
 
 export type SharedCorridor = {
   lanes: readonly (readonly LineId[])[];
@@ -193,7 +204,9 @@ export class CorridorLayout {
   }
 
   getConnectionRenderPoints(connection: Connection, visibleConnectionIds: ReadonlySet<string>): Point[] {
-    return this.getHeathrowLoopSplitPath(connection, visibleConnectionIds) ??
+    return this.getLiverpoolStreetAldgateSplitPath(connection, visibleConnectionIds) ??
+      this.getTowerHillAldgateSplitPath(connection, visibleConnectionIds) ??
+      this.getHeathrowLoopSplitPath(connection, visibleConnectionIds) ??
       this.getBakerStreetSubsurfaceSplitPath(connection, visibleConnectionIds) ??
       this.getHighStreetKensingtonBranchSplitPath(connection, visibleConnectionIds) ??
       this.getConnectionPoints(connection);
@@ -343,6 +356,71 @@ export class CorridorLayout {
     return pointsMatch(gridPointToSvgPoint(connection.path[0]), fromPoint)
       ? [connection.from, connection.to]
       : [connection.to, connection.from];
+  }
+
+  private getLiverpoolStreetAldgateSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    const currentLine = LIVERPOOL_STREET_ALDGATE_LINE_ORDER.find((entry) =>
+      entry.connectionId === connection.id
+    );
+    if (!currentLine) return null;
+
+    const visibleLines = LIVERPOOL_STREET_ALDGATE_LINE_ORDER.filter((entry) =>
+      visibleConnectionIds.has(entry.connectionId)
+    );
+    if (visibleLines.length < 2 || !visibleLines.includes(currentLine)) {
+      return null;
+    }
+
+    const horizontalOffset = getCenteredOffset(
+      visibleLines.indexOf(currentLine),
+      visibleLines.length,
+      LINE_STROKE_WIDTH,
+    );
+    if (connection.id === HAMMERSMITH_CITY_LIVERPOOL_STREET_ALDGATE_EAST) {
+      return simplifyPolylinePoints(
+        offsetPolylinePoints(this.getConnectionPoints(connection), horizontalOffset * currentLine.pathSign),
+      );
+    }
+
+    const visibleAldgateLines = visibleLines.filter((entry) =>
+      entry.connectionId !== HAMMERSMITH_CITY_LIVERPOOL_STREET_ALDGATE_EAST
+    );
+    const aldgateOffset = visibleAldgateLines.length < 2
+      ? 0
+      : getCenteredOffset(
+        visibleAldgateLines.findIndex((entry) => entry.connectionId === currentLine.connectionId),
+        visibleAldgateLines.length,
+        LINE_STROKE_WIDTH,
+      );
+    const points = this.getConnectionPoints(connection);
+    const offsets = points.slice(0, -1).map((_, index) =>
+      (index === points.length - 2 ? horizontalOffset : aldgateOffset) * currentLine.pathSign
+    );
+    return simplifyPolylinePoints(offsetPolylinePointsBySegment(points, offsets));
+  }
+
+  private getTowerHillAldgateSplitPath(
+    connection: Connection,
+    visibleConnectionIds: ReadonlySet<string>,
+  ): Point[] | null {
+    if (
+      !visibleConnectionIds.has(CIRCLE_TOWER_HILL_ALDGATE) ||
+      !visibleConnectionIds.has(DISTRICT_TOWER_HILL_ALDGATE_EAST)
+    ) {
+      return null;
+    }
+
+    const offset = connection.id === CIRCLE_TOWER_HILL_ALDGATE
+      ? -CONDITIONAL_VERTICAL_SPLIT
+      : connection.id === DISTRICT_TOWER_HILL_ALDGATE_EAST
+        ? CONDITIONAL_VERTICAL_SPLIT
+        : 0;
+    return offset === 0
+      ? null
+      : simplifyPolylinePoints(offsetPolylinePoints(this.getConnectionPoints(connection), offset));
   }
 
   private getHeathrowLoopSplitPath(

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { GridPoint, NetworkData } from "../data/types";
+import type { GridPoint, NetworkData, Point } from "../data/types";
 import { networkData } from "../data/network";
 import { GRID_CELL_SIZE, gridPointToSvgPoint } from "./grid";
 import { CorridorLayout, type SharedCorridor } from "./corridorLayout";
@@ -376,6 +376,84 @@ describe("shared corridor layout", () => {
     expect(hammersmithCity.every((point) => point.y === -12)).toBe(true);
   });
 
+  it("matches the Aldgate reference lane offsets from Liverpool Street", () => {
+    const layout = new CorridorLayout(networkData);
+    const hammersmithCity = findConnection("hammersmith-city", "liverpool-street", "aldgate-east");
+    const circle = findConnection("circle", "liverpool-street", "aldgate");
+    const metropolitan = findConnection("metropolitan", "liverpool-street", "aldgate");
+    const centreY = gridPointToSvgPoint({ x: 92, y: -12 }).y;
+    const aldgateX = gridPointToSvgPoint({ x: 108, y: -8 }).x;
+
+    for (const connection of [hammersmithCity, circle, metropolitan]) {
+      expect(layout.getConnectionRenderPoints(connection, new Set([connection.id])))
+        .toEqual(layout.getConnectionCameraPoints(connection));
+    }
+
+    const referenceCases = [
+      {
+        visible: [hammersmithCity, circle],
+        horizontalOffsets: new Map([
+          [hammersmithCity.id, -LINE_STROKE_WIDTH / 2],
+          [circle.id, LINE_STROKE_WIDTH / 2],
+        ]),
+        aldgateOffsets: new Map([
+          [circle.id, 0],
+        ]),
+      },
+      {
+        visible: [hammersmithCity, metropolitan],
+        horizontalOffsets: new Map([
+          [hammersmithCity.id, -LINE_STROKE_WIDTH / 2],
+          [metropolitan.id, LINE_STROKE_WIDTH / 2],
+        ]),
+        aldgateOffsets: new Map([
+          [metropolitan.id, 0],
+        ]),
+      },
+      {
+        visible: [circle, metropolitan],
+        horizontalOffsets: new Map([
+          [circle.id, -LINE_STROKE_WIDTH / 2],
+          [metropolitan.id, LINE_STROKE_WIDTH / 2],
+        ]),
+        aldgateOffsets: new Map([
+          [circle.id, -LINE_STROKE_WIDTH / 2],
+          [metropolitan.id, LINE_STROKE_WIDTH / 2],
+        ]),
+      },
+      {
+        visible: [hammersmithCity, circle, metropolitan],
+        horizontalOffsets: new Map([
+          [hammersmithCity.id, -LINE_STROKE_WIDTH],
+          [circle.id, 0],
+          [metropolitan.id, LINE_STROKE_WIDTH],
+        ]),
+        aldgateOffsets: new Map([
+          [circle.id, -LINE_STROKE_WIDTH / 2],
+          [metropolitan.id, LINE_STROKE_WIDTH / 2],
+        ]),
+      },
+    ];
+
+    for (const referenceCase of referenceCases) {
+      const visibleIds = new Set(referenceCase.visible.map((connection) => connection.id));
+      for (const connection of referenceCase.visible) {
+        const horizontalOffset = referenceCase.horizontalOffsets.get(connection.id);
+        if (horizontalOffset === undefined) throw new Error(`Missing horizontal offset for ${connection.id}`);
+
+        const points = layout.getConnectionRenderPoints(connection, visibleIds);
+        expect(leftmostPointY(points))
+          .toBeCloseTo(centreY + horizontalOffset);
+
+        if (connection.line === "circle" || connection.line === "metropolitan") {
+          const aldgateOffset = referenceCase.aldgateOffsets.get(connection.id);
+          if (aldgateOffset === undefined) throw new Error(`Missing Aldgate offset for ${connection.id}`);
+          expect(points[0].x).toBeCloseTo(aldgateX - aldgateOffset);
+        }
+      }
+    }
+  });
+
   it("renders Elizabeth diagonally from Canary Wharf to Whitechapel", () => {
     const layout = new CorridorLayout(networkData);
 
@@ -639,8 +717,8 @@ describe("shared corridor layout", () => {
     const hammersmithCityPoints = layout.getConnectionRenderPoints(hammersmithCity, visibleConnectionIds);
     const metropolitanPoints = layout.getConnectionRenderPoints(metropolitan, visibleConnectionIds);
 
-    expect(circlePoints.every((point) => point.y === centreY - LINE_STROKE_WIDTH)).toBe(true);
-    expect(hammersmithCityPoints.every((point) => point.y === centreY)).toBe(true);
+    expect(hammersmithCityPoints.every((point) => point.y === centreY - LINE_STROKE_WIDTH)).toBe(true);
+    expect(circlePoints.every((point) => point.y === centreY)).toBe(true);
     expect(metropolitanPoints.every((point) => point.y === centreY + LINE_STROKE_WIDTH)).toBe(true);
     for (const points of [circlePoints, hammersmithCityPoints, metropolitanPoints]) {
       expect(points).toHaveLength(2);
@@ -649,12 +727,12 @@ describe("shared corridor layout", () => {
     }
   });
 
-  it("uses Circle H&C Metropolitan order when two Baker Street subsurface lines are explored", () => {
+  it("uses H&C Circle Metropolitan order when two Baker Street subsurface lines are explored", () => {
     const layout = new CorridorLayout(networkData);
     const orderedPairs = [
-      ["circle", "hammersmith-city"],
-      ["circle", "metropolitan"],
+      ["hammersmith-city", "circle"],
       ["hammersmith-city", "metropolitan"],
+      ["circle", "metropolitan"],
     ] as const;
     const centreY = gridPointToSvgPoint({ x: 50, y: -22 }).y;
 
@@ -952,6 +1030,34 @@ describe("shared corridor layout", () => {
     }
   });
 
+  it("renders Circle inside and District outside from Tower Hill toward Aldgate", () => {
+    const layout = new CorridorLayout(networkData);
+    const circle = findConnection("circle", "tower-hill", "aldgate");
+    const district = findConnection("district", "tower-hill", "aldgate-east");
+
+    expect(layout.getConnectionRenderPoints(circle, new Set([circle.id])))
+      .toEqual(layout.getConnectionCameraPoints(circle));
+    expect(layout.getConnectionRenderPoints(district, new Set([district.id])))
+      .toEqual(layout.getConnectionCameraPoints(district));
+
+    const visibleConnectionIds = new Set([circle.id, district.id]);
+    const circlePoints = layout.getConnectionRenderPoints(circle, visibleConnectionIds);
+    const districtPoints = layout.getConnectionRenderPoints(district, visibleConnectionIds);
+    const circleCameraPoints = layout.getConnectionCameraPoints(circle);
+    const districtCameraPoints = layout.getConnectionCameraPoints(district);
+
+    expect(midpoint(circlePoints[0], circlePoints[1]).y)
+      .toBeLessThan(midpoint(circleCameraPoints[0], circleCameraPoints[1]).y);
+    expect(midpoint(districtPoints[0], districtPoints[1]).y)
+      .toBeGreaterThan(midpoint(districtCameraPoints[0], districtCameraPoints[1]).y);
+    expect(midpoint(circlePoints[2], circlePoints[3]).x)
+      .toBeLessThan(midpoint(circleCameraPoints[2], circleCameraPoints[3]).x);
+    expect(midpoint(districtPoints[2], districtPoints[3]).x)
+      .toBeGreaterThan(midpoint(districtCameraPoints[2], districtCameraPoints[3]).x);
+    expect(Math.sign(districtPoints.at(-1)!.x - districtPoints.at(-2)!.x)).toBe(1);
+    expect(Math.sign(districtPoints.at(-1)!.y - districtPoints.at(-2)!.y)).toBe(-1);
+  });
+
   it("applies Heathrow loop overlap rules based on visible services", () => {
     const layout = new CorridorLayout(networkData);
     const elizabethT5 = findConnection("elizabeth", "heathrow-terminal-2-and-3", "heathrow-terminal-5");
@@ -1115,6 +1221,10 @@ function midpoint(first: { x: number; y: number }, second: { x: number; y: numbe
     x: (first.x + second.x) / 2,
     y: (first.y + second.y) / 2,
   };
+}
+
+function leftmostPointY(points: Point[]): number {
+  return points.reduce((leftmost, point) => point.x < leftmost.x ? point : leftmost).y;
 }
 
 function expectSegmentIsVertical(points: { x: number; y: number }[], segmentIndex: number) {
