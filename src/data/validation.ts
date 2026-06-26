@@ -4,6 +4,7 @@ import type { LineId, NetworkData } from "./types";
 const ALLOWED_SHORT_ZIG_ZAG_CONNECTIONS = new Set([
   "bakerloo:paddington:warwick-avenue",
   "metropolitan:baker-street:finchley-road",
+  "victoria:finsbury-park:highbury-and-islington",
 ]);
 
 const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
@@ -16,6 +17,7 @@ const ALLOWED_SCHEMATIC_DETOUR_CONNECTIONS = new Set([
   "metropolitan:aldgate:liverpool-street",
   "piccadilly:hatton-cross:heathrow-terminal-4",
   "piccadilly:heathrow-terminal-2-and-3:heathrow-terminal-4",
+  "victoria:highbury-and-islington:king-s-cross-st-pancras",
 ]);
 
 const ALLOWED_SHARP_TURN_CONNECTIONS = new Set([

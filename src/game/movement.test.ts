@@ -116,6 +116,19 @@ describe("movement", () => {
       .toBeNull();
   });
 
+  it("matches clicks to the Jubilee branch from Wembley Park to Stanmore", () => {
+    expect(findDirectionalNeighbour(networkData, "wembley-park", "jubilee", "northwest")?.id)
+      .toBe("kingsbury");
+    expect(findDirectionalNeighbour(networkData, "kingsbury", "jubilee", "south")?.id)
+      .toBe("wembley-park");
+    expect(findDirectionalNeighbour(networkData, "kingsbury", "jubilee", "north")?.id)
+      .toBe("queensbury");
+    expect(findDirectionalNeighbour(networkData, "queensbury", "jubilee", "north")?.id)
+      .toBe("canons-park");
+    expect(findDirectionalNeighbour(networkData, "canons-park", "jubilee", "north")?.id)
+      .toBe("stanmore");
+  });
+
   it("requires northwest from Canary Wharf to Whitechapel on the Elizabeth line", () => {
     expect(findDirectionalNeighbour(
       networkData,
@@ -225,6 +238,15 @@ describe("movement", () => {
     }
   });
 
+  it("matches clicks to the Royal Oak and Paddington shared Circle and Hammersmith & City route", () => {
+    for (const line of ["circle", "hammersmith-city"] as const) {
+      expect(findDirectionalNeighbour(networkData, "royal-oak", line, "northeast")?.id)
+        .toBe("paddington");
+      expect(findDirectionalNeighbour(networkData, "paddington", line, "southwest")?.id)
+        .toBe("royal-oak");
+    }
+  });
+
   it("uses northeast from Warren Street into the Euston Victoria marker", () => {
     expect(findDirectionalNeighbour(networkData, "warren-street", "victoria", "northeast")?.id)
       .toBe("euston");
@@ -253,6 +275,12 @@ describe("movement", () => {
   it("matches clicks to the Piccadilly and Victoria Finsbury Park corridor", () => {
     expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "piccadilly", "north")?.id)
       .toBe("caledonian-road");
+    expect(findDirectionalNeighbour(networkData, "king-s-cross-st-pancras", "victoria", "east")?.id)
+      .toBe("highbury-and-islington");
+    expect(findDirectionalNeighbour(networkData, "highbury-and-islington", "victoria", "south")?.id)
+      .toBe("king-s-cross-st-pancras");
+    expect(findDirectionalNeighbour(networkData, "highbury-and-islington", "victoria", "north")?.id)
+      .toBe("finsbury-park");
     expect(findDirectionalNeighbour(networkData, "finsbury-park", "piccadilly", "northeast")?.id)
       .toBe("manor-house");
     expect(findDirectionalNeighbour(networkData, "finsbury-park", "victoria", "northeast")?.id)

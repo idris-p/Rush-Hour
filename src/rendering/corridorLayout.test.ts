@@ -301,16 +301,16 @@ describe("shared corridor layout", () => {
     expect(piccadilly?.lines).toEqual(["piccadilly"]);
     expect(victoria?.lines).toEqual(["victoria"]);
     expect(gridPointFromSvgPoint(piccadilly!.point)).toEqual({ x: 94, y: -46 });
-    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 96, y: -44 });
-    expect(victoria!.point.x - piccadilly!.point.x).toBe(GRID_CELL_SIZE * 2);
-    expect(victoria!.point.y - piccadilly!.point.y).toBe(GRID_CELL_SIZE * 2);
+    expect(gridPointFromSvgPoint(victoria!.point)).toEqual({ x: 95, y: -45 });
+    expect(victoria!.point.x - piccadilly!.point.x).toBe(GRID_CELL_SIZE);
+    expect(victoria!.point.y - piccadilly!.point.y).toBe(GRID_CELL_SIZE);
   });
 
   it("renders the Piccadilly corridor diagonally from Caledonian Road to Finsbury Park", () => {
     const layout = new CorridorLayout(networkData);
 
     expect(renderedGridPoints(layout, "piccadilly", "king-s-cross-st-pancras", "caledonian-road"))
-      .toEqual([{ x: 74, y: -22 }, { x: 74, y: -26 }, { x: 76, y: -28 }]);
+      .toEqual([{ x: 74, y: -22 }, { x: 74, y: -26 }, { x: 79, y: -31 }]);
     expect(renderedDirectionRuns(layout, "piccadilly", "caledonian-road", "holloway-road"))
       .toEqual(["1,-1"]);
     expect(renderedDirectionRuns(layout, "piccadilly", "holloway-road", "arsenal"))
@@ -322,12 +322,20 @@ describe("shared corridor layout", () => {
   it("renders Piccadilly and Victoria outward from the Finsbury Park split marker", () => {
     const layout = new CorridorLayout(networkData);
 
+    expect(renderedGridPoints(layout, "victoria", "king-s-cross-st-pancras", "highbury-and-islington"))
+      .toEqual([{ x: 77, y: -25 }, { x: 87, y: -25 }, { x: 92, y: -30 }, { x: 92, y: -36 }]);
+    expect(renderedDirectionRuns(layout, "victoria", "king-s-cross-st-pancras", "highbury-and-islington"))
+      .toEqual(["1,0", "1,-1", "0,-1"]);
+    expect(renderedGridPoints(layout, "victoria", "highbury-and-islington", "finsbury-park"))
+      .toEqual([{ x: 92, y: -36 }, { x: 92, y: -42 }, { x: 95, y: -45 }]);
+    expect(renderedDirectionRuns(layout, "victoria", "highbury-and-islington", "finsbury-park"))
+      .toEqual(["0,-1", "1,-1"]);
     expect(renderedGridPoints(layout, "piccadilly", "finsbury-park", "manor-house"))
       .toEqual([{ x: 94, y: -46 }, { x: 100, y: -52 }, { x: 100, y: -56 }]);
     expect(renderedDirectionRuns(layout, "piccadilly", "finsbury-park", "manor-house"))
       .toEqual(["1,-1", "0,-1"]);
     expect(renderedGridPoints(layout, "victoria", "finsbury-park", "seven-sisters"))
-      .toEqual([{ x: 96, y: -44 }, { x: 106, y: -54 }, { x: 120, y: -54 }]);
+      .toEqual([{ x: 95, y: -45 }, { x: 104, y: -54 }, { x: 120, y: -54 }]);
     expect(renderedDirectionRuns(layout, "victoria", "finsbury-park", "seven-sisters"))
       .toEqual(["1,-1", "1,0"]);
   });
@@ -671,8 +679,16 @@ describe("shared corridor layout", () => {
   it("preserves requested branch directions from displaced conjoined markers", () => {
     const layout = new CorridorLayout(networkData);
 
+    expect(renderedGridPoints(layout, "jubilee", "wembley-park", "kingsbury"))
+      .toEqual([{ x: 15, y: -53 }, { x: 13, y: -55 }, { x: 13, y: -59 }]);
     expect(renderedDirectionRuns(layout, "jubilee", "wembley-park", "kingsbury"))
       .toEqual(["-1,-1", "0,-1"]);
+    expect(renderedGridPoints(layout, "jubilee", "kingsbury", "queensbury"))
+      .toEqual([{ x: 13, y: -59 }, { x: 13, y: -63 }]);
+    expect(renderedGridPoints(layout, "jubilee", "queensbury", "canons-park"))
+      .toEqual([{ x: 13, y: -63 }, { x: 13, y: -67 }]);
+    expect(renderedGridPoints(layout, "jubilee", "canons-park", "stanmore"))
+      .toEqual([{ x: 13, y: -67 }, { x: 13, y: -71 }]);
     expect(renderedDirectionRuns(layout, "district", "ealing-common", "ealing-broadway"))
       .toEqual(["0,-1", "-1,-1"]);
     expect(renderedDirectionRuns(layout, "district", "earl-s-court", "west-brompton"))

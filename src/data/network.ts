@@ -77,11 +77,11 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["mornington-crescent", { x: 63, y: -30 }],
   ["old-street", { x: 87, y: -21 }],
   ["angel", { x: 82, y: -22 }],
-  ["caledonian-road", { x: 76, y: -28 }],
-  ["holloway-road", { x: 81, y: -33 }],
-  ["arsenal", { x: 88, y: -40 }],
+  ["caledonian-road", { x: 79, y: -31 }],
+  ["holloway-road", { x: 84, y: -36 }],
+  ["arsenal", { x: 89, y: -41 }],
   ["finsbury-park", { x: 94, y: -46 }],
-  ["highbury-and-islington", { x: 87, y: -35 }],
+  ["highbury-and-islington", { x: 92, y: -36 }],
   ["canary-wharf-elizabeth-line", { x: 142, y: 10 }],
   ["whitechapel", { x: 119, y: -12 }],
   ["bethnal-green", { x: 122, y: -14 }],
@@ -115,10 +115,10 @@ const schematicStationPositionOverrides = new Map<string, Pick<Station, "x" | "y
   ["dollis-hill", { x: 19, y: -49 }],
   ["neasden", { x: 17, y: -51 }],
   ["wembley-park", { x: 14, y: -52 }],
-  ["kingsbury", { x: 12, y: -60 }],
-  ["queensbury", { x: 12, y: -64 }],
-  ["canons-park", { x: 12, y: -68 }],
-  ["stanmore", { x: 12, y: -72 }],
+  ["kingsbury", { x: 13, y: -59 }],
+  ["queensbury", { x: 13, y: -63 }],
+  ["canons-park", { x: 13, y: -67 }],
+  ["stanmore", { x: 13, y: -71 }],
   ["gunnersbury", { x: -25, y: 20 }],
   ["kew-gardens", { x: -31, y: 26 }],
   ["richmond", { x: -37, y: 32 }],
@@ -348,19 +348,19 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("jubilee", "wembley-park", "kingsbury"),
-    expandSchematicPath([{ x: 14, y: -52 }, { x: 15, y: -53 }, { x: 12, y: -56 }, { x: 12, y: -60 }]),
+    expandSchematicPath([{ x: 14, y: -52 }, { x: 15, y: -53 }, { x: 13, y: -55 }, { x: 13, y: -59 }]),
   ],
   [
     createConnectionId("jubilee", "kingsbury", "queensbury"),
-    expandSchematicPath([{ x: 12, y: -60 }, { x: 12, y: -64 }]),
+    expandSchematicPath([{ x: 13, y: -59 }, { x: 13, y: -63 }]),
   ],
   [
     createConnectionId("jubilee", "queensbury", "canons-park"),
-    expandSchematicPath([{ x: 12, y: -64 }, { x: 12, y: -68 }]),
+    expandSchematicPath([{ x: 13, y: -63 }, { x: 13, y: -67 }]),
   ],
   [
     createConnectionId("jubilee", "canons-park", "stanmore"),
-    expandSchematicPath([{ x: 12, y: -68 }, { x: 12, y: -72 }]),
+    expandSchematicPath([{ x: 13, y: -67 }, { x: 13, y: -71 }]),
   ],
   [
     createConnectionId("jubilee", "west-ham", "stratford"),
@@ -723,19 +723,19 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("piccadilly", "caledonian-road", "king-s-cross-st-pancras"),
-    expandSchematicPath([{ x: 76, y: -28 }, { x: 74, y: -26 }, { x: 74, y: -22 }]),
+    expandSchematicPath([{ x: 79, y: -31 }, { x: 74, y: -26 }, { x: 74, y: -22 }]),
   ],
   [
     createConnectionId("piccadilly", "caledonian-road", "holloway-road"),
-    expandSchematicPath([{ x: 76, y: -28 }, { x: 81, y: -33 }]),
+    expandSchematicPath([{ x: 79, y: -31 }, { x: 84, y: -36 }]),
   ],
   [
     createConnectionId("piccadilly", "holloway-road", "arsenal"),
-    expandSchematicPath([{ x: 81, y: -33 }, { x: 88, y: -40 }]),
+    expandSchematicPath([{ x: 84, y: -36 }, { x: 89, y: -41 }]),
   ],
   [
     createConnectionId("piccadilly", "arsenal", "finsbury-park"),
-    expandSchematicPath([{ x: 88, y: -40 }, { x: 94, y: -46 }]),
+    expandSchematicPath([{ x: 89, y: -41 }, { x: 94, y: -46 }]),
   ],
   [
     createConnectionId("piccadilly", "finsbury-park", "manor-house"),
@@ -751,13 +751,20 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   ],
   [
     createConnectionId("victoria", "king-s-cross-st-pancras", "highbury-and-islington"),
-    expandSchematicPath([{ x: 74, y: -22 }, { x: 87, y: -35 }]),
+    expandSchematicPath([
+      { x: 74, y: -22 },
+      { x: 77, y: -25 },
+      { x: 87, y: -25 },
+      { x: 92, y: -30 },
+      { x: 92, y: -36 },
+    ]),
   ],
   [
     createConnectionId("victoria", "highbury-and-islington", "finsbury-park"),
     expandSchematicPath([
-      { x: 87, y: -35 },
-      { x: 94, y: -42 },
+      { x: 92, y: -36 },
+      { x: 92, y: -42 },
+      { x: 94, y: -44 },
       { x: 94, y: -46 },
     ]),
   ],
@@ -933,6 +940,13 @@ for (const line of ["district", "hammersmith-city"] as const) {
   );
 }
 
+for (const line of ["circle", "hammersmith-city"] as const) {
+  schematicPathOverrides.set(
+    createConnectionId(line, "paddington", "royal-oak"),
+    expandSchematicPath([{ x: 18, y: -18 }, { x: 16, y: -16 }, { x: 10, y: -16 }, { x: 8, y: -14 }]),
+  );
+}
+
 for (const line of ["circle", "district"] as const) {
   schematicPathOverrides.set(
     createConnectionId(line, "south-kensington", "sloane-square"),
@@ -1058,6 +1072,14 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
     { to: { x: -1, y: 0 } },
   ],
   [
+    createConnectionId("circle", "paddington", "royal-oak"),
+    { from: { x: -1, y: 1 }, to: { x: 1, y: -1 } },
+  ],
+  [
+    createConnectionId("hammersmith-city", "paddington", "royal-oak"),
+    { from: { x: -1, y: 1 }, to: { x: 1, y: -1 } },
+  ],
+  [
     createConnectionId("district", "gunnersbury", "turnham-green"),
     { to: { x: -1, y: 1 } },
   ],
@@ -1068,6 +1090,10 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
   [
     createConnectionId("victoria", "euston", "king-s-cross-st-pancras"),
     { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("victoria", "king-s-cross-st-pancras", "highbury-and-islington"),
+    { from: { x: 1, y: 0 }, to: { x: 0, y: 1 } },
   ],
   [
     createConnectionId("northern", "angel", "king-s-cross-st-pancras"),
@@ -1087,7 +1113,11 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
   ],
   [
     createConnectionId("victoria", "highbury-and-islington", "finsbury-park"),
-    { from: { x: 1, y: -1 }, to: { x: -1, y: 1 } },
+    { from: { x: 0, y: -1 }, to: { x: -1, y: 1 } },
+  ],
+  [
+    createConnectionId("victoria", "finsbury-park", "seven-sisters"),
+    { from: { x: 1, y: -1 }, to: { x: -1, y: 0 } },
   ],
 ]);
 
