@@ -229,6 +229,21 @@ describe("movement", () => {
       .toBe("bank");
   });
 
+  it("matches clicks to the conjoined Bank markers", () => {
+    expect(findDirectionalNeighbour(networkData, "bank", "central", "west")?.id)
+      .toBe("st-paul-s");
+    expect(findDirectionalNeighbour(networkData, "bank", "waterloo-city", "south")?.id)
+      .toBe("waterloo");
+    expect(findDirectionalNeighbour(networkData, "bank", "northern", "north")?.id)
+      .toBe("moorgate");
+    expect(findDirectionalNeighbour(networkData, "moorgate", "northern", "south")?.id)
+      .toBe("bank");
+    expect(findDirectionalNeighbour(networkData, "bank", "northern", "south")?.id)
+      .toBe("london-bridge");
+    expect(findDirectionalNeighbour(networkData, "bank", "walk", "southeast")?.id)
+      .toBe("monument");
+  });
+
   it("requires west from Sloane Square to South Kensington", () => {
     for (const line of ["circle", "district"] as const) {
       expect(findDirectionalNeighbour(networkData, "sloane-square", line, "west")?.id)

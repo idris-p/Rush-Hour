@@ -714,6 +714,14 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
     expandSchematicPath([{ x: 88, y: -12 }, { x: 88, y: -20 }, { x: 87, y: -21 }]),
   ],
   [
+    createConnectionId("northern", "bank", "moorgate"),
+    expandSchematicPath([{ x: 88, y: -8 }, { x: 88, y: -12 }]),
+  ],
+  [
+    createConnectionId("northern", "bank", "london-bridge"),
+    expandSchematicPath([{ x: 88, y: -8 }, { x: 90, y: -6 }, { x: 90, y: 10 }]),
+  ],
+  [
     createConnectionId("northern", "old-street", "angel"),
     expandSchematicPath([{ x: 87, y: -21 }, { x: 86, y: -22 }, { x: 82, y: -22 }]),
   ],
@@ -783,6 +791,10 @@ const schematicPathOverrides = new Map<string, Connection["path"]>([
   [
     createConnectionId("waterloo-city", "bank", "waterloo"),
     expandSchematicPath([{ x: 88, y: -8 }, { x: 88, y: 9 }, { x: 76, y: 21 }, { x: 62, y: 21 }]),
+  ],
+  [
+    createConnectionId("walk", "bank", "monument"),
+    expandSchematicPath([{ x: 88, y: -8 }, { x: 90, y: -6 }, { x: 96, y: 0 }]),
   ],
   [
     createConnectionId("walk", "euston", "euston-square"),
@@ -1090,6 +1102,14 @@ const connectionDirectionOverrides = new Map<string, NonNullable<Connection["dir
   [
     createConnectionId("victoria", "euston", "king-s-cross-st-pancras"),
     { from: { x: 1, y: 0 }, to: { x: -1, y: 0 } },
+  ],
+  [
+    createConnectionId("northern", "bank", "moorgate"),
+    { from: { x: 0, y: -1 }, to: { x: 0, y: 1 } },
+  ],
+  [
+    createConnectionId("northern", "bank", "london-bridge"),
+    { from: { x: 0, y: 1 }, to: { x: 0, y: -1 } },
   ],
   [
     createConnectionId("victoria", "king-s-cross-st-pancras", "highbury-and-islington"),

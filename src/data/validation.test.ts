@@ -664,6 +664,31 @@ describe("network data validation", () => {
       ]);
   });
 
+  it("routes Northern through the southeast Bank marker", () => {
+    expect(networkData.stations.find((station) => station.id === "bank"))
+      .toMatchObject({ x: 88, y: -8 });
+    expect(directionRuns(findConnectionPath("northern", "bank", "moorgate")))
+      .toEqual(["0,-1"]);
+    expect(findConnectionPath("northern", "bank", "moorgate")).toEqual([
+      { x: 88, y: -8 },
+      { x: 88, y: -9 },
+      { x: 88, y: -10 },
+      { x: 88, y: -11 },
+      { x: 88, y: -12 },
+    ]);
+    expect(directionRuns(findConnectionPath("northern", "bank", "london-bridge")))
+      .toEqual(["1,1", "0,1"]);
+    expect(findConnection("northern", "bank", "moorgate")?.directionOverrides)
+      .toEqual({ from: { x: 0, y: -1 }, to: { x: 0, y: 1 } });
+    expect(findConnection("northern", "bank", "london-bridge")?.directionOverrides)
+      .toEqual({ from: { x: 0, y: 1 }, to: { x: 0, y: -1 } });
+    expect(findConnectionPath("walk", "bank", "monument").slice(0, 3)).toEqual([
+      { x: 88, y: -8 },
+      { x: 89, y: -7 },
+      { x: 90, y: -6 },
+    ]);
+  });
+
   it("moves Elizabeth line Canary Wharf southeast and keeps nearby links schematic", () => {
     expect(stationByName("Whitechapel"))
       .toMatchObject({ x: 119, y: -12 });

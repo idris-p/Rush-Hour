@@ -500,6 +500,30 @@ describe("shared corridor layout", () => {
       .toEqual(["0,1", "-1,1", "-1,0"]);
   });
 
+  it("makes Bank a northwest-to-southeast conjoined marker", () => {
+    const layout = new CorridorLayout(networkData);
+    const groups = layout.getStationMarkerGroups("bank");
+    const northwest = groups.find((group) => group.lines.includes("central"));
+    const southeast = groups.find((group) => group.lines.includes("northern"));
+
+    expect(groups).toHaveLength(2);
+    expect(northwest?.lines).toEqual(["central", "waterloo-city"]);
+    expect(southeast?.lines).toEqual(["northern", "walk"]);
+    expect(gridPointFromSvgPoint(northwest!.point)).toEqual({ x: 88, y: -8 });
+    expect(gridPointFromSvgPoint(southeast!.point)).toEqual({ x: 90, y: -6 });
+
+    expect(renderedGridPoints(layout, "northern", "bank", "moorgate"))
+      .toEqual([{ x: 90, y: -6 }, { x: 90, y: -8 }, { x: 88, y: -10 }, { x: 88, y: -12 }]);
+    expect(renderedDirectionRuns(layout, "northern", "bank", "moorgate"))
+      .toEqual(["0,-1", "-1,-1", "0,-1"]);
+    expect(renderedGridPoints(layout, "northern", "bank", "london-bridge"))
+      .toEqual([{ x: 90, y: -6 }, { x: 90, y: 10 }]);
+    expect(renderedDirectionRuns(layout, "northern", "bank", "london-bridge"))
+      .toEqual(["0,1"]);
+    expect(renderedGridPoints(layout, "walk", "bank", "monument")[0])
+      .toEqual({ x: 90, y: -6 });
+  });
+
   it("renders Elizabeth one cell above between Bond Street and Tottenham Court Road", () => {
     const layout = new CorridorLayout(networkData);
 

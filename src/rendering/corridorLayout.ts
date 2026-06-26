@@ -60,6 +60,8 @@ const STATION_LINE_POINT_OVERRIDES = new Map<string, GridPoint>([
   ["baker-street|jubilee", { x: 42, y: -20 }],
   ["baker-street|metropolitan", { x: 44, y: -22 }],
   ["paddington|bakerloo", { x: 16, y: -20 }],
+  ["bank|northern", { x: 90, y: -6 }],
+  ["bank|walk", { x: 90, y: -6 }],
   ["euston|victoria", { x: 67, y: -25 }],
   ["finchley-road|jubilee", { x: 33, y: -35 }],
   ["king-s-cross-st-pancras|northern", { x: 76, y: -24 }],
@@ -111,6 +113,9 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["elizabeth:stratford:whitechapel", [{ x: 150, y: -30 }, { x: 138, y: -18 }, { x: 124, y: -18 }, { x: 119, y: -13 }]],
   ["victoria:euston:warren-street", [{ x: 62, y: -20 }, { x: 67, y: -25 }]],
   ["victoria:euston:king-s-cross-st-pancras", [{ x: 67, y: -25 }, { x: 77, y: -25 }]],
+  ["northern:bank:moorgate", [{ x: 90, y: -6 }, { x: 90, y: -8 }, { x: 88, y: -10 }, { x: 88, y: -12 }]],
+  ["northern:bank:london-bridge", [{ x: 90, y: -6 }, { x: 90, y: 10 }]],
+  ["walk:bank:monument", [{ x: 90, y: -6 }, { x: 96, y: 0 }]],
   [
     "victoria:highbury-and-islington:king-s-cross-st-pancras",
     [{ x: 77, y: -25 }, { x: 87, y: -25 }, { x: 92, y: -30 }, { x: 92, y: -36 }],
@@ -216,14 +221,14 @@ export class CorridorLayout {
   }
 
   getStationLinePoint(stationId: string, lineId: LineId): Point {
-    if (lineId === "walk") {
-      return this.getBaseStationPoint(stationId);
-    }
-
     const key = getStationLineKey(stationId, lineId);
     const override = STATION_LINE_POINT_OVERRIDES.get(key);
     if (override) {
       return gridPointToSvgPoint(override);
+    }
+
+    if (lineId === "walk") {
+      return this.getBaseStationPoint(stationId);
     }
 
     if (MERGED_CORRIDOR_STATIONS.has(stationId)) {
@@ -274,7 +279,10 @@ export class CorridorLayout {
     if (!station) return [];
 
     const groups: StationMarkerGroup[] = [];
-    for (const lineId of station.lines.filter((line) => line !== "walk").sort(compareLineIds)) {
+    const markerLines = station.id === "bank"
+      ? station.lines
+      : station.lines.filter((line) => line !== "walk");
+    for (const lineId of markerLines.sort(compareLineIds)) {
       const point = this.getStationLinePoint(stationId, lineId);
       const existing = groups.find((group) => pointsMatch(group.point, point));
       if (existing) {
