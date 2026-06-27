@@ -48,7 +48,7 @@ export class Hud {
     topLeft.append(
       metric("Time", this.timerValue),
       metric("Moves", this.moveValue),
-      metric("Station", this.stationValue),
+      metric("Start", this.stationValue),
       metric("Target", this.destinationValue),
     );
 
@@ -164,13 +164,13 @@ export class Hud {
       return;
     }
 
-    const currentStation = getStation(this.network, state.currentStationId);
+    const startStation = getStation(this.network, state.startStationId);
     const destination = getStation(this.network, state.destinationStationId);
     const elapsed = getElapsedMilliseconds(state, now);
 
     this.timerValue.textContent = formatMilliseconds(elapsed);
     this.moveValue.textContent = String(state.moveCount);
-    this.stationValue.textContent = currentStation.name;
+    this.stationValue.textContent = startStation.name;
     this.destinationValue.textContent = destination.name;
     this.seedInput.value = state.seed;
 
