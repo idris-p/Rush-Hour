@@ -12,14 +12,16 @@ import { cycleSelectedLine, getLineCyclePreview } from "./lineSelection";
 import type { NetworkData } from "../data/types";
 import { networkData } from "../data/network";
 
+const testLabelOffset = { x: 28, y: -24 };
+
 const testNetwork: NetworkData = {
   temporary: true,
   notes: [],
   stations: [
-    { id: "a", name: "A", x: 0, y: 0, lines: ["central", "victoria"] },
-    { id: "b", name: "B", x: 2, y: -1, lines: ["central"] },
-    { id: "c", name: "C", x: 0, y: 1, lines: ["victoria"] },
-    { id: "d", name: "D", x: 3, y: -1, lines: ["central"] },
+    { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central", "victoria"] },
+    { id: "b", name: "B", x: 2, y: -1, labelOffset: testLabelOffset, lines: ["central"] },
+    { id: "c", name: "C", x: 0, y: 1, labelOffset: testLabelOffset, lines: ["victoria"] },
+    { id: "d", name: "D", x: 3, y: -1, labelOffset: testLabelOffset, lines: ["central"] },
   ],
   connections: [
     { id: "central:a:b", from: "a", to: "b", line: "central", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: -1 }] },
@@ -408,8 +410,8 @@ describe("line selection", () => {
       temporary: true,
       notes: [],
       stations: [
-        { id: "bank", name: "Bank", x: 0, y: 0, lines: ["central", "walk"] },
-        { id: "monument", name: "Monument", x: 2, y: 0, lines: ["district", "walk"] },
+        { id: "bank", name: "Bank", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central", "walk"] },
+        { id: "monument", name: "Monument", x: 2, y: 0, labelOffset: testLabelOffset, lines: ["district", "walk"] },
       ],
       connections: [
         { id: "walk:bank:monument", from: "bank", to: "monument", line: "walk", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }] },

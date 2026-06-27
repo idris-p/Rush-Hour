@@ -92,11 +92,18 @@ const stations = stationMarkers.map(({ station, markerGroup }) => {
   const title = `${station.name} (${markerGroup.lines.join(", ")})`;
   return `<circle cx="${cx}" cy="${cy}" r="3.5" fill="white" stroke="#111" stroke-width="1.5"><title>${escapeXml(title)}</title></circle>`;
 });
+const labels = networkData.stations.map((station) => {
+  const point = gridPointToSvgPoint(station);
+  const x = (point.x - minX) * SCALE + PADDING + station.labelOffset.x * SCALE;
+  const y = (point.y - minY) * SCALE + PADDING + station.labelOffset.y * SCALE;
+  const anchor = station.labelOffset.x < -4 ? "end" : station.labelOffset.x > 4 ? "start" : "middle";
+  return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-family="Arial, sans-serif" font-size="${18 * SCALE}" font-weight="700" fill="#111" stroke="#fff" stroke-width="${4 * SCALE}" paint-order="stroke">${escapeXml(station.name)}</text>`;
+});
 
 const output = join(tmpdir(), "tube-speedrun-network-preview.svg");
 await writeFile(
   output,
-  `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f7f5ef">${river.join("")}${lines.join("")}${stationLinks.join("")}${stations.join("")}</svg>`,
+  `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" style="background:#f7f5ef">${river.join("")}${lines.join("")}${stationLinks.join("")}${stations.join("")}${labels.join("")}</svg>`,
   "utf8",
 );
 console.log(output);

@@ -35,12 +35,30 @@ const root = document.querySelector<HTMLElement>("#app");
 if (!root) {
   throw new Error("Missing #app root.");
 }
+const appRoot = root;
 
 const validationErrors = validateNetworkData(networkData);
 if (validationErrors.length > 0) {
   throw new Error(`Invalid network data:\n${validationErrors.join("\n")}`);
 }
 
+void boot();
+
+async function boot(): Promise<void> {
+  if (window.location.pathname === "/label-editor") {
+    if (!isDevMode()) {
+      appRoot.replaceChildren("Label editor is only available in development.");
+      return;
+    }
+    const { LabelEditor } = await import("./dev/LabelEditor");
+    new LabelEditor(appRoot, networkData);
+    return;
+  }
+
+  startGame();
+}
+
+function startGame(): void {
 let state: GameState | null = null;
 let pointerPoint: Point | null = null;
 let mouseIntent = createMouseIntentState();
@@ -70,7 +88,7 @@ let cameraPanAnimation: {
   startedAt: number;
 } | null = null;
 
-const hud = new Hud(root, networkData, {
+const hud = new Hud(appRoot, networkData, {
   onPlaySeed: (seed) => startRun(seed.trim() === "" ? pendingSeed : seed.trim()),
   onRandomSeed: () => {
     pendingSeed = generateSeed();
@@ -440,4 +458,9 @@ function isStationVisible(
       revealedConnectionIds.has(connection.id) &&
       (connection.from === stationId || connection.to === stationId),
   );
+}
+}
+
+function isDevMode(): boolean {
+  return Boolean((import.meta as ImportMeta & { env?: { DEV?: boolean } }).env?.DEV);
 }

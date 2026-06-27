@@ -21,9 +21,9 @@ import {
 } from "./pathOffset";
 import { renderRiverThames } from "./riverRenderer";
 import {
+  getStationLabelPlacement,
   isInterchangeStation,
   renderStationMarker,
-  type CurrentStationLabelPlacement,
   type StationMarkerRenderOptions,
 } from "./stationRenderer";
 
@@ -37,22 +37,7 @@ const STUB_LENGTH = 40;
 const STUB_ARROW_LENGTH = 11;
 const STUB_ARROW_HALF_WIDTH = STUB_STROKE_WIDTH / 2;
 const STUB_ARROW_OVERLAP = 0.2;
-const LABEL_RADII = [26, 32, 40, 50, 62, 76, 92, 112];
-const LABEL_SAMPLE_COLUMNS = 9;
-const LABEL_SAMPLE_ROWS = 5;
-const LABEL_COLLISION_PADDING = 3;
 const MAP_PAN_PADDING = GRID_CELL_SIZE * 3;
-const LABEL_OBSTACLE_SELECTOR = [
-  ".map-line",
-  ".direction-stub",
-  ".direction-stub-arrow",
-  ".interchange-marker",
-  ".station-bar-marker",
-  ".conjoined-station-link",
-  ".current-station-highlight",
-  ".river-thames-outline",
-  ".river-thames-fill",
-].join(",");
 const CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH = [
   "hammersmith-circle-and-hammersmith-and-city",
   "goldhawk-road",
@@ -111,14 +96,6 @@ export class MapRenderer {
 
   private renderedSeed: string | null = null;
 
-  private readonly stationLabelPlacements = new Map<string, CurrentStationLabelPlacement>();
-
-  private labelPlacementCache: {
-    key: string;
-    placement: CurrentStationLabelPlacement;
-    verifiedAfterLayout: boolean;
-  } | null = null;
-
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
     this.corridorLayout = new CorridorLayout(network);
@@ -141,8 +118,6 @@ export class MapRenderer {
   ): void {
     if (this.renderedSeed !== state.seed) {
       this.renderedSeed = state.seed;
-      this.stationLabelPlacements.clear();
-      this.labelPlacementCache = null;
       this.completedCameraCenter = null;
     }
     this.svg.classList.toggle("tube-map-running", !state.completed);
@@ -245,7 +220,6 @@ export class MapRenderer {
     stationLayer.setAttribute("class", "stations");
     this.svg.append(stationLayer);
 
-    let currentLabel: SVGTextElement | null = null;
     for (const stationId of visibleStationIds) {
       const station = getStation(this.network, stationId);
       const markerOptions: StationMarkerRenderOptions = {};
@@ -257,30 +231,20 @@ export class MapRenderer {
         };
       }
       if (station.id !== state.currentStationId) {
-        const revealedLabel = this.getRevealedStationLabel(station.id);
-        if (revealedLabel) {
-          markerOptions.revealedLabel = revealedLabel;
-        }
+        markerOptions.revealedLabel = {
+          placement: getStationLabelPlacement(station),
+        };
       }
-      const label = renderStationMarker(
+      renderStationMarker(
         stationLayer,
         station,
         this.network,
         state.selectedLineId,
         station.id === state.currentStationId,
-        1,
         this.corridorLayout.getStationMarkerGroups(station.id),
         undefined,
         markerOptions,
       );
-      if (label) currentLabel = label;
-    }
-    if (currentLabel) {
-      this.positionCurrentStationLabel(currentLabel, state, {
-        forceMeasure: false,
-        layoutStable: !lineReveal && !stationWipe && !cameraPan,
-        viewBoxKey: `${viewBox.x},${viewBox.y},${viewBox.width},${viewBox.height}`,
-      });
     }
 
     if (!state.completed) {
@@ -296,8 +260,6 @@ export class MapRenderer {
     this.svg.classList.remove("tube-map-completed", "tube-map-panning");
     this.completedCameraCenter = null;
     this.renderedSeed = null;
-    this.stationLabelPlacements.clear();
-    this.labelPlacementCache = null;
     const viewBoxSize = this.getViewBoxSize();
     const baseViewBoxSize = this.getBaseViewBoxSize();
     const viewBox = {
@@ -587,142 +549,7 @@ export class MapRenderer {
     }
   }
 
-  private positionCurrentStationLabel(
-    label: SVGTextElement,
-    state: GameState,
-    options: CurrentStationLabelPositionOptions,
-  ): void {
-    const station = getStation(this.network, state.currentStationId);
-    const stationPoint = gridPointToSvgPoint(station);
-    const labelAnchor = subtractPoints(
-      getSelectedStationMarkerPoint(
-        this.corridorLayout.getStationMarkerGroups(state.currentStationId),
-        state.selectedLineId,
-        stationPoint,
-      ),
-      stationPoint,
-    );
-    const cacheKey = [
-      state.currentStationId,
-      state.selectedLineId,
-      labelAnchor.x,
-      labelAnchor.y,
-      this.zoom,
-      this.svg.clientWidth,
-      this.svg.clientHeight,
-      options.viewBoxKey,
-      [...state.revealedConnections].sort().join(","),
-    ].join("|");
-    if (options.layoutStable && !options.forceMeasure && this.labelPlacementCache?.key === cacheKey) {
-      applyCurrentStationLabelPlacement(label, this.labelPlacementCache.placement);
-      this.rememberStationLabelPlacement(state.currentStationId, this.labelPlacementCache.placement);
-      if (!this.labelPlacementCache.verifiedAfterLayout || areDocumentFontsLoading()) {
-        this.queuePostLayoutLabelPlacement(label, state, {
-          ...options,
-          forceMeasure: true,
-          afterNextFrame: !this.labelPlacementCache.verifiedAfterLayout,
-          afterFontsReady: areDocumentFontsLoading(),
-        });
-      }
-      return;
-    }
-
-    const placements = getCurrentStationLabelPlacements(labelAnchor);
-    let best = placements[0];
-    let bestCollisionCount = Number.POSITIVE_INFINITY;
-    let measuredAnyPlacement = false;
-    for (const placement of placements) {
-      applyCurrentStationLabelPlacement(label, placement);
-      const collisionCount = countLabelCollisions(label);
-      if (collisionCount === null) {
-        continue;
-      }
-      measuredAnyPlacement = true;
-      if (collisionCount < bestCollisionCount) {
-        best = placement;
-        bestCollisionCount = collisionCount;
-      }
-      if (collisionCount === 0) break;
-    }
-
-    if (!measuredAnyPlacement) {
-      const pendingPlacement = getPendingLayoutLabelPlacement(labelAnchor);
-      applyCurrentStationLabelPlacement(label, pendingPlacement);
-      this.rememberStationLabelPlacement(state.currentStationId, pendingPlacement);
-      if (options.layoutStable && !options.forceMeasure) {
-        this.queuePostLayoutLabelPlacement(label, state, {
-          ...options,
-          forceMeasure: true,
-          afterNextFrame: true,
-          afterFontsReady: areDocumentFontsLoading(),
-        });
-      }
-      return;
-    }
-
-    applyCurrentStationLabelPlacement(label, best);
-    this.rememberStationLabelPlacement(state.currentStationId, best);
-    if (!options.layoutStable) {
-      return;
-    }
-
-    this.labelPlacementCache = { key: cacheKey, placement: best, verifiedAfterLayout: options.forceMeasure };
-    if (!options.forceMeasure) {
-      this.queuePostLayoutLabelPlacement(label, state, {
-        ...options,
-        forceMeasure: true,
-        afterNextFrame: true,
-        afterFontsReady: areDocumentFontsLoading(),
-      });
-    } else if (areDocumentFontsLoading()) {
-      this.queuePostLayoutLabelPlacement(label, state, {
-        ...options,
-        forceMeasure: true,
-        afterNextFrame: false,
-        afterFontsReady: true,
-      });
-    }
-  }
-
-  private getRevealedStationLabel(stationId: string): { placement: CurrentStationLabelPlacement; scale: number } | undefined {
-    const placement = this.stationLabelPlacements.get(stationId);
-    return placement ? { placement, scale: 1 } : undefined;
-  }
-
-  private rememberStationLabelPlacement(stationId: string, placement: CurrentStationLabelPlacement): void {
-    this.stationLabelPlacements.set(stationId, { ...placement });
-  }
-
-  private queuePostLayoutLabelPlacement(
-    label: SVGTextElement,
-    state: GameState,
-    options: CurrentStationLabelPositionOptions & { afterNextFrame: boolean; afterFontsReady: boolean },
-  ): void {
-    if (options.afterNextFrame) {
-      window.requestAnimationFrame(() => {
-        if (label.isConnected) {
-          this.positionCurrentStationLabel(label, state, options);
-        }
-      });
-    }
-
-    if (options.afterFontsReady && "fonts" in document) {
-      void document.fonts.ready.then(() => {
-        window.requestAnimationFrame(() => {
-          if (label.isConnected) {
-            this.positionCurrentStationLabel(label, state, options);
-          }
-        });
-      });
-    }
-  }
 }
-
-type CurrentStationLabelPositionOptions = {
-  forceMeasure: boolean;
-  layoutStable: boolean;
-  viewBoxKey: string;
-};
 
 export type MapBounds = { minX: number; maxX: number; minY: number; maxY: number };
 
@@ -764,87 +591,8 @@ export function getStubArrowHeadPoints(end: Point, unit: Point, normal: Point): 
   ];
 }
 
-export function getCurrentStationLabelPlacements(
-  anchor: Point = { x: 0, y: 0 },
-): CurrentStationLabelPlacement[] {
-  const directions = [
-    { x: 1, y: 0 },
-    diagonal(1, -1),
-    { x: 0, y: -1 },
-    diagonal(-1, -1),
-    { x: -1, y: 0 },
-    diagonal(-1, 1),
-    { x: 0, y: 1 },
-    diagonal(1, 1),
-  ];
-  return LABEL_RADII.flatMap((radius) =>
-    directions.map((direction) => ({
-      x: anchor.x + direction.x * radius,
-      y: anchor.y + direction.y * radius + getLabelBaselineAdjustment(direction.y),
-      textAnchor: direction.x > 0.35 ? "start" : direction.x < -0.35 ? "end" : "middle",
-    })),
-  );
-}
-
-function getLabelBaselineAdjustment(verticalDirection: number): number {
-  if (verticalDirection > 0.35) return 12;
-  if (verticalDirection < -0.35) return 0;
-  return 5;
-}
-
-function getPendingLayoutLabelPlacement(anchor: Point): CurrentStationLabelPlacement {
-  return {
-    x: anchor.x + 50 / Math.SQRT2,
-    y: anchor.y - 50 / Math.SQRT2,
-    textAnchor: "start",
-  };
-}
-
-function diagonal(x: number, y: number): Point {
-  const length = Math.SQRT2;
-  return { x: x / length, y: y / length };
-}
-
 function subtractPoints(first: Point, second: Point): Point {
   return { x: first.x - second.x, y: first.y - second.y };
-}
-
-function applyCurrentStationLabelPlacement(
-  label: SVGTextElement,
-  placement: CurrentStationLabelPlacement,
-): void {
-  label.setAttribute("x", String(placement.x));
-  label.setAttribute("y", String(placement.y));
-  label.setAttribute("text-anchor", placement.textAnchor);
-}
-
-function countLabelCollisions(label: SVGTextElement): number | null {
-  const rect = label.getBoundingClientRect();
-  if (rect.width === 0 || rect.height === 0) return null;
-
-  const left = rect.left - LABEL_COLLISION_PADDING;
-  const right = rect.right + LABEL_COLLISION_PADDING;
-  const top = rect.top - LABEL_COLLISION_PADDING;
-  const bottom = rect.bottom + LABEL_COLLISION_PADDING;
-  const collisions = new Set<Element>();
-  for (let row = 0; row < LABEL_SAMPLE_ROWS; row += 1) {
-    const y = top + ((bottom - top) * row) / (LABEL_SAMPLE_ROWS - 1);
-    for (let column = 0; column < LABEL_SAMPLE_COLUMNS; column += 1) {
-      const x = left + ((right - left) * column) / (LABEL_SAMPLE_COLUMNS - 1);
-      for (const element of document.elementsFromPoint(x, y)) {
-        if (element !== label && isCurrentStationLabelObstacle(element)) collisions.add(element);
-      }
-    }
-  }
-  return collisions.size;
-}
-
-export function isCurrentStationLabelObstacle(element: Element): boolean {
-  return element.matches(LABEL_OBSTACLE_SELECTOR);
-}
-
-function areDocumentFontsLoading(): boolean {
-  return "fonts" in document && document.fonts.status !== "loaded";
 }
 
 function getNetworkBounds(network: NetworkData): MapBounds {

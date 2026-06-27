@@ -66,6 +66,10 @@ export function validateNetworkData(network: NetworkData): string[] {
       errors.push(`Station appears to reference trams: ${station.name}`);
     }
 
+    if (!Number.isFinite(station.labelOffset.x) || !Number.isFinite(station.labelOffset.y)) {
+      errors.push(`Station ${station.id} has an invalid label offset`);
+    }
+
     const cellKey = `${station.x},${station.y}`;
     const occupiedBy = occupiedCells.get(cellKey);
     if (occupiedBy) {

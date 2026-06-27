@@ -6,7 +6,6 @@ import {
   compareDirectionStubsBySelectedLine,
   compareDirectionStubsByRenderedOffset,
   type DirectionStubLike,
-  getCurrentStationLabelPlacements,
   getDirectionStubStart,
   getDirectionStubUnit,
   getPointAlongPolyline,
@@ -14,7 +13,6 @@ import {
   getStationSpecificDirectionStubStart,
   getStubArrowHeadPoints,
   groupConnectionsByRenderedPath,
-  isCurrentStationLabelObstacle,
 } from "./mapRenderer";
 import { CorridorLayout } from "./corridorLayout";
 import { getOneWayArrowLineSegments } from "./lineRenderer";
@@ -196,33 +194,6 @@ describe("one-way line arrows", () => {
       path: [],
       oneWay: true,
     })).toEqual([]);
-  });
-});
-
-describe("current station label placement", () => {
-  it("searches close positions before progressively farther ones", () => {
-    const placements = getCurrentStationLabelPlacements();
-    expect(placements[0]).toEqual({ x: 26, y: 5, textAnchor: "start" });
-    expect(Math.hypot(placements[7].x, placements[7].y - 12)).toBeCloseTo(26);
-    expect(Math.hypot(placements[8].x, placements[8].y - 5)).toBeCloseTo(32);
-  });
-
-  it("centres candidate positions around the focused conjoined marker", () => {
-    const placements = getCurrentStationLabelPlacements({ x: 96, y: -96 });
-
-    expect(placements[0]).toEqual({ x: 122, y: -91, textAnchor: "start" });
-    expect(Math.hypot(placements[7].x - 96, placements[7].y - 12 + 96)).toBeCloseTo(26);
-    expect(Math.hypot(placements[8].x - 96, placements[8].y - 5 + 96)).toBeCloseTo(32);
-  });
-
-  it("does not move labels away from HUD controls", () => {
-    const mapLine = { matches: (selector: string) => selector.includes(".map-line") };
-    const hudPanel = { matches: (selector: string) => selector.includes(".hud-panel") };
-    const lineIndicator = { matches: (selector: string) => selector.includes(".line-indicator") };
-
-    expect(isCurrentStationLabelObstacle(mapLine as Element)).toBe(true);
-    expect(isCurrentStationLabelObstacle(hudPanel as Element)).toBe(false);
-    expect(isCurrentStationLabelObstacle(lineIndicator as Element)).toBe(false);
   });
 });
 

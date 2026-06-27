@@ -6,13 +6,15 @@ import { CorridorLayout, type SharedCorridor } from "./corridorLayout";
 import { LINE_STROKE_WIDTH } from "./lineStyles";
 import { offsetPolylinePoints } from "./pathOffset";
 
+const testLabelOffset = { x: 28, y: -24 };
+
 const corridorNetwork: NetworkData = {
   temporary: true,
   notes: [],
   stations: [
-    { id: "a", name: "A", x: 0, y: 0, lines: ["district", "piccadilly"] },
-    { id: "b", name: "B", x: 3, y: 0, lines: ["district"] },
-    { id: "c", name: "C", x: 6, y: 0, lines: ["district", "piccadilly"] },
+    { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["district", "piccadilly"] },
+    { id: "b", name: "B", x: 3, y: 0, labelOffset: testLabelOffset, lines: ["district"] },
+    { id: "c", name: "C", x: 6, y: 0, labelOffset: testLabelOffset, lines: ["district", "piccadilly"] },
   ],
   connections: [
     {
@@ -76,10 +78,10 @@ describe("shared corridor layout", () => {
       temporary: true,
       notes: [],
       stations: [
-        { id: "a", name: "A", x: 0, y: 0, lines: ["district"] },
-        { id: "b", name: "B", x: 2, y: 0, lines: ["district"] },
-        { id: "c", name: "C", x: 1, y: 0, lines: ["piccadilly"] },
-        { id: "d", name: "D", x: 3, y: 0, lines: ["piccadilly"] },
+        { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["district"] },
+        { id: "b", name: "B", x: 2, y: 0, labelOffset: testLabelOffset, lines: ["district"] },
+        { id: "c", name: "C", x: 1, y: 0, labelOffset: testLabelOffset, lines: ["piccadilly"] },
+        { id: "d", name: "D", x: 3, y: 0, labelOffset: testLabelOffset, lines: ["piccadilly"] },
       ],
       connections: [
         { id: "district:a:b", from: "a", to: "b", line: "district", path: horizontalPath(0, 2) },

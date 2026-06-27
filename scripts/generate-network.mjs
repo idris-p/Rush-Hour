@@ -65,6 +65,7 @@ const EXCLUDED_WALK_LINKS = new Set(["liverpool-street:moorgate"]);
 const STATION_NAME_BY_NODE = new Map([
   ["44.5,-7.5", "Moorgate"],
 ]);
+const DEFAULT_LABEL_OFFSET = { x: 28, y: -24 };
 const STATION_POSITION_OVERRIDES = new Map([
   ["north-harrow", { x: -20, y: -58 }],
   ["pinner", { x: -24, y: -62 }],
@@ -225,6 +226,7 @@ for (const root of nodesByRoot.keys()) {
 
 const stationByGroup = new Map();
 const usedIds = new Set();
+const labelOffsetsByGroup = getLabelOffsetsByGroup(stationLabels, stationGroupByNode);
 for (const [groupKey, group] of stationGroups) {
   let name = [...group.names].sort().join(" / ");
   name = disambiguateStationName(name, group.nodes);
@@ -237,6 +239,10 @@ for (const [groupKey, group] of stationGroups) {
     name,
     x: toGridCoordinate(sourcePoint.x),
     y: toGridCoordinate(sourcePoint.y),
+    labelOffset:
+      labelOffsetsByGroup.get(groupKey) ??
+      getNearestNamedLabelOffset(stationLabels, group.names, sourcePoint) ??
+      DEFAULT_LABEL_OFFSET,
   });
 }
 
@@ -422,11 +428,62 @@ function extractStationLabels(tokens, routeNodes) {
         const nearest = findNearestNode(anchor, routeNodes);
         if (nearest && nearest.distance <= 2.5) candidates = [nearest.node];
       }
-      labels.push({ name, candidates });
+      labels.push({ name, anchor, candidates });
     }
     pending = [];
   }
   return labels;
+}
+
+function getLabelOffsetsByGroup(stationLabels, stationGroupByNode) {
+  const offsetsByGroup = new Map();
+  for (const label of stationLabels) {
+    const candidatesByGroup = new Map();
+    for (const candidate of label.candidates) {
+      const groupKey = stationGroupByNode.get(candidate);
+      if (!groupKey) continue;
+      const candidates = candidatesByGroup.get(groupKey) ?? [];
+      candidates.push(candidate);
+      candidatesByGroup.set(groupKey, candidates);
+    }
+
+    for (const [groupKey, candidates] of candidatesByGroup) {
+      const closestCandidate = candidates.reduce((best, candidate) =>
+        distance(keyToPoint(candidate), label.anchor) < distance(keyToPoint(best), label.anchor)
+          ? candidate
+          : best
+      );
+      const candidateOffset = createLabelOffset(label.anchor, keyToPoint(closestCandidate));
+      const currentOffset = offsetsByGroup.get(groupKey);
+      if (!currentOffset || labelOffsetDistance(candidateOffset) < labelOffsetDistance(currentOffset)) {
+        offsetsByGroup.set(groupKey, candidateOffset);
+      }
+    }
+  }
+  return offsetsByGroup;
+}
+
+function createLabelOffset(anchor, stationPoint) {
+  return {
+    x: Math.round((anchor.x - stationPoint.x) * 2 * 32),
+    y: Math.round((anchor.y - stationPoint.y) * 2 * 32),
+  };
+}
+
+function labelOffsetDistance(offset) {
+  return Math.hypot(offset.x, offset.y);
+}
+
+function getNearestNamedLabelOffset(stationLabels, names, sourcePoint) {
+  const matchingLabels = stationLabels
+    .filter((label) => names.has(correctLabel(label.name)))
+    .map((label) => ({
+      label,
+      distance: distance(label.anchor, sourcePoint),
+    }))
+    .sort((a, b) => a.distance - b.distance);
+  const nearest = matchingLabels[0];
+  return nearest ? createLabelOffset(nearest.label.anchor, sourcePoint) : null;
 }
 
 function findNearestNode(point, nodes) {

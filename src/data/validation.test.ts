@@ -3,6 +3,8 @@ import type { GridPoint, LineId, NetworkData } from "./types";
 import { networkData } from "./network";
 import { validateNetworkData } from "./validation";
 
+const testLabelOffset = { x: 28, y: -24 };
+
 describe("network data validation", () => {
   it("has internally consistent generated network data", () => {
     expect(validateNetworkData(networkData)).toEqual([]);
@@ -1533,9 +1535,9 @@ describe("network data validation", () => {
   it("rejects duplicate first-step directions at a line branch", () => {
     const network: NetworkData = {
       stations: [
-        { id: "a", name: "A", x: 0, y: 0, lines: ["central"] },
-        { id: "b", name: "B", x: 3, y: 0, lines: ["central"] },
-        { id: "c", name: "C", x: 3, y: 2, lines: ["central"] },
+        { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "b", name: "B", x: 3, y: 0, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "c", name: "C", x: 3, y: 2, labelOffset: testLabelOffset, lines: ["central"] },
       ],
       connections: [
         { id: "central:a:b", from: "a", to: "b", line: "central", path: [{ x: 0, y: 0 }, { x: 1, y: 0 }, { x: 2, y: 0 }, { x: 3, y: 0 }] },
@@ -1553,10 +1555,10 @@ describe("network data validation", () => {
   it("rejects a branch that initially points away from its destination", () => {
     const network: NetworkData = {
       stations: [
-        { id: "a", name: "A", x: 0, y: 0, lines: ["central"] },
-        { id: "b", name: "B", x: 3, y: 0, lines: ["central"] },
-        { id: "c", name: "C", x: 0, y: 3, lines: ["central"] },
-        { id: "d", name: "D", x: -3, y: 0, lines: ["central"] },
+        { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "b", name: "B", x: 3, y: 0, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "c", name: "C", x: 0, y: 3, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "d", name: "D", x: -3, y: 0, labelOffset: testLabelOffset, lines: ["central"] },
       ],
       connections: [
         {
@@ -1671,8 +1673,8 @@ function createPathValidationNetwork(
 
   return {
     stations: [
-      { id: "a", name: "A", x: start.x, y: start.y, lines: [line] },
-      { id: "b", name: "B", x: end.x, y: end.y, lines: [line] },
+      { id: "a", name: "A", x: start.x, y: start.y, labelOffset: testLabelOffset, lines: [line] },
+      { id: "b", name: "B", x: end.x, y: end.y, labelOffset: testLabelOffset, lines: [line] },
     ],
     connections: [
       {

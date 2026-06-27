@@ -1,6 +1,7 @@
 import { compareLineIds } from "./lines";
+import { stationLabelOffsets } from "./labelOffsets.generated";
 import { connectionSeeds, stationSeeds } from "./network.generated";
-import type { Connection, ConnectionSeed, LineId, NetworkData, Station } from "./types";
+import type { Connection, ConnectionSeed, LineId, NetworkData, Point, Station } from "./types";
 
 export function createConnectionId(line: LineId, from: string, to: string): string {
   const [a, b] = [from, to].sort();
@@ -28,6 +29,7 @@ const stationIdRemaps = new Map<string, string>([
 ]);
 
 const allConnectionSeeds = remapConnectionSeeds([...connectionSeeds, ...localConnectionSeeds]);
+const labelOffsetOverrides = stationLabelOffsets as Partial<Record<string, Point>>;
 
 const linesByStation = new Map<string, Set<LineId>>();
 for (const connection of allConnectionSeeds) {
@@ -182,6 +184,7 @@ const stations: Station[] = stationSeeds
   .map((station) => ({
     ...station,
     ...schematicStationPositionOverrides.get(station.id),
+    labelOffset: labelOffsetOverrides[station.id] ?? station.labelOffset,
     lines: [...(linesByStation.get(station.id) ?? [])].sort(compareLineIds),
   }));
 

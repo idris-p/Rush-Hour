@@ -20,6 +20,10 @@ export const STATION_WIPE_COMPONENT_RADIUS = CONJOINED_HIGHLIGHT_RADIUS;
 const CONJOINED_HIGHLIGHT_NECK_WIDTH = CONJOINED_NECK_WIDTH + CURRENT_HIGHLIGHT_WIDTH * 2;
 export const CONJOINED_CENTRE_LINE_WIDTH = 3.5;
 const NORTHERN_BRANCH_INTERCHANGES = new Set(["Camden Town", "Kennington"]);
+const MULTILINE_STATION_LABELS = new Map<string, string[]>([
+  ["hammersmith-district-and-piccadilly", ["Hammersmith", "(District and Piccadilly)"]],
+]);
+const STATION_LABEL_LINE_HEIGHT_EM = 1.1;
 const WIPE_BOUNDS = {
   x: -160,
   y: -140,
@@ -27,7 +31,7 @@ const WIPE_BOUNDS = {
   height: 280,
 };
 
-export type CurrentStationLabelPlacement = {
+export type StationLabelPlacement = {
   x: number;
   y: number;
   textAnchor: "start" | "middle" | "end";
@@ -40,8 +44,7 @@ export type StationMarkerRenderOptions = {
     progress: number;
   };
   revealedLabel?: {
-    placement: CurrentStationLabelPlacement;
-    scale: number;
+    placement: StationLabelPlacement;
   };
 };
 
@@ -51,9 +54,8 @@ export function renderStationMarker(
   network: NetworkData,
   selectedLineId: LineId,
   isCurrent: boolean,
-  currentLabelScale = 1,
   markerGroups: StationMarkerGroup[] = [{ point: gridPointToSvgPoint(station), lines: [...station.lines] }],
-  currentLabelPlacement: CurrentStationLabelPlacement = { x: 28, y: -24, textAnchor: "start" },
+  currentLabelPlacement: StationLabelPlacement = getStationLabelPlacement(station),
   options: StationMarkerRenderOptions = {},
 ): SVGTextElement | null {
   const point = gridPointToSvgPoint(station);
@@ -113,21 +115,62 @@ export function renderStationMarker(
   const labelPlacement = isCurrent ? currentLabelPlacement : options.revealedLabel?.placement;
   let renderedLabel: SVGTextElement | null = null;
   if (labelPlacement) {
-    const labelScale = isCurrent ? currentLabelScale : options.revealedLabel?.scale ?? currentLabelScale;
     const labelClass = isCurrent ? "current-station-label" : "current-station-label revealed-station-label";
     const label = document.createElementNS(SVG_NS, "text");
-    label.textContent = station.name;
     label.setAttribute("x", String(labelPlacement.x));
     label.setAttribute("y", String(labelPlacement.y));
     label.setAttribute("text-anchor", labelPlacement.textAnchor);
-    label.setAttribute("transform", `scale(${labelScale})`);
     label.setAttribute("class", labelClass);
+    appendStationLabelText(label, station, labelPlacement);
     contentGroup.append(label);
     renderedLabel = label;
   }
 
   layer.append(group);
   return isCurrent ? renderedLabel : null;
+}
+
+export function getStationLabelPlacement(station: Station): StationLabelPlacement {
+  return {
+    x: station.labelOffset.x,
+    y: station.labelOffset.y,
+    textAnchor: getStationLabelLines(station).length > 1 ? "middle" : getStationLabelAnchor(station.labelOffset.x),
+  };
+}
+
+export function appendStationLabelText(
+  label: SVGTextElement,
+  station: Station,
+  placement: StationLabelPlacement = getStationLabelPlacement(station),
+): void {
+  const lines = getStationLabelLines(station);
+  label.replaceChildren();
+  if (lines.length === 1) {
+    label.textContent = lines[0];
+    return;
+  }
+
+  for (const [index, line] of lines.entries()) {
+    const tspan = document.createElementNS(SVG_NS, "tspan");
+    tspan.textContent = line;
+    tspan.setAttribute("x", String(placement.x));
+    if (index === 0) {
+      tspan.setAttribute("dy", "0");
+    } else {
+      tspan.setAttribute("dy", `${STATION_LABEL_LINE_HEIGHT_EM}em`);
+    }
+    label.append(tspan);
+  }
+}
+
+export function getStationLabelLines(station: Station): string[] {
+  return MULTILINE_STATION_LABELS.get(station.id) ?? [station.name];
+}
+
+function getStationLabelAnchor(offsetX: number): StationLabelPlacement["textAnchor"] {
+  if (offsetX < -4) return "end";
+  if (offsetX > 4) return "start";
+  return "middle";
 }
 
 function createWipeContentGroup(

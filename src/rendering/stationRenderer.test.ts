@@ -3,6 +3,8 @@ import type { NetworkData, Station } from "../data/types";
 import {
   CONJOINED_CENTRE_LINE_WIDTH,
   STATION_BAR_MARKER_LENGTH,
+  getStationLabelPlacement,
+  getStationLabelLines,
   getSelectedLineDashArray,
   getStationLineDirection,
   isInterchangeStation,
@@ -52,10 +54,38 @@ describe("station marker geometry", () => {
   it("uses a one-cell marker height for non-interchange stations", () => {
     expect(STATION_BAR_MARKER_LENGTH).toBe(GRID_CELL_SIZE);
   });
+
+  it("converts fixed station label offsets to SVG text anchors", () => {
+    expect(getStationLabelPlacement(station(["central"], "Left", { x: -32, y: 8 }))).toEqual({
+      x: -32,
+      y: 8,
+      textAnchor: "end",
+    });
+    expect(getStationLabelPlacement(station(["central"], "Right", { x: 32, y: 8 }))).toEqual({
+      x: 32,
+      y: 8,
+      textAnchor: "start",
+    });
+    expect(getStationLabelPlacement(station(["central"], "Above", { x: 0, y: -68 }))).toEqual({
+      x: 0,
+      y: -68,
+      textAnchor: "middle",
+    });
+  });
+
+  it("splits the District and Piccadilly Hammersmith label over centred lines", () => {
+    const hammersmith = {
+      ...station(["district", "piccadilly"], "Hammersmith (District and Piccadilly)", { x: 32, y: 72 }),
+      id: "hammersmith-district-and-piccadilly",
+    };
+
+    expect(getStationLabelLines(hammersmith)).toEqual(["Hammersmith", "(District and Piccadilly)"]);
+    expect(getStationLabelPlacement(hammersmith).textAnchor).toBe("middle");
+  });
 });
 
-function station(lines: Station["lines"], name = "Centre"): Station {
-  return { id: "centre", name, x: 0, y: 0, lines };
+function station(lines: Station["lines"], name = "Centre", labelOffset = { x: 28, y: -24 }): Station {
+  return { id: "centre", name, x: 0, y: 0, labelOffset, lines };
 }
 
 function connection(from: string, to: string, path: Array<{ x: number; y: number }>) {

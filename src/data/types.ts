@@ -29,6 +29,7 @@ export type Station = {
   name: string;
   x: number;
   y: number;
+  labelOffset: Point;
   lines: LineId[];
 };
 

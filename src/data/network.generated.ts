@@ -8,1813 +8,3021 @@ export const stationSeeds: StationSeed[] = [
     "id": "abbey-wood",
     "name": "Abbey Wood",
     "x": 174,
-    "y": 38
+    "y": 38,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "acton-main-line",
     "name": "Acton Main Line",
     "x": -20,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "acton-town",
     "name": "Acton Town",
     "x": -34,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "aldgate",
     "name": "Aldgate",
     "x": 108,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "aldgate-east",
     "name": "Aldgate East",
     "x": 116,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "alperton",
     "name": "Alperton",
     "x": -36,
-    "y": -32
+    "y": -32,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "amersham",
     "name": "Amersham",
     "x": -58,
-    "y": -88
+    "y": -88,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "angel",
     "name": "Angel",
     "x": 84,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "archway",
     "name": "Archway",
     "x": 72,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "arnos-grove",
     "name": "Arnos Grove",
     "x": 100,
-    "y": -78
+    "y": -78,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "arsenal",
     "name": "Arsenal",
     "x": 90,
-    "y": -44
+    "y": -44,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "baker-street",
     "name": "Baker Street",
     "x": 40,
-    "y": -20
+    "y": -20,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "balham",
     "name": "Balham",
     "x": 42,
-    "y": 58
+    "y": 58,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "bank",
     "name": "Bank",
     "x": 88,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "barbican",
     "name": "Barbican",
     "x": 84,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "barking",
     "name": "Barking",
     "x": 170,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "barkingside",
     "name": "Barkingside",
     "x": 170,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "barons-court",
     "name": "Barons Court",
     "x": 4,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "battersea-power-station",
     "name": "Battersea Power Station",
     "x": 30,
-    "y": 38
+    "y": 38,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "bayswater",
     "name": "Bayswater",
     "x": 18,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "becontree",
     "name": "Becontree",
     "x": 178,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "belsize-park",
     "name": "Belsize Park",
     "x": 58,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "bermondsey",
     "name": "Bermondsey",
     "x": 106,
-    "y": 12
+    "y": 12,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "bethnal-green",
     "name": "Bethnal Green",
     "x": 122,
-    "y": -16
+    "y": -16,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "blackfriars",
     "name": "Blackfriars",
     "x": 78,
-    "y": 10
+    "y": 10,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "blackhorse-road",
     "name": "Blackhorse Road",
     "x": 132,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 32,
+      "y": -132
+    }
   },
   {
     "id": "bond-street",
     "name": "Bond Street",
     "x": 44,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "borough",
     "name": "Borough",
     "x": 78,
-    "y": 24
+    "y": 24,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "boston-manor",
     "name": "Boston Manor",
     "x": -50,
-    "y": 18
+    "y": 18,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "bounds-green",
     "name": "Bounds Green",
     "x": 100,
-    "y": -74
+    "y": -74,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "bow-road",
     "name": "Bow Road",
     "x": 136,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "brent-cross",
     "name": "Brent Cross",
     "x": 38,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "brentwood",
     "name": "Brentwood",
     "x": 202,
-    "y": -64
+    "y": -64,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "brixton",
     "name": "Brixton",
     "x": 60,
-    "y": 56
+    "y": 56,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "bromley-by-bow",
     "name": "Bromley-by-Bow",
     "x": 146,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "buckhurst-hill",
     "name": "Buckhurst Hill",
     "x": 158,
-    "y": -70
+    "y": -70,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "burnham",
     "name": "Burnham",
     "x": -80,
-    "y": -26
+    "y": -26,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "burnt-oak",
     "name": "Burnt Oak",
     "x": 24,
-    "y": -76
+    "y": -76,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "caledonian-road",
     "name": "Caledonian Road",
     "x": 86,
-    "y": -40
+    "y": -40,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "camden-town",
     "name": "Camden Town",
     "x": 64,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "canada-water",
     "name": "Canada Water",
     "x": 118,
-    "y": 16
+    "y": 16,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "canary-wharf-elizabeth-line",
     "name": "Canary Wharf (Elizabeth line)",
     "x": 140,
-    "y": 10
+    "y": 10,
+    "labelOffset": {
+      "x": -22,
+      "y": 124
+    }
   },
   {
     "id": "canary-wharf-jubilee",
     "name": "Canary Wharf (Jubilee)",
     "x": 136,
-    "y": 16
+    "y": 16,
+    "labelOffset": {
+      "x": 106,
+      "y": -68
+    }
   },
   {
     "id": "canning-town",
     "name": "Canning Town",
     "x": 154,
-    "y": 4
+    "y": 4,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "cannon-street",
     "name": "Cannon Street",
     "x": 86,
-    "y": 2
+    "y": 2,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "canons-park",
     "name": "Canons Park",
     "x": 12,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "chadwell-heath",
     "name": "Chadwell Heath",
     "x": 184,
-    "y": -46
+    "y": -46,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "chalfont-and-latimer",
     "name": "Chalfont & Latimer",
     "x": -50,
-    "y": -88
+    "y": -88,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "chalk-farm",
     "name": "Chalk Farm",
     "x": 62,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "chancery-lane",
     "name": "Chancery Lane",
     "x": 74,
-    "y": -4
+    "y": -4,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "charing-cross",
     "name": "Charing Cross",
     "x": 62,
-    "y": 8
+    "y": 8,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "chesham",
     "name": "Chesham",
     "x": -54,
-    "y": -92
+    "y": -92,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "chigwell",
     "name": "Chigwell",
     "x": 164,
-    "y": -64
+    "y": -64,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "chiswick-park",
     "name": "Chiswick Park",
     "x": -30,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "chorleywood",
     "name": "Chorleywood",
     "x": -46,
-    "y": -84
+    "y": -84,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "clapham-common",
     "name": "Clapham Common",
     "x": 46,
-    "y": 54
+    "y": 54,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "clapham-north",
     "name": "Clapham North",
     "x": 48,
-    "y": 52
+    "y": 52,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "clapham-south",
     "name": "Clapham South",
     "x": 44,
-    "y": 56
+    "y": 56,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "cockfosters",
     "name": "Cockfosters",
     "x": 100,
-    "y": -90
+    "y": -90,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "colindale",
     "name": "Colindale",
     "x": 28,
-    "y": -72
+    "y": -72,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "colliers-wood",
     "name": "Colliers Wood",
     "x": 34,
-    "y": 66
+    "y": 66,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "covent-garden",
     "name": "Covent Garden",
     "x": 66,
-    "y": -2
+    "y": -2,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "croxley",
     "name": "Croxley",
     "x": -36,
-    "y": -82
+    "y": -82,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "custom-house",
     "name": "Custom House",
     "x": 172,
-    "y": 12
+    "y": 12,
+    "labelOffset": {
+      "x": 234,
+      "y": -196
+    }
   },
   {
     "id": "dagenham-east",
     "name": "Dagenham East",
     "x": 182,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "dagenham-heathway",
     "name": "Dagenham Heathway",
     "x": 180,
-    "y": -20
+    "y": -20,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "debden",
     "name": "Debden",
     "x": 164,
-    "y": -76
+    "y": -76,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "dollis-hill",
     "name": "Dollis Hill",
     "x": 18,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "ealing-broadway",
     "name": "Ealing Broadway",
     "x": -42,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "ealing-common",
     "name": "Ealing Common",
     "x": -38,
-    "y": 8
+    "y": 8,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "earl-s-court",
     "name": "Earl's Court",
     "x": 14,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "east-acton",
     "name": "East Acton",
     "x": -10,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "east-finchley",
     "name": "East Finchley",
     "x": 72,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "east-ham",
     "name": "East Ham",
     "x": 166,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "east-putney",
     "name": "East Putney",
     "x": 12,
-    "y": 36
+    "y": 36,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "eastcote",
     "name": "Eastcote",
     "x": -40,
-    "y": -64
+    "y": -64,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "edgware",
     "name": "Edgware",
     "x": 20,
-    "y": -80
+    "y": -80,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "edgware-road",
     "name": "Edgware Road",
     "x": 24,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "edgware-road-bakerloo",
     "name": "Edgware Road (Bakerloo)",
     "x": 18,
-    "y": -24
+    "y": -24,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "elephant-and-castle",
     "name": "Elephant & Castle",
     "x": 68,
-    "y": 34
+    "y": 34,
+    "labelOffset": {
+      "x": 106,
+      "y": 60
+    }
   },
   {
     "id": "elm-park",
     "name": "Elm Park",
     "x": 184,
-    "y": -24
+    "y": -24,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "embankment",
     "name": "Embankment",
     "x": 62,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "epping",
     "name": "Epping",
     "x": 168,
-    "y": -80
+    "y": -80,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "euston",
     "name": "Euston",
     "x": 66,
-    "y": -28
+    "y": -28,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "euston-square",
     "name": "Euston Square",
     "x": 58,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "fairlop",
     "name": "Fairlop",
     "x": 170,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "farringdon",
     "name": "Farringdon",
     "x": 80,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "finchley-central",
     "name": "Finchley Central",
     "x": 72,
-    "y": -70
+    "y": -70,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "finchley-road",
     "name": "Finchley Road",
     "x": 32,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "finsbury-park",
     "name": "Finsbury Park",
     "x": 94,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "forest-gate",
     "name": "Forest Gate",
     "x": 160,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "fulham-broadway",
     "name": "Fulham Broadway",
     "x": 12,
-    "y": 26
+    "y": 26,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "gants-hill",
     "name": "Gants Hill",
     "x": 168,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "gidea-park",
     "name": "Gidea Park",
     "x": 194,
-    "y": -56
+    "y": -56,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "gloucester-road",
     "name": "Gloucester Road",
     "x": 22,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "golders-green",
     "name": "Golders Green",
     "x": 42,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "goldhawk-road",
     "name": "Goldhawk Road",
     "x": -2,
-    "y": 8
+    "y": 8,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "goodge-street",
     "name": "Goodge Street",
     "x": 62,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "goodmayes",
     "name": "Goodmayes",
     "x": 180,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "grange-hill",
     "name": "Grange Hill",
     "x": 168,
-    "y": -64
+    "y": -64,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "great-portland-street",
     "name": "Great Portland Street",
     "x": 50,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "green-park",
     "name": "Green Park",
     "x": 44,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "greenford",
     "name": "Greenford",
     "x": -48,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "gunnersbury",
     "name": "Gunnersbury",
     "x": -26,
-    "y": 20
+    "y": 20,
+    "labelOffset": {
+      "x": 42,
+      "y": 72
+    }
   },
   {
     "id": "hainault",
     "name": "Hainault",
     "x": 170,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "hammersmith-circle-and-hammersmith-and-city",
     "name": "Hammersmith (Circle and Hammersmith & City)",
     "x": -2,
-    "y": 10
+    "y": 10,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "hammersmith-district-and-piccadilly",
     "name": "Hammersmith (District and Piccadilly)",
     "x": -2,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": -42,
+      "y": -120
+    }
   },
   {
     "id": "hampstead",
     "name": "Hampstead",
     "x": 46,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "hanger-lane",
     "name": "Hanger Lane",
     "x": -34,
-    "y": -20
+    "y": -20,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "hanwell",
     "name": "Hanwell",
     "x": -54,
-    "y": -2
+    "y": -2,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "harlesden",
     "name": "Harlesden",
     "x": -2,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "harold-wood",
     "name": "Harold Wood",
     "x": 198,
-    "y": -60
+    "y": -60,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "harrow-and-wealdstone",
     "name": "Harrow & Wealdstone",
     "x": -2,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "harrow-on-the-hill",
     "name": "Harrow-on-the-Hill",
     "x": -16,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "hatton-cross",
     "name": "Hatton Cross",
     "x": -62,
-    "y": 30
+    "y": 30,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "hayes-and-harlington",
     "name": "Hayes & Harlington",
     "x": -66,
-    "y": -2
+    "y": -2,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "heathrow-terminal-2-and-3",
     "name": "Heathrow Terminal 2 & 3",
     "x": -66,
-    "y": 34
+    "y": 34,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "heathrow-terminal-4",
     "name": "Heathrow Terminal 4",
     "x": -68,
-    "y": 48
+    "y": 48,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "heathrow-terminal-5",
     "name": "Heathrow Terminal 5",
     "x": -78,
-    "y": 50
+    "y": 50,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "hendon-central",
     "name": "Hendon Central",
     "x": 34,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "high-barnet",
     "name": "High Barnet",
     "x": 72,
-    "y": -90
+    "y": -90,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "high-street-kensington",
     "name": "High Street Kensington",
     "x": 18,
-    "y": 4
+    "y": 4,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "highbury-and-islington",
     "name": "Highbury & Islington",
     "x": 92,
-    "y": -40
+    "y": -40,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "highgate",
     "name": "Highgate",
     "x": 72,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "hillingdon",
     "name": "Hillingdon",
     "x": -62,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "holborn",
     "name": "Holborn",
     "x": 70,
-    "y": -6
+    "y": -6,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "holland-park",
     "name": "Holland Park",
     "x": 14,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "holloway-road",
     "name": "Holloway Road",
     "x": 88,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "hornchurch",
     "name": "Hornchurch",
     "x": 186,
-    "y": -26
+    "y": -26,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "hounslow-central",
     "name": "Hounslow Central",
     "x": -54,
-    "y": 22
+    "y": 22,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "hounslow-east",
     "name": "Hounslow East",
     "x": -56,
-    "y": 24
+    "y": 24,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "hounslow-west",
     "name": "Hounslow West",
     "x": -58,
-    "y": 26
+    "y": 26,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "hyde-park-corner",
     "name": "Hyde Park Corner",
     "x": 38,
-    "y": 4
+    "y": 4,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "ickenham",
     "name": "Ickenham",
     "x": -56,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "ilford",
     "name": "Ilford",
     "x": 170,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "iver",
     "name": "Iver",
     "x": -80,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "kennington",
     "name": "Kennington",
     "x": 60,
-    "y": 38
+    "y": 38,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "kensal-green",
     "name": "Kensal Green",
     "x": -2,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "kensington-olympia",
     "name": "Kensington (Olympia)",
     "x": 12,
-    "y": 6
+    "y": 6,
+    "labelOffset": {
+      "x": -106,
+      "y": -4
+    }
   },
   {
     "id": "kentish-town",
     "name": "Kentish Town",
     "x": 72,
-    "y": -46
+    "y": -46,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "kenton",
     "name": "Kenton",
     "x": -2,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "kew-gardens",
     "name": "Kew Gardens",
     "x": -32,
-    "y": 26
+    "y": 26,
+    "labelOffset": {
+      "x": 42,
+      "y": 60
+    }
   },
   {
     "id": "kilburn",
     "name": "Kilburn",
     "x": 24,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "kilburn-park",
     "name": "Kilburn Park",
     "x": 2,
-    "y": -28
+    "y": -28,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "king-s-cross-st-pancras",
     "name": "King's Cross St Pancras",
     "x": 74,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": 160,
+      "y": -196
+    }
   },
   {
     "id": "kingsbury",
     "name": "Kingsbury",
     "x": 12,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "knightsbridge",
     "name": "Knightsbridge",
     "x": 34,
-    "y": 8
+    "y": 8,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "ladbroke-grove",
     "name": "Ladbroke Grove",
     "x": 4,
-    "y": -10
+    "y": -10,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "lambeth-north",
     "name": "Lambeth North",
     "x": 64,
-    "y": 30
+    "y": 30,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "lancaster-gate",
     "name": "Lancaster Gate",
     "x": 32,
-    "y": -4
+    "y": -4,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "langley",
     "name": "Langley",
     "x": -80,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "latimer-road",
     "name": "Latimer Road",
     "x": 2,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "leicester-square",
     "name": "Leicester Square",
     "x": 62,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "leyton",
     "name": "Leyton",
     "x": 154,
-    "y": -36
+    "y": -36,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "leytonstone",
     "name": "Leytonstone",
     "x": 156,
-    "y": -44
+    "y": -44,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "liverpool-street",
     "name": "Liverpool Street",
     "x": 92,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "london-bridge",
     "name": "London Bridge",
     "x": 90,
-    "y": 10
+    "y": 10,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "loughton",
     "name": "Loughton",
     "x": 162,
-    "y": -74
+    "y": -74,
+    "labelOffset": {
+      "x": -32,
+      "y": -56
+    }
   },
   {
     "id": "maida-vale",
     "name": "Maida Vale",
     "x": 4,
-    "y": -26
+    "y": -26,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "maidenhead",
     "name": "Maidenhead",
     "x": -80,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "manor-house",
     "name": "Manor House",
     "x": 100,
-    "y": -56
+    "y": -56,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "manor-park",
     "name": "Manor Park",
     "x": 166,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "mansion-house",
     "name": "Mansion House",
     "x": 82,
-    "y": 6
+    "y": 6,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "marble-arch",
     "name": "Marble Arch",
     "x": 34,
-    "y": -6
+    "y": -6,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "maryland",
     "name": "Maryland",
     "x": 154,
-    "y": -34
+    "y": -34,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "marylebone",
     "name": "Marylebone",
     "x": 32,
-    "y": -24
+    "y": -24,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "mile-end",
     "name": "Mile End",
     "x": 130,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "mill-hill-east",
     "name": "Mill Hill East",
     "x": 70,
-    "y": -74
+    "y": -74,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "monument",
     "name": "Monument",
     "x": 96,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "moor-park",
     "name": "Moor Park",
     "x": -36,
-    "y": -74
+    "y": -74,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "moorgate",
     "name": "Moorgate",
     "x": 88,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "morden",
     "name": "Morden",
     "x": 22,
-    "y": 78
+    "y": 78,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "mornington-crescent",
     "name": "Mornington Crescent",
     "x": 62,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "neasden",
     "name": "Neasden",
     "x": 16,
-    "y": -50
+    "y": -50,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "newbury-park",
     "name": "Newbury Park",
     "x": 170,
-    "y": -50
+    "y": -50,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "nine-elms",
     "name": "Nine Elms",
     "x": 38,
-    "y": 38
+    "y": 38,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "north-acton",
     "name": "North Acton",
     "x": -14,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "north-ealing",
     "name": "North Ealing",
     "x": -36,
-    "y": -10
+    "y": -10,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "north-greenwich",
     "name": "North Greenwich",
     "x": 146,
-    "y": 16
+    "y": 16,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "north-harrow",
     "name": "North Harrow",
     "x": -20,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "north-wembley",
     "name": "North Wembley",
     "x": -2,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "northfields",
     "name": "Northfields",
     "x": -48,
-    "y": 16
+    "y": 16,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "northolt",
     "name": "Northolt",
     "x": -52,
-    "y": -46
+    "y": -46,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "northwick-park",
     "name": "Northwick Park",
     "x": -6,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "northwood",
     "name": "Northwood",
     "x": -32,
-    "y": -70
+    "y": -70,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "northwood-hills",
     "name": "Northwood Hills",
     "x": -28,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "notting-hill-gate",
     "name": "Notting Hill Gate",
     "x": 18,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "oakwood",
     "name": "Oakwood",
     "x": 100,
-    "y": -86
+    "y": -86,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "old-street",
     "name": "Old Street",
     "x": 88,
-    "y": -20
+    "y": -20,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "osterley",
     "name": "Osterley",
     "x": -52,
-    "y": 20
+    "y": 20,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "oval",
     "name": "Oval",
     "x": 56,
-    "y": 44
+    "y": 44,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "oxford-circus",
     "name": "Oxford Circus",
     "x": 50,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "paddington",
     "name": "Paddington",
     "x": 18,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "paddington-bakerloo",
     "name": "Paddington (Bakerloo)",
     "x": 12,
-    "y": -24
+    "y": -24,
+    "labelOffset": {
+      "x": 28,
+      "y": -24
+    }
   },
   {
     "id": "park-royal",
     "name": "Park Royal",
     "x": -36,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "parsons-green",
     "name": "Parsons Green",
     "x": 12,
-    "y": 30
+    "y": 30,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "perivale",
     "name": "Perivale",
     "x": -42,
-    "y": -28
+    "y": -28,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "piccadilly-circus",
     "name": "Piccadilly Circus",
     "x": 54,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "pimlico",
     "name": "Pimlico",
     "x": 44,
-    "y": 30
+    "y": 30,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "pinner",
     "name": "Pinner",
     "x": -24,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "plaistow",
     "name": "Plaistow",
     "x": 158,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "preston-road",
     "name": "Preston Road",
     "x": 6,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "putney-bridge",
     "name": "Putney Bridge",
     "x": 12,
-    "y": 32
+    "y": 32,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "queen-s-park",
     "name": "Queen's Park",
     "x": 0,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "queensbury",
     "name": "Queensbury",
     "x": 12,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "queensway",
     "name": "Queensway",
     "x": 24,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "ravenscourt-park",
     "name": "Ravenscourt Park",
     "x": -8,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "rayners-lane",
     "name": "Rayners Lane",
     "x": -38,
-    "y": -62
+    "y": -62,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "reading",
     "name": "Reading",
     "x": -80,
-    "y": -42
+    "y": -42,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "redbridge",
     "name": "Redbridge",
     "x": 164,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "regent-s-park",
     "name": "Regent's Park",
     "x": 46,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "richmond",
     "name": "Richmond",
     "x": -38,
-    "y": 32
+    "y": 32,
+    "labelOffset": {
+      "x": 42,
+      "y": 60
+    }
   },
   {
     "id": "rickmansworth",
     "name": "Rickmansworth",
     "x": -42,
-    "y": -80
+    "y": -80,
+    "labelOffset": {
+      "x": -32,
+      "y": 72
+    }
   },
   {
     "id": "roding-valley",
     "name": "Roding Valley",
     "x": 160,
-    "y": -64
+    "y": -64,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "romford",
     "name": "Romford",
     "x": 190,
-    "y": -52
+    "y": -52,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "royal-oak",
     "name": "Royal Oak",
     "x": 8,
-    "y": -14
+    "y": -14,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "ruislip",
     "name": "Ruislip",
     "x": -48,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "ruislip-gardens",
     "name": "Ruislip Gardens",
     "x": -52,
-    "y": -58
+    "y": -58,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "ruislip-manor",
     "name": "Ruislip Manor",
     "x": -44,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "russell-square",
     "name": "Russell Square",
     "x": 76,
-    "y": -18
+    "y": -18,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "seven-kings",
     "name": "Seven Kings",
     "x": 174,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "seven-sisters",
     "name": "Seven Sisters",
     "x": 120,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "shenfield",
     "name": "Shenfield",
     "x": 206,
-    "y": -68
+    "y": -68,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "shepherd-s-bush",
     "name": "Shepherd's Bush",
     "x": 10,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "shepherd-s-bush-market",
     "name": "Shepherd's Bush Market",
     "x": -2,
-    "y": 4
+    "y": 4,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "sloane-square",
     "name": "Sloane Square",
     "x": 38,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "slough",
     "name": "Slough",
     "x": -80,
-    "y": -22
+    "y": -22,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "snaresbrook",
     "name": "Snaresbrook",
     "x": 156,
-    "y": -50
+    "y": -50,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "south-ealing",
     "name": "South Ealing",
     "x": -46,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "south-harrow",
     "name": "South Harrow",
     "x": -36,
-    "y": -50
+    "y": -50,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "south-kensington",
     "name": "South Kensington",
     "x": 28,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "south-kenton",
     "name": "South Kenton",
     "x": -2,
-    "y": -50
+    "y": -50,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "south-ruislip",
     "name": "South Ruislip",
     "x": -52,
-    "y": -52
+    "y": -52,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "south-wimbledon",
     "name": "South Wimbledon",
     "x": 32,
-    "y": 68
+    "y": 68,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "south-woodford",
     "name": "South Woodford",
     "x": 156,
-    "y": -56
+    "y": -56,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "southall",
     "name": "Southall",
     "x": -60,
-    "y": -2
+    "y": -2,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "southfields",
     "name": "Southfields",
     "x": 12,
-    "y": 40
+    "y": 40,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "southgate",
     "name": "Southgate",
     "x": 100,
-    "y": -82
+    "y": -82,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "southwark",
     "name": "Southwark",
     "x": 70,
-    "y": 22
+    "y": 22,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "st-james-s-park",
     "name": "St James's Park",
     "x": 50,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "st-john-s-wood",
     "name": "St John's Wood",
     "x": 40,
-    "y": -26
+    "y": -26,
+    "labelOffset": {
+      "x": 96,
+      "y": -36
+    }
   },
   {
     "id": "st-paul-s",
     "name": "St Paul's",
     "x": 80,
-    "y": -4
+    "y": -4,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "stamford-brook",
     "name": "Stamford Brook",
     "x": -14,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "stanmore",
     "name": "Stanmore",
     "x": 12,
-    "y": -70
+    "y": -70,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "stepney-green",
     "name": "Stepney Green",
     "x": 128,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "stockwell",
     "name": "Stockwell",
     "x": 52,
-    "y": 48
+    "y": 48,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   },
   {
     "id": "stonebridge-park",
     "name": "Stonebridge Park",
     "x": -2,
-    "y": -44
+    "y": -44,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "stratford",
     "name": "Stratford",
     "x": 150,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "sudbury-hill",
     "name": "Sudbury Hill",
     "x": -36,
-    "y": -44
+    "y": -44,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "sudbury-town",
     "name": "Sudbury Town",
     "x": -36,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "swiss-cottage",
     "name": "Swiss Cottage",
     "x": 36,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "taplow",
     "name": "Taplow",
     "x": -80,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "temple",
     "name": "Temple",
     "x": 72,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": -56
+    }
   },
   {
     "id": "theydon-bois",
     "name": "Theydon Bois",
     "x": 166,
-    "y": -78
+    "y": -78,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "tooting-bec",
     "name": "Tooting Bec",
     "x": 40,
-    "y": 60
+    "y": 60,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "tooting-broadway",
     "name": "Tooting Broadway",
     "x": 38,
-    "y": 62
+    "y": 62,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "tottenham-court-road",
     "name": "Tottenham Court Road",
     "x": 60,
-    "y": -8
+    "y": -8,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "tottenham-hale",
     "name": "Tottenham Hale",
     "x": 126,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "totteridge-and-whetstone",
     "name": "Totteridge & Whetstone",
     "x": 72,
-    "y": -86
+    "y": -86,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "tower-hill",
     "name": "Tower Hill",
     "x": 104,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "tufnell-park",
     "name": "Tufnell Park",
     "x": 72,
-    "y": -52
+    "y": -52,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "turnham-green",
     "name": "Turnham Green",
     "x": -20,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "turnpike-lane",
     "name": "Turnpike Lane",
     "x": 100,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "twyford",
     "name": "Twyford",
     "x": -80,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "upminster",
     "name": "Upminster",
     "x": 190,
-    "y": -30
+    "y": -30,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "upminster-bridge",
     "name": "Upminster Bridge",
     "x": 188,
-    "y": -28
+    "y": -28,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "upney",
     "name": "Upney",
     "x": 176,
-    "y": -16
+    "y": -16,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "upton-park",
     "name": "Upton Park",
     "x": 162,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "uxbridge",
     "name": "Uxbridge",
     "x": -68,
-    "y": -66
+    "y": -66,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "vauxhall",
     "name": "Vauxhall",
     "x": 46,
-    "y": 42
+    "y": 42,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "victoria",
     "name": "Victoria",
     "x": 44,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "walthamstow-central",
     "name": "Walthamstow Central",
     "x": 142,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "wanstead",
     "name": "Wanstead",
     "x": 160,
-    "y": -48
+    "y": -48,
+    "labelOffset": {
+      "x": 0,
+      "y": 72
+    }
   },
   {
     "id": "warren-street",
     "name": "Warren Street",
     "x": 62,
-    "y": -20
+    "y": -20,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "warwick-avenue",
     "name": "Warwick Avenue",
     "x": 8,
-    "y": -24
+    "y": -24,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "waterloo",
     "name": "Waterloo",
     "x": 62,
-    "y": 20
+    "y": 20,
+    "labelOffset": {
+      "x": -32,
+      "y": 60
+    }
   },
   {
     "id": "watford",
     "name": "Watford",
     "x": -36,
-    "y": -86
+    "y": -86,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "wembley-central",
     "name": "Wembley Central",
     "x": -2,
-    "y": -46
+    "y": -46,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "wembley-park",
     "name": "Wembley Park",
     "x": 14,
-    "y": -52
+    "y": -52,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "west-acton",
     "name": "West Acton",
     "x": -26,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "west-brompton",
     "name": "West Brompton",
     "x": 12,
-    "y": 20
+    "y": 20,
+    "labelOffset": {
+      "x": -106,
+      "y": -4
+    }
   },
   {
     "id": "west-drayton",
     "name": "West Drayton",
     "x": -80,
-    "y": -10
+    "y": -10,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "west-ealing",
     "name": "West Ealing",
     "x": -48,
-    "y": -2
+    "y": -2,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "west-finchley",
     "name": "West Finchley",
     "x": 72,
-    "y": -78
+    "y": -78,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "west-ham",
     "name": "West Ham",
     "x": 154,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": -32,
+      "y": -68
+    }
   },
   {
     "id": "west-hampstead",
     "name": "West Hampstead",
     "x": 30,
-    "y": -36
+    "y": -36,
+    "labelOffset": {
+      "x": 32,
+      "y": -132
+    }
   },
   {
     "id": "west-harrow",
     "name": "West Harrow",
     "x": -24,
-    "y": -54
+    "y": -54,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "west-kensington",
     "name": "West Kensington",
     "x": 6,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 0,
+      "y": 60
+    }
   },
   {
     "id": "west-ruislip",
     "name": "West Ruislip",
     "x": -52,
-    "y": -72
+    "y": -72,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "westbourne-park",
     "name": "Westbourne Park",
     "x": 6,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 32,
+      "y": 60
+    }
   },
   {
     "id": "westminster",
     "name": "Westminster",
     "x": 56,
-    "y": 14
+    "y": 14,
+    "labelOffset": {
+      "x": 32,
+      "y": -56
+    }
   },
   {
     "id": "white-city",
     "name": "White City",
     "x": -4,
-    "y": 0
+    "y": 0,
+    "labelOffset": {
+      "x": 0,
+      "y": -68
+    }
   },
   {
     "id": "whitechapel",
     "name": "Whitechapel",
     "x": 118,
-    "y": -12
+    "y": -12,
+    "labelOffset": {
+      "x": 32,
+      "y": 72
+    }
   },
   {
     "id": "willesden-green",
     "name": "Willesden Green",
     "x": 20,
-    "y": -46
+    "y": -46,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "willesden-junction",
     "name": "Willesden Junction",
     "x": -2,
-    "y": -38
+    "y": -38,
+    "labelOffset": {
+      "x": 32,
+      "y": -68
+    }
   },
   {
     "id": "wimbledon",
     "name": "Wimbledon",
     "x": 12,
-    "y": 48
+    "y": 48,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "wimbledon-park",
     "name": "Wimbledon Park",
     "x": 12,
-    "y": 44
+    "y": 44,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "wood-green",
     "name": "Wood Green",
     "x": 100,
-    "y": -70
+    "y": -70,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "wood-lane",
     "name": "Wood Lane",
     "x": -2,
-    "y": 2
+    "y": 2,
+    "labelOffset": {
+      "x": 42,
+      "y": -4
+    }
   },
   {
     "id": "woodford",
     "name": "Woodford",
     "x": 156,
-    "y": -60
+    "y": -60,
+    "labelOffset": {
+      "x": -42,
+      "y": 8
+    }
   },
   {
     "id": "woodside-park",
     "name": "Woodside Park",
     "x": 72,
-    "y": -82
+    "y": -82,
+    "labelOffset": {
+      "x": -42,
+      "y": -4
+    }
   },
   {
     "id": "woolwich",
     "name": "Woolwich",
     "x": 174,
-    "y": 32
+    "y": 32,
+    "labelOffset": {
+      "x": 42,
+      "y": 8
+    }
   }
 ];
 
