@@ -20,6 +20,7 @@ export class Hud {
   private readonly stationValue: HTMLSpanElement;
   private readonly destinationValue: HTMLSpanElement;
   private readonly lineIndicator: HTMLDivElement;
+  private zoomControls: HTMLDivElement | null = null;
   private readonly seedInput: HTMLInputElement;
   private readonly overlayButton: HTMLButtonElement;
   private readonly completionOverlay: HTMLDivElement;
@@ -31,10 +32,12 @@ export class Hud {
   private readonly completionCloseButton: HTMLButtonElement;
   private readonly temporaryBanner: HTMLDivElement;
   private readonly network: NetworkData;
+  private readonly callbacks: HudCallbacks;
   private completionDismissed = false;
 
   constructor(root: HTMLElement, network: NetworkData, callbacks: HudCallbacks) {
     this.network = network;
+    this.callbacks = callbacks;
     root.replaceChildren();
     root.className = "app-shell";
 
@@ -83,12 +86,6 @@ export class Hud {
 
     seedControls.append(this.seedInput, startButton, randomButton);
 
-    const zoomControls = document.createElement("div");
-    zoomControls.className = "zoom-controls";
-    const zoomInButton = zoomButton("+", "Zoom in", callbacks.onZoomIn);
-    const zoomOutButton = zoomButton("-", "Zoom out", callbacks.onZoomOut);
-    zoomControls.append(zoomInButton, zoomOutButton);
-
     this.temporaryBanner = document.createElement("div");
     this.temporaryBanner.className = "temporary-banner";
     this.temporaryBanner.textContent = "Temporary playable subset";
@@ -135,7 +132,6 @@ export class Hud {
       this.lineIndicator,
       this.mapHost,
       seedControls,
-      zoomControls,
       this.temporaryBanner,
       this.completionOverlay,
     );
@@ -160,6 +156,7 @@ export class Hud {
       this.completionMeta.textContent = `Seed ${this.seedInput.value}`;
       this.completionStats.hidden = true;
       this.completionCloseButton.hidden = true;
+      this.removeZoomControls();
       this.overlayButton.textContent = "Play";
       return;
     }
@@ -178,6 +175,7 @@ export class Hud {
 
     if (!state.completed) {
       this.completionDismissed = false;
+      this.removeZoomControls();
     }
     this.completionOverlay.hidden = !state.completed || this.completionDismissed;
     if (state.completed) {
@@ -188,6 +186,7 @@ export class Hud {
       this.completionStats.hidden = false;
       this.completionCloseButton.hidden = false;
       this.overlayButton.textContent = "Play again";
+      this.ensureZoomControls();
     }
   }
 
@@ -208,6 +207,25 @@ export class Hud {
       lineChip("Now", preview.current, "current"),
       lineChip("D", preview.next, canSwitch ? "preview" : "disabled"),
     );
+  }
+
+  private ensureZoomControls(): void {
+    if (this.zoomControls) {
+      return;
+    }
+
+    this.zoomControls = document.createElement("div");
+    this.zoomControls.className = "zoom-controls";
+    this.zoomControls.append(
+      zoomButton("+", "Zoom in", this.callbacks.onZoomIn),
+      zoomButton("-", "Zoom out", this.callbacks.onZoomOut),
+    );
+    this.completionOverlay.before(this.zoomControls);
+  }
+
+  private removeZoomControls(): void {
+    this.zoomControls?.remove();
+    this.zoomControls = null;
   }
 }
 

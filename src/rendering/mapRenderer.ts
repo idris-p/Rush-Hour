@@ -24,6 +24,7 @@ import {
   isInterchangeStation,
   renderStationMarker,
   type CurrentStationLabelPlacement,
+  type StationMarkerRenderOptions,
 } from "./stationRenderer";
 
 const SVG_NS = "http://www.w3.org/2000/svg";
@@ -108,6 +109,10 @@ export class MapRenderer {
 
   private completedCameraCenter: Point | null = null;
 
+  private renderedSeed: string | null = null;
+
+  private readonly stationLabelPlacements = new Map<string, CurrentStationLabelPlacement>();
+
   private labelPlacementCache: {
     key: string;
     placement: CurrentStationLabelPlacement;
@@ -134,6 +139,12 @@ export class MapRenderer {
     stationWipe: StationWipeAnimation | null = null,
     cameraPan: CameraPanAnimation | null = null,
   ): void {
+    if (this.renderedSeed !== state.seed) {
+      this.renderedSeed = state.seed;
+      this.stationLabelPlacements.clear();
+      this.labelPlacementCache = null;
+      this.completedCameraCenter = null;
+    }
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
     const hiddenCurrentStationId = lineReveal?.hiddenCurrentStationId ?? null;
@@ -237,24 +248,30 @@ export class MapRenderer {
     let currentLabel: SVGTextElement | null = null;
     for (const stationId of visibleStationIds) {
       const station = getStation(this.network, stationId);
+      const markerOptions: StationMarkerRenderOptions = {};
+      if (stationWipe?.stationId === station.id) {
+        markerOptions.wipe = {
+          id: `station-wipe-${station.id}`,
+          direction: stationWipe.direction,
+          progress: stationWipe.progress,
+        };
+      }
+      if (station.id !== state.currentStationId) {
+        const revealedLabel = this.getRevealedStationLabel(station.id);
+        if (revealedLabel) {
+          markerOptions.revealedLabel = revealedLabel;
+        }
+      }
       const label = renderStationMarker(
         stationLayer,
         station,
         this.network,
         state.selectedLineId,
         station.id === state.currentStationId,
-        1 / this.zoom,
+        1,
         this.corridorLayout.getStationMarkerGroups(station.id),
         undefined,
-        stationWipe?.stationId === station.id
-          ? {
-              wipe: {
-                id: `station-wipe-${station.id}`,
-                direction: stationWipe.direction,
-                progress: stationWipe.progress,
-              },
-            }
-          : undefined,
+        markerOptions,
       );
       if (label) currentLabel = label;
     }
@@ -278,6 +295,9 @@ export class MapRenderer {
     this.svg.classList.remove("tube-map-running");
     this.svg.classList.remove("tube-map-completed", "tube-map-panning");
     this.completedCameraCenter = null;
+    this.renderedSeed = null;
+    this.stationLabelPlacements.clear();
+    this.labelPlacementCache = null;
     const viewBoxSize = this.getViewBoxSize();
     const baseViewBoxSize = this.getBaseViewBoxSize();
     const viewBox = {
@@ -303,6 +323,10 @@ export class MapRenderer {
   zoomByWheel(deltaY: number): void {
     const factor = Math.exp(-Math.max(-100, Math.min(100, deltaY)) * 0.0018);
     this.zoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, this.zoom * factor));
+  }
+
+  resetZoom(): void {
+    this.zoom = 1;
   }
 
   panByClientDelta(deltaX: number, deltaY: number): void {
@@ -591,6 +615,7 @@ export class MapRenderer {
     ].join("|");
     if (options.layoutStable && !options.forceMeasure && this.labelPlacementCache?.key === cacheKey) {
       applyCurrentStationLabelPlacement(label, this.labelPlacementCache.placement);
+      this.rememberStationLabelPlacement(state.currentStationId, this.labelPlacementCache.placement);
       if (!this.labelPlacementCache.verifiedAfterLayout || areDocumentFontsLoading()) {
         this.queuePostLayoutLabelPlacement(label, state, {
           ...options,
@@ -621,7 +646,9 @@ export class MapRenderer {
     }
 
     if (!measuredAnyPlacement) {
-      applyCurrentStationLabelPlacement(label, getPendingLayoutLabelPlacement(labelAnchor));
+      const pendingPlacement = getPendingLayoutLabelPlacement(labelAnchor);
+      applyCurrentStationLabelPlacement(label, pendingPlacement);
+      this.rememberStationLabelPlacement(state.currentStationId, pendingPlacement);
       if (options.layoutStable && !options.forceMeasure) {
         this.queuePostLayoutLabelPlacement(label, state, {
           ...options,
@@ -634,6 +661,7 @@ export class MapRenderer {
     }
 
     applyCurrentStationLabelPlacement(label, best);
+    this.rememberStationLabelPlacement(state.currentStationId, best);
     if (!options.layoutStable) {
       return;
     }
@@ -654,6 +682,15 @@ export class MapRenderer {
         afterFontsReady: true,
       });
     }
+  }
+
+  private getRevealedStationLabel(stationId: string): { placement: CurrentStationLabelPlacement; scale: number } | undefined {
+    const placement = this.stationLabelPlacements.get(stationId);
+    return placement ? { placement, scale: 1 } : undefined;
+  }
+
+  private rememberStationLabelPlacement(stationId: string, placement: CurrentStationLabelPlacement): void {
+    this.stationLabelPlacements.set(stationId, { ...placement });
   }
 
   private queuePostLayoutLabelPlacement(

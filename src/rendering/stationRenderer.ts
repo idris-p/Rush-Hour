@@ -39,6 +39,10 @@ export type StationMarkerRenderOptions = {
     direction: MovementDirection;
     progress: number;
   };
+  revealedLabel?: {
+    placement: CurrentStationLabelPlacement;
+    scale: number;
+  };
 };
 
 export function renderStationMarker(
@@ -106,21 +110,24 @@ export function renderStationMarker(
     ));
   }
 
-  let currentLabel: SVGTextElement | null = null;
-  if (isCurrent) {
+  const labelPlacement = isCurrent ? currentLabelPlacement : options.revealedLabel?.placement;
+  let renderedLabel: SVGTextElement | null = null;
+  if (labelPlacement) {
+    const labelScale = isCurrent ? currentLabelScale : options.revealedLabel?.scale ?? currentLabelScale;
+    const labelClass = isCurrent ? "current-station-label" : "current-station-label revealed-station-label";
     const label = document.createElementNS(SVG_NS, "text");
     label.textContent = station.name;
-    label.setAttribute("x", String(currentLabelPlacement.x));
-    label.setAttribute("y", String(currentLabelPlacement.y));
-    label.setAttribute("text-anchor", currentLabelPlacement.textAnchor);
-    label.setAttribute("transform", `scale(${currentLabelScale})`);
-    label.setAttribute("class", "current-station-label");
+    label.setAttribute("x", String(labelPlacement.x));
+    label.setAttribute("y", String(labelPlacement.y));
+    label.setAttribute("text-anchor", labelPlacement.textAnchor);
+    label.setAttribute("transform", `scale(${labelScale})`);
+    label.setAttribute("class", labelClass);
     contentGroup.append(label);
-    currentLabel = label;
+    renderedLabel = label;
   }
 
   layer.append(group);
-  return currentLabel;
+  return isCurrent ? renderedLabel : null;
 }
 
 function createWipeContentGroup(

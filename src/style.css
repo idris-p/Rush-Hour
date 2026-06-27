@@ -107,6 +107,10 @@ svg text {
   -webkit-user-select: none;
 }
 
+.revealed-station-label {
+  opacity: 0.48;
+}
+
 .cursor-arrow {
   pointer-events: none;
 }

@@ -83,14 +83,21 @@ const hud = new Hud(root, networkData, {
     heldMoveConsumed = false;
     lastHeldMoveAttemptDirection = null;
     mouseIntent = createMouseIntentState();
+    renderer.resetZoom();
     hud.setSeed(pendingSeed);
     render();
   },
   onZoomIn: () => {
+    if (!state?.completed) {
+      return;
+    }
     renderer.zoomIn();
     render();
   },
   onZoomOut: () => {
+    if (!state?.completed) {
+      return;
+    }
     renderer.zoomOut();
     render();
   },
@@ -102,6 +109,7 @@ hud.setSeed(pendingSeed);
 function startRun(seed: string): void {
   pendingSeed = seed;
   state = createGameState(seed, networkData, performance.now());
+  renderer.resetZoom();
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
   activeMovePointerId = null;
@@ -344,7 +352,7 @@ function tryHeldPointerMove(now: number, forceAttempt = false): void {
 }
 
 renderer.svg.addEventListener("wheel", (event) => {
-  if (!state) {
+  if (!state?.completed) {
     return;
   }
 
