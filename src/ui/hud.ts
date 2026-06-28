@@ -21,6 +21,7 @@ export class Hud {
   private readonly destinationValue: HTMLSpanElement;
   private readonly lineIndicator: HTMLDivElement;
   private zoomControls: HTMLDivElement | null = null;
+  private readonly seedControls: HTMLFormElement;
   private readonly seedInput: HTMLInputElement;
   private readonly overlayButton: HTMLButtonElement;
   private readonly completionOverlay: HTMLDivElement;
@@ -41,18 +42,23 @@ export class Hud {
     root.replaceChildren();
     root.className = "app-shell";
 
-    const topLeft = document.createElement("div");
-    topLeft.className = "hud-panel hud-left";
+    const statsPanel = document.createElement("div");
+    statsPanel.className = "hud-panel hud-left";
+
+    const timerPanel = document.createElement("div");
+    timerPanel.className = "hud-panel hud-timer";
 
     this.timerValue = document.createElement("span");
     this.moveValue = document.createElement("span");
     this.stationValue = document.createElement("span");
     this.destinationValue = document.createElement("span");
-    topLeft.append(
+    timerPanel.append(
       metric("Time", this.timerValue),
-      metric("Moves", this.moveValue),
+    );
+    statsPanel.append(
       metric("Start", this.stationValue),
       metric("Target", this.destinationValue),
+      metric("Moves", this.moveValue),
     );
 
     this.lineIndicator = document.createElement("div");
@@ -61,9 +67,9 @@ export class Hud {
     this.mapHost = document.createElement("div");
     this.mapHost.className = "map-host";
 
-    const seedControls = document.createElement("form");
-    seedControls.className = "seed-controls";
-    seedControls.addEventListener("submit", (event) => {
+    this.seedControls = document.createElement("form");
+    this.seedControls.className = "seed-controls";
+    this.seedControls.addEventListener("submit", (event) => {
       event.preventDefault();
       callbacks.onPlaySeed(this.seedInput.value);
     });
@@ -84,7 +90,7 @@ export class Hud {
     randomButton.textContent = "Random";
     randomButton.addEventListener("click", callbacks.onRandomSeed);
 
-    seedControls.append(this.seedInput, startButton, randomButton);
+    this.seedControls.append(this.seedInput, startButton, randomButton);
 
     this.temporaryBanner = document.createElement("div");
     this.temporaryBanner.className = "temporary-banner";
@@ -128,10 +134,11 @@ export class Hud {
     );
 
     root.append(
-      topLeft,
+      statsPanel,
+      timerPanel,
       this.lineIndicator,
       this.mapHost,
-      seedControls,
+      this.seedControls,
       this.temporaryBanner,
       this.completionOverlay,
     );
@@ -144,6 +151,7 @@ export class Hud {
   update(state: GameState | null, now: number): void {
     if (!state) {
       this.completionDismissed = false;
+      this.seedControls.hidden = false;
       this.timerValue.textContent = formatMilliseconds(0);
       this.moveValue.textContent = "0";
       this.stationValue.textContent = "Ready";
@@ -166,6 +174,7 @@ export class Hud {
     const elapsed = getElapsedMilliseconds(state, now);
 
     this.timerValue.textContent = formatMilliseconds(elapsed);
+    this.seedControls.hidden = !state.completed;
     this.moveValue.textContent = String(state.moveCount);
     this.stationValue.textContent = startStation.name;
     this.destinationValue.textContent = destination.name;
@@ -243,8 +252,8 @@ function lineChip(label: string, lineId: keyof typeof LINE_BY_ID, variant: "prev
   const line = LINE_BY_ID[lineId];
   const chip = document.createElement("div");
   chip.className = `line-chip line-chip-${variant}`;
-  chip.style.setProperty("--chip-line-color", line.color);
-  chip.style.setProperty("--chip-line-text-color", line.textColor);
+  chip.style.setProperty("--chip-line-color", lineId === "walk" ? "#ffffff" : line.color);
+  chip.style.setProperty("--chip-line-text-color", lineId === "walk" ? "#111111" : line.textColor);
 
   const key = document.createElement("span");
   key.className = "line-chip-key";
