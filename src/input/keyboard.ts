@@ -29,6 +29,10 @@ export function bindKeyboardControls(onCycleLine: LineCycleHandler): () => void 
   };
 
   const handleKeyDown = (event: KeyboardEvent): void => {
+    if (isEditableKeyboardTarget(event.target)) {
+      return;
+    }
+
     const key = event.key.toLowerCase();
     if (key !== "a" && key !== "d") {
       return;
@@ -43,6 +47,11 @@ export function bindKeyboardControls(onCycleLine: LineCycleHandler): () => void 
   };
 
   const handleKeyUp = (event: KeyboardEvent): void => {
+    if (isEditableKeyboardTarget(event.target)) {
+      stopCycling();
+      return;
+    }
+
     const key = event.key.toLowerCase();
     if (key === heldKey) {
       event.preventDefault();
@@ -59,4 +68,17 @@ export function bindKeyboardControls(onCycleLine: LineCycleHandler): () => void 
     window.removeEventListener("keyup", handleKeyUp);
     window.removeEventListener("blur", stopCycling);
   };
+}
+
+function isEditableKeyboardTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false;
+  }
+
+  return (
+    target instanceof HTMLInputElement ||
+    target instanceof HTMLTextAreaElement ||
+    target instanceof HTMLSelectElement ||
+    target.isContentEditable
+  );
 }

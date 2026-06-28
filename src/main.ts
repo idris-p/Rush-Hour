@@ -48,7 +48,6 @@ function startGame(): void {
 let state: GameState | null = null;
 let pointerPoint: Point | null = null;
 let mouseIntent = createMouseIntentState();
-let pendingSeed = generateSeed();
 let activeMovePointerId: number | null = null;
 let heldMoveConsumed = false;
 let lastHeldMoveAttemptDirection: MovementDirection | null = null;
@@ -75,20 +74,12 @@ let cameraPanAnimation: {
 } | null = null;
 
 const hud = new Hud(appRoot, networkData, {
-  onPlaySeed: (seed) => startRun(seed.trim() === "" ? pendingSeed : seed.trim()),
-  onRandomSeed: () => {
-    pendingSeed = generateSeed();
+  onStartRandomSeed: () => startRun(generateSeed()),
+  onStartSeed: (seed) => startRun(seed),
+  onReturnToMenu: () => {
     state = null;
-    lineRevealAnimation = null;
-    stationWipeAnimation = null;
-    cameraPanAnimation = null;
-    pointerPoint = null;
-    activeMovePointerId = null;
-    heldMoveConsumed = false;
-    lastHeldMoveAttemptDirection = null;
-    mouseIntent = createMouseIntentState();
-    renderer.resetZoom();
-    hud.setSeed(pendingSeed);
+    resetRunTransientState();
+    hud.showMenu();
     render();
   },
   onZoomIn: () => {
@@ -108,12 +99,14 @@ const hud = new Hud(appRoot, networkData, {
 });
 
 const renderer = new MapRenderer(hud.mapHost, networkData);
-hud.setSeed(pendingSeed);
 
 function startRun(seed: string): void {
-  pendingSeed = seed;
   state = createGameState(seed, networkData, performance.now());
-  renderer.resetZoom();
+  resetRunTransientState();
+  render();
+}
+
+function resetRunTransientState(): void {
   pointerPoint = null;
   mouseIntent = createMouseIntentState();
   activeMovePointerId = null;
@@ -122,7 +115,10 @@ function startRun(seed: string): void {
   lineRevealAnimation = null;
   stationWipeAnimation = null;
   cameraPanAnimation = null;
-  render();
+  panPointerId = null;
+  lastPanPoint = null;
+  renderer.svg.classList.remove("tube-map-panning");
+  renderer.resetZoom();
 }
 
 function render(now = performance.now()): void {
@@ -136,7 +132,7 @@ function render(now = performance.now()): void {
       getActiveCameraPanAnimation(now),
     );
   } else {
-    renderer.renderIdle();
+    renderer.renderMenuPreview(createMenuPreviewState());
   }
   hud.update(state, now);
 }
@@ -444,5 +440,21 @@ function isStationVisible(
       revealedConnectionIds.has(connection.id) &&
       (connection.from === stationId || connection.to === stationId),
   );
+}
+
+function createMenuPreviewState(): GameState {
+  return {
+    seed: "menu-preview",
+    startStationId: "oxford-circus",
+    destinationStationId: "bond-street",
+    currentStationId: "oxford-circus",
+    selectedLineId: "central",
+    revealedConnections: new Set(networkData.connections.map((connection) => connection.id)),
+    moveCount: 8,
+    startTime: 0,
+    endTime: null,
+    completed: false,
+    rejectedMoveAt: null,
+  };
 }
 }

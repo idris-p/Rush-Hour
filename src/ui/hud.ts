@@ -6,23 +6,27 @@ import { getLineCyclePreview } from "../game/lineSelection";
 import { getStation } from "../game/movement";
 
 export type HudCallbacks = {
-  onPlaySeed: (seed: string) => void;
-  onRandomSeed: () => void;
+  onStartRandomSeed: () => void;
+  onStartSeed: (seed: string) => void;
+  onReturnToMenu: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 };
 
+type MenuMode = "home" | "seed-choice" | "seed-entry";
+
 export class Hud {
   readonly mapHost: HTMLDivElement;
 
+  private readonly shell: HTMLElement;
+  private readonly statsPanel: HTMLDivElement;
+  private readonly timerPanel: HTMLDivElement;
   private readonly timerValue: HTMLSpanElement;
   private readonly moveValue: HTMLSpanElement;
   private readonly stationValue: HTMLSpanElement;
   private readonly destinationValue: HTMLSpanElement;
   private readonly lineIndicator: HTMLDivElement;
   private zoomControls: HTMLDivElement | null = null;
-  private readonly seedControls: HTMLFormElement;
-  private readonly seedInput: HTMLInputElement;
   private readonly overlayButton: HTMLButtonElement;
   private readonly completionOverlay: HTMLDivElement;
   private readonly completionTitle: HTMLHeadingElement;
@@ -31,9 +35,15 @@ export class Hud {
   private readonly completionMoves: HTMLSpanElement;
   private readonly completionStats: HTMLDivElement;
   private readonly completionCloseButton: HTMLButtonElement;
+  private readonly gameplayExitButton: HTMLButtonElement;
   private readonly temporaryBanner: HTMLDivElement;
+  private readonly menuOverlay: HTMLDivElement;
+  private readonly menuBackButton: HTMLButtonElement;
+  private readonly menuActions: HTMLDivElement;
+  private readonly menuSeedInput: HTMLInputElement;
   private readonly network: NetworkData;
   private readonly callbacks: HudCallbacks;
+  private menuMode: MenuMode = "home";
   private completionDismissed = false;
 
   constructor(root: HTMLElement, network: NetworkData, callbacks: HudCallbacks) {
@@ -41,21 +51,22 @@ export class Hud {
     this.callbacks = callbacks;
     root.replaceChildren();
     root.className = "app-shell";
+    this.shell = root;
 
-    const statsPanel = document.createElement("div");
-    statsPanel.className = "hud-panel hud-left";
+    this.statsPanel = document.createElement("div");
+    this.statsPanel.className = "hud-panel hud-left";
 
-    const timerPanel = document.createElement("div");
-    timerPanel.className = "hud-panel hud-timer";
+    this.timerPanel = document.createElement("div");
+    this.timerPanel.className = "hud-panel hud-timer";
 
     this.timerValue = document.createElement("span");
     this.moveValue = document.createElement("span");
     this.stationValue = document.createElement("span");
     this.destinationValue = document.createElement("span");
-    timerPanel.append(
+    this.timerPanel.append(
       metric("Time", this.timerValue),
     );
-    statsPanel.append(
+    this.statsPanel.append(
       metric("Start", this.stationValue),
       metric("Target", this.destinationValue),
       metric("Moves", this.moveValue),
@@ -67,35 +78,38 @@ export class Hud {
     this.mapHost = document.createElement("div");
     this.mapHost.className = "map-host";
 
-    this.seedControls = document.createElement("form");
-    this.seedControls.className = "seed-controls";
-    this.seedControls.addEventListener("submit", (event) => {
-      event.preventDefault();
-      callbacks.onPlaySeed(this.seedInput.value);
-    });
-
-    this.seedInput = document.createElement("input");
-    this.seedInput.type = "text";
-    this.seedInput.name = "seed";
-    this.seedInput.autocomplete = "off";
-    this.seedInput.spellcheck = false;
-    this.seedInput.ariaLabel = "Seed";
-
-    const startButton = document.createElement("button");
-    startButton.type = "submit";
-    startButton.textContent = "Play";
-
-    const randomButton = document.createElement("button");
-    randomButton.type = "button";
-    randomButton.textContent = "Random";
-    randomButton.addEventListener("click", callbacks.onRandomSeed);
-
-    this.seedControls.append(this.seedInput, startButton, randomButton);
-
     this.temporaryBanner = document.createElement("div");
     this.temporaryBanner.className = "temporary-banner";
     this.temporaryBanner.textContent = "Temporary playable subset";
     this.temporaryBanner.hidden = !network.temporary;
+
+    this.menuOverlay = document.createElement("div");
+    this.menuOverlay.className = "main-menu";
+    this.menuBackButton = document.createElement("button");
+    this.menuBackButton.type = "button";
+    this.menuBackButton.className = "menu-back";
+    this.menuBackButton.textContent = "\u2190 Back";
+    this.menuBackButton.addEventListener("click", () => this.setMenuMode(getPreviousMenuMode(this.menuMode)));
+
+    const menuContent = document.createElement("div");
+    menuContent.className = "main-menu-content";
+    const menuTitle = document.createElement("h1");
+    menuTitle.textContent = "Rush Hour";
+    this.menuActions = document.createElement("div");
+    this.menuActions.className = "main-menu-actions";
+
+    this.menuSeedInput = document.createElement("input");
+    this.menuSeedInput.type = "text";
+    this.menuSeedInput.name = "seed";
+    this.menuSeedInput.autocomplete = "off";
+    this.menuSeedInput.spellcheck = false;
+    this.menuSeedInput.required = true;
+    this.menuSeedInput.placeholder = "Enter seed";
+    this.menuSeedInput.ariaLabel = "Seed";
+
+    menuContent.append(menuTitle, this.menuActions);
+    this.menuOverlay.append(this.menuBackButton, menuContent);
+    this.setMenuMode("home");
 
     this.completionOverlay = document.createElement("div");
     this.completionOverlay.className = "completion-overlay";
@@ -120,11 +134,19 @@ export class Hud {
       this.completionDismissed = true;
       this.completionOverlay.hidden = true;
     });
+    this.gameplayExitButton = document.createElement("button");
+    this.gameplayExitButton.type = "button";
+    this.gameplayExitButton.className = "gameplay-exit-button";
+    this.gameplayExitButton.ariaLabel = "Exit to menu";
+    this.gameplayExitButton.title = "Exit to menu";
+    this.gameplayExitButton.hidden = true;
+    this.gameplayExitButton.append(exitIcon());
+    this.gameplayExitButton.addEventListener("click", callbacks.onReturnToMenu);
     this.overlayButton = document.createElement("button");
     this.overlayButton.type = "button";
     this.overlayButton.className = "completion-action";
-    this.overlayButton.textContent = "Play";
-    this.overlayButton.addEventListener("click", () => callbacks.onPlaySeed(this.seedInput.value));
+    this.overlayButton.textContent = "Menu";
+    this.overlayButton.addEventListener("click", callbacks.onReturnToMenu);
     this.completionOverlay.append(
       this.completionCloseButton,
       this.completionTitle,
@@ -134,51 +156,52 @@ export class Hud {
     );
 
     root.append(
-      statsPanel,
-      timerPanel,
-      this.lineIndicator,
       this.mapHost,
-      this.seedControls,
+      this.statsPanel,
+      this.timerPanel,
+      this.lineIndicator,
       this.temporaryBanner,
+      this.menuOverlay,
       this.completionOverlay,
+      this.gameplayExitButton,
     );
   }
 
-  setSeed(seed: string): void {
-    this.seedInput.value = seed;
+  showMenu(): void {
+    this.completionDismissed = false;
+    this.setMenuMode("home");
   }
 
   update(state: GameState | null, now: number): void {
     if (!state) {
-      this.completionDismissed = false;
-      this.seedControls.hidden = false;
-      this.timerValue.textContent = formatMilliseconds(0);
-      this.moveValue.textContent = "0";
-      this.stationValue.textContent = "Ready";
-      this.destinationValue.textContent = "Ready";
-      this.lineIndicator.textContent = "Ready";
-      this.lineIndicator.style.setProperty("--line-color", "#ffffff");
-      this.lineIndicator.style.setProperty("--line-text-color", "#111111");
-      this.completionOverlay.hidden = false;
-      this.completionTitle.textContent = "Rush Hour";
-      this.completionMeta.textContent = `Seed ${this.seedInput.value}`;
-      this.completionStats.hidden = true;
-      this.completionCloseButton.hidden = true;
+      this.shell.classList.add("menu-active");
+      this.statsPanel.hidden = true;
+      this.timerPanel.hidden = true;
+      this.lineIndicator.hidden = true;
+      this.temporaryBanner.hidden = true;
+      this.menuOverlay.hidden = false;
+      this.completionOverlay.hidden = true;
+      this.gameplayExitButton.hidden = true;
       this.removeZoomControls();
-      this.overlayButton.textContent = "Play";
       return;
     }
+
+    this.shell.classList.remove("menu-active");
+    this.statsPanel.hidden = false;
+    this.timerPanel.hidden = false;
+    this.lineIndicator.hidden = false;
+    this.temporaryBanner.hidden = !this.network.temporary;
+    this.menuOverlay.hidden = true;
+    this.gameplayExitButton.hidden = false;
 
     const startStation = getStation(this.network, state.startStationId);
     const destination = getStation(this.network, state.destinationStationId);
     const elapsed = getElapsedMilliseconds(state, now);
 
     this.timerValue.textContent = formatMilliseconds(elapsed);
-    this.seedControls.hidden = !state.completed;
     this.moveValue.textContent = String(state.moveCount);
     this.stationValue.textContent = startStation.name;
     this.destinationValue.textContent = destination.name;
-    this.seedInput.value = state.seed;
 
     this.renderLineIndicator(state);
 
@@ -194,9 +217,49 @@ export class Hud {
       this.completionMeta.textContent = `Seed ${state.seed}`;
       this.completionStats.hidden = false;
       this.completionCloseButton.hidden = false;
-      this.overlayButton.textContent = "Play again";
+      this.overlayButton.textContent = "Menu";
       this.ensureZoomControls();
     }
+  }
+
+  private setMenuMode(mode: MenuMode): void {
+    this.menuMode = mode;
+    this.menuOverlay.dataset.menuMode = mode;
+    this.menuBackButton.hidden = mode === "home";
+    this.menuActions.replaceChildren();
+
+    if (mode === "home") {
+      this.menuActions.append(menuButton("Play", "primary", () => this.setMenuMode("seed-choice")));
+      return;
+    }
+
+    if (mode === "seed-choice") {
+      this.menuActions.append(
+        menuButton("Random Seed", "primary", this.callbacks.onStartRandomSeed),
+        menuButton("Set Seed", "secondary", () => this.setMenuMode("seed-entry")),
+      );
+      return;
+    }
+
+    const form = document.createElement("form");
+    form.className = "main-menu-seed-form";
+    form.addEventListener("submit", (event) => {
+      event.preventDefault();
+      const seed = this.menuSeedInput.value.trim();
+      if (seed === "") {
+        this.menuSeedInput.focus();
+        return;
+      }
+      this.callbacks.onStartSeed(seed);
+    });
+
+    this.menuSeedInput.value = "";
+    form.append(
+      this.menuSeedInput,
+      menuButton("Start", "primary"),
+    );
+    this.menuActions.append(form);
+    window.setTimeout(() => this.menuSeedInput.focus(), 0);
   }
 
   private renderLineIndicator(state: GameState): void {
@@ -236,6 +299,44 @@ export class Hud {
     this.zoomControls?.remove();
     this.zoomControls = null;
   }
+}
+
+function menuButton(
+  label: string,
+  variant: "primary" | "secondary",
+  callback?: () => void,
+): HTMLButtonElement {
+  const button = document.createElement("button");
+  button.type = callback ? "button" : "submit";
+  button.className = `main-menu-button main-menu-button-${variant}`;
+  button.textContent = label;
+  if (callback) {
+    button.addEventListener("click", callback);
+  }
+  return button;
+}
+
+function getPreviousMenuMode(mode: MenuMode): MenuMode {
+  if (mode === "seed-entry") {
+    return "seed-choice";
+  }
+  return "home";
+}
+
+function exitIcon(): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "button-icon");
+
+  const door = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  door.setAttribute("d", "M 5 4 H 12 V 7 H 8 V 17 H 12 V 20 H 5 Z");
+
+  const arrow = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  arrow.setAttribute("d", "M 13 8 L 17 12 L 13 16 V 13 H 9 V 11 H 13 Z");
+
+  svg.append(door, arrow);
+  return svg;
 }
 
 function zoomButton(label: string, ariaLabel: string, callback: () => void): HTMLButtonElement {

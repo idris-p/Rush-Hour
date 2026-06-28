@@ -120,6 +120,7 @@ export class MapRenderer {
       this.renderedSeed = state.seed;
       this.completedCameraCenter = null;
     }
+    this.svg.classList.remove("tube-map-menu-preview");
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
     const hiddenCurrentStationId = lineReveal?.hiddenCurrentStationId ?? null;
@@ -272,6 +273,12 @@ export class MapRenderer {
     this.svg.replaceChildren();
     this.renderGrid(viewBox);
     renderRiverThames(this.svg, viewBox);
+  }
+
+  renderMenuPreview(state: GameState): void {
+    this.render(state, null, "east");
+    this.svg.classList.remove("tube-map-running", "tube-map-completed", "tube-map-panning");
+    this.svg.classList.add("tube-map-menu-preview");
   }
 
   zoomIn(): void {
