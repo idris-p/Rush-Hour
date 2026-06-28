@@ -7,8 +7,10 @@ export type GameState = {
   destinationStationId: string;
   currentStationId: string;
   selectedLineId: LineId;
+  enteredStationLineId: LineId | null;
   revealedConnections: Set<string>;
   moveCount: number;
+  changeCount: number;
   startTime: number;
   endTime: number | null;
   completed: boolean;
@@ -29,8 +31,10 @@ export function createGameState(seed: string, network: NetworkData, now: number)
     destinationStationId: selection.destinationStationId,
     currentStationId: selection.startStationId,
     selectedLineId: startStation.lines[0],
+    enteredStationLineId: null,
     revealedConnections: new Set<string>(),
     moveCount: 0,
+    changeCount: 0,
     startTime: now,
     endTime: null,
     completed: false,
@@ -41,4 +45,3 @@ export function createGameState(seed: string, network: NetworkData, now: number)
 export function getElapsedMilliseconds(state: GameState, now: number): number {
   return Math.max(0, (state.endTime ?? now) - state.startTime);
 }
-

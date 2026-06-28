@@ -361,6 +361,111 @@ describe("movement", () => {
     expect(result.state.revealedConnections.has("central:a:b")).toBe(true);
   });
 
+  it("counts line changes only when leaving an entered station on a different line", () => {
+    const transferNetwork: NetworkData = {
+      temporary: true,
+      notes: [],
+      stations: [
+        { id: "a", name: "A", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central", "victoria"] },
+        { id: "b", name: "B", x: 2, y: 0, labelOffset: testLabelOffset, lines: ["central", "victoria"] },
+        { id: "c", name: "C", x: 2, y: 2, labelOffset: testLabelOffset, lines: ["victoria"] },
+      ],
+      connections: [
+        { id: "central:a:b", from: "a", to: "b", line: "central", path: [{ x: 0, y: 0 }, { x: 2, y: 0 }] },
+        { id: "victoria:b:c", from: "b", to: "c", line: "victoria", path: [{ x: 2, y: 0 }, { x: 2, y: 2 }] },
+      ],
+    };
+    const start = {
+      ...createGameState("change-count", transferNetwork, 0),
+      startStationId: "a",
+      destinationStationId: "c",
+      currentStationId: "a",
+      selectedLineId: "central" as const,
+    };
+
+    const enteredInterchange = attemptMove(start, transferNetwork, 0, 100).state;
+    const switchedLine = cycleSelectedLine(enteredInterchange, transferNetwork, 1);
+    const result = attemptMove(switchedLine, transferNetwork, 90, 200);
+
+    expect(enteredInterchange.changeCount).toBe(0);
+    expect(result.state.changeCount).toBe(1);
+  });
+
+  it("does not count a line change when leaving the start station", () => {
+    const state = {
+      ...createGameState("start-change", testNetwork, 0),
+      startStationId: "a",
+      destinationStationId: "c",
+      currentStationId: "a",
+      selectedLineId: "victoria" as const,
+    };
+
+    const result = attemptMove(state, testNetwork, 90, 100);
+
+    expect(result.moved).toBe(true);
+    expect(result.state.changeCount).toBe(0);
+  });
+
+  it("does not count changing from a tube line to walking", () => {
+    const transferNetwork: NetworkData = {
+      temporary: true,
+      notes: [],
+      stations: [
+        { id: "a", name: "A", x: 0, y: -2, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "bank", name: "Bank", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central", "walk"] },
+        { id: "monument", name: "Monument", x: 2, y: 0, labelOffset: testLabelOffset, lines: ["walk"] },
+      ],
+      connections: [
+        { id: "central:a:bank", from: "a", to: "bank", line: "central", path: [{ x: 0, y: -2 }, { x: 0, y: 0 }] },
+        { id: "walk:bank:monument", from: "bank", to: "monument", line: "walk", path: [{ x: 0, y: 0 }, { x: 2, y: 0 }] },
+      ],
+    };
+    const start = {
+      ...createGameState("tube-to-walk", transferNetwork, 0),
+      startStationId: "a",
+      destinationStationId: "monument",
+      currentStationId: "a",
+      selectedLineId: "central" as const,
+    };
+
+    const enteredByTube = attemptMove(start, transferNetwork, 90, 100).state;
+    const walking = { ...enteredByTube, selectedLineId: "walk" as const };
+    const result = attemptMove(walking, transferNetwork, 0, 200);
+
+    expect(result.moved).toBe(true);
+    expect(result.state.changeCount).toBe(0);
+  });
+
+  it("counts changing from walking to a tube line", () => {
+    const transferNetwork: NetworkData = {
+      temporary: true,
+      notes: [],
+      stations: [
+        { id: "a", name: "A", x: 0, y: -2, labelOffset: testLabelOffset, lines: ["central"] },
+        { id: "bank", name: "Bank", x: 0, y: 0, labelOffset: testLabelOffset, lines: ["central", "walk"] },
+        { id: "monument", name: "Monument", x: 2, y: 0, labelOffset: testLabelOffset, lines: ["walk"] },
+      ],
+      connections: [
+        { id: "central:a:bank", from: "a", to: "bank", line: "central", path: [{ x: 0, y: -2 }, { x: 0, y: 0 }] },
+        { id: "walk:bank:monument", from: "bank", to: "monument", line: "walk", path: [{ x: 0, y: 0 }, { x: 2, y: 0 }] },
+      ],
+    };
+    const start = {
+      ...createGameState("walk-to-tube", transferNetwork, 0),
+      startStationId: "monument",
+      destinationStationId: "a",
+      currentStationId: "monument",
+      selectedLineId: "walk" as const,
+    };
+
+    const enteredByWalking = attemptMove(start, transferNetwork, 180, 100).state;
+    const tube = { ...enteredByWalking, selectedLineId: "central" as const };
+    const result = attemptMove(tube, transferNetwork, 270, 200);
+
+    expect(result.moved).toBe(true);
+    expect(result.state.changeCount).toBe(1);
+  });
+
   it("marks the run complete when reaching the destination", () => {
     const state = {
       ...createGameState("movement-complete", testNetwork, 0),

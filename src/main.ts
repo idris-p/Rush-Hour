@@ -19,6 +19,8 @@ import { Hud } from "./ui/hud";
 import type { Point } from "./data/types";
 
 const REJECTED_MOVE_FLASH_MS = 180;
+const COUNTDOWN_STEP_MS = 700;
+const COUNTDOWN_START_VALUE = 3;
 const LINE_SWITCH_CAMERA_PAN_SPEED = 1 / 160;
 const LINE_REVEAL_ANIMATION_DURATION_MS = 1 / LINE_REVEAL_ANIMATION_SPEED;
 
@@ -46,6 +48,7 @@ startGame();
 
 function startGame(): void {
 let state: GameState | null = null;
+let countdown: { seed: string; startedAt: number } | null = null;
 let pointerPoint: Point | null = null;
 let mouseIntent = createMouseIntentState();
 let activeMovePointerId: number | null = null;
@@ -78,6 +81,7 @@ const hud = new Hud(appRoot, networkData, {
   onStartSeed: (seed) => startRun(seed),
   onReturnToMenu: () => {
     state = null;
+    countdown = null;
     resetRunTransientState();
     hud.showMenu();
     render();
@@ -101,9 +105,17 @@ const hud = new Hud(appRoot, networkData, {
 const renderer = new MapRenderer(hud.mapHost, networkData);
 
 function startRun(seed: string): void {
-  state = createGameState(seed, networkData, performance.now());
+  state = null;
+  countdown = { seed, startedAt: performance.now() };
   resetRunTransientState();
   render();
+}
+
+function completeCountdown(seed: string, now: number): void {
+  countdown = null;
+  state = createGameState(seed, networkData, now);
+  resetRunTransientState();
+  render(now);
 }
 
 function resetRunTransientState(): void {
@@ -131,15 +143,25 @@ function render(now = performance.now()): void {
       getActiveStationWipeAnimation(now),
       getActiveCameraPanAnimation(now),
     );
+    hud.update(state, now);
+  } else if (countdown) {
+    renderer.renderMenuPreview(createMenuPreviewState());
+    hud.showCountdown(getCountdownValue(countdown, now));
   } else {
     renderer.renderMenuPreview(createMenuPreviewState());
+    hud.update(null, now);
   }
-  hud.update(state, now);
 }
 
 function tick(): void {
   const now = performance.now();
-  if (state) {
+  if (countdown) {
+    if (now - countdown.startedAt >= COUNTDOWN_STEP_MS * COUNTDOWN_START_VALUE) {
+      completeCountdown(countdown.seed, now);
+    } else {
+      render(now);
+    }
+  } else if (state) {
     const hadLineRevealAnimation = lineRevealAnimation !== null;
     const hadStationWipeAnimation = stationWipeAnimation !== null;
     const hadCameraPanAnimation = cameraPanAnimation !== null;
@@ -172,6 +194,11 @@ function tick(): void {
     }
   }
   requestAnimationFrame(tick);
+}
+
+function getCountdownValue(activeCountdown: NonNullable<typeof countdown>, now: number): number {
+  const elapsedSteps = Math.floor((now - activeCountdown.startedAt) / COUNTDOWN_STEP_MS);
+  return Math.max(1, COUNTDOWN_START_VALUE - elapsedSteps);
 }
 
 function getActiveLineRevealAnimation(now: number) {
@@ -449,8 +476,10 @@ function createMenuPreviewState(): GameState {
     destinationStationId: "bond-street",
     currentStationId: "oxford-circus",
     selectedLineId: "central",
+    enteredStationLineId: "central",
     revealedConnections: new Set(networkData.connections.map((connection) => connection.id)),
     moveCount: 8,
+    changeCount: 2,
     startTime: 0,
     endTime: null,
     completed: false,

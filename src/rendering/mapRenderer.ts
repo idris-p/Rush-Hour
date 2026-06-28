@@ -258,7 +258,7 @@ export class MapRenderer {
 
   renderIdle(): void {
     this.svg.classList.remove("tube-map-running");
-    this.svg.classList.remove("tube-map-completed", "tube-map-panning");
+    this.svg.classList.remove("tube-map-completed", "tube-map-panning", "tube-map-menu-preview");
     this.completedCameraCenter = null;
     this.renderedSeed = null;
     const viewBoxSize = this.getViewBoxSize();

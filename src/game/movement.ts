@@ -233,13 +233,19 @@ export function attemptMoveInDirection(
   revealedConnections.add(connectionId);
 
   const completed = target.id === state.destinationStationId;
+  const changedLineOnDeparture =
+    state.enteredStationLineId !== null &&
+    state.enteredStationLineId !== state.selectedLineId &&
+    !(state.enteredStationLineId !== "walk" && state.selectedLineId === "walk");
 
   return {
     state: {
       ...state,
       currentStationId: target.id,
+      enteredStationLineId: state.selectedLineId,
       revealedConnections,
       moveCount: state.moveCount + 1,
+      changeCount: state.changeCount + (changedLineOnDeparture ? 1 : 0),
       completed,
       endTime: completed ? now : state.endTime,
       rejectedMoveAt: null,

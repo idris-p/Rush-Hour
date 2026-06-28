@@ -23,6 +23,7 @@ export class Hud {
   private readonly timerPanel: HTMLDivElement;
   private readonly timerValue: HTMLSpanElement;
   private readonly moveValue: HTMLSpanElement;
+  private readonly changeValue: HTMLSpanElement;
   private readonly stationValue: HTMLSpanElement;
   private readonly destinationValue: HTMLSpanElement;
   private readonly lineIndicator: HTMLDivElement;
@@ -31,11 +32,17 @@ export class Hud {
   private readonly completionOverlay: HTMLDivElement;
   private readonly completionTitle: HTMLHeadingElement;
   private readonly completionMeta: HTMLParagraphElement;
+  private readonly completionSeedText: HTMLSpanElement;
+  private readonly completionSeedCopyButton: HTMLButtonElement;
   private readonly completionTime: HTMLSpanElement;
   private readonly completionMoves: HTMLSpanElement;
+  private readonly completionChanges: HTMLSpanElement;
   private readonly completionStats: HTMLDivElement;
   private readonly completionCloseButton: HTMLButtonElement;
   private readonly gameplayExitButton: HTMLButtonElement;
+  private readonly exitConfirmOverlay: HTMLDivElement;
+  private readonly countdownOverlay: HTMLDivElement;
+  private readonly countdownValue: HTMLDivElement;
   private readonly temporaryBanner: HTMLDivElement;
   private readonly menuOverlay: HTMLDivElement;
   private readonly menuBackButton: HTMLButtonElement;
@@ -61,6 +68,7 @@ export class Hud {
 
     this.timerValue = document.createElement("span");
     this.moveValue = document.createElement("span");
+    this.changeValue = document.createElement("span");
     this.stationValue = document.createElement("span");
     this.destinationValue = document.createElement("span");
     this.timerPanel.append(
@@ -69,6 +77,7 @@ export class Hud {
     this.statsPanel.append(
       metric("Start", this.stationValue),
       metric("Target", this.destinationValue),
+      metric("Changes", this.changeValue),
       metric("Moves", this.moveValue),
     );
 
@@ -111,18 +120,42 @@ export class Hud {
     this.menuOverlay.append(this.menuBackButton, menuContent);
     this.setMenuMode("home");
 
+    this.countdownOverlay = document.createElement("div");
+    this.countdownOverlay.className = "countdown-overlay";
+    this.countdownOverlay.hidden = true;
+    this.countdownValue = document.createElement("div");
+    this.countdownValue.className = "countdown-value";
+    this.countdownOverlay.append(this.countdownValue);
+
     this.completionOverlay = document.createElement("div");
     this.completionOverlay.className = "completion-overlay";
     this.completionOverlay.hidden = true;
     this.completionTitle = document.createElement("h1");
     this.completionMeta = document.createElement("p");
     this.completionMeta.className = "completion-meta";
+    this.completionSeedText = document.createElement("span");
+    this.completionSeedCopyButton = document.createElement("button");
+    this.completionSeedCopyButton.type = "button";
+    this.completionSeedCopyButton.className = "completion-copy-seed";
+    this.completionSeedCopyButton.textContent = "Copy";
+    this.completionSeedCopyButton.addEventListener("click", () => {
+      void copyTextToClipboard(this.completionSeedText.textContent ?? "").then((copied) => {
+        const originalText = this.completionSeedCopyButton.textContent;
+        this.completionSeedCopyButton.textContent = copied ? "Copied" : "Copy failed";
+        window.setTimeout(() => {
+          this.completionSeedCopyButton.textContent = originalText;
+        }, 1200);
+      });
+    });
+    this.completionMeta.append("Seed ", this.completionSeedText, this.completionSeedCopyButton);
     this.completionTime = document.createElement("span");
     this.completionMoves = document.createElement("span");
+    this.completionChanges = document.createElement("span");
     this.completionStats = document.createElement("div");
     this.completionStats.className = "completion-stats";
     this.completionStats.append(
       completionStat("Time", this.completionTime),
+      completionStat("Changes", this.completionChanges),
       completionStat("Moves", this.completionMoves),
     );
     this.completionCloseButton = document.createElement("button");
@@ -141,7 +174,33 @@ export class Hud {
     this.gameplayExitButton.title = "Exit to menu";
     this.gameplayExitButton.hidden = true;
     this.gameplayExitButton.append(exitIcon());
-    this.gameplayExitButton.addEventListener("click", callbacks.onReturnToMenu);
+    this.gameplayExitButton.addEventListener("click", () => {
+      this.exitConfirmOverlay.hidden = false;
+    });
+    this.exitConfirmOverlay = document.createElement("div");
+    this.exitConfirmOverlay.className = "exit-confirm-overlay";
+    this.exitConfirmOverlay.hidden = true;
+    const exitConfirmDialog = document.createElement("div");
+    exitConfirmDialog.className = "exit-confirm-dialog";
+    const exitConfirmMessage = document.createElement("p");
+    exitConfirmMessage.textContent = "Are you sure you want to exit?";
+    const exitConfirmActions = document.createElement("div");
+    exitConfirmActions.className = "exit-confirm-actions";
+    const exitConfirmYes = document.createElement("button");
+    exitConfirmYes.type = "button";
+    exitConfirmYes.className = "exit-confirm-button exit-confirm-button-primary";
+    exitConfirmYes.textContent = "Yes";
+    exitConfirmYes.addEventListener("click", callbacks.onReturnToMenu);
+    const exitConfirmNo = document.createElement("button");
+    exitConfirmNo.type = "button";
+    exitConfirmNo.className = "exit-confirm-button exit-confirm-button-secondary";
+    exitConfirmNo.textContent = "No";
+    exitConfirmNo.addEventListener("click", () => {
+      this.exitConfirmOverlay.hidden = true;
+    });
+    exitConfirmActions.append(exitConfirmYes, exitConfirmNo);
+    exitConfirmDialog.append(exitConfirmMessage, exitConfirmActions);
+    this.exitConfirmOverlay.append(exitConfirmDialog);
     this.overlayButton = document.createElement("button");
     this.overlayButton.type = "button";
     this.overlayButton.className = "completion-action";
@@ -162,18 +221,38 @@ export class Hud {
       this.lineIndicator,
       this.temporaryBanner,
       this.menuOverlay,
+      this.countdownOverlay,
       this.completionOverlay,
+      this.exitConfirmOverlay,
       this.gameplayExitButton,
     );
   }
 
   showMenu(): void {
     this.completionDismissed = false;
+    this.exitConfirmOverlay.hidden = true;
     this.setMenuMode("home");
+  }
+
+  showCountdown(value: number): void {
+    this.shell.classList.remove("menu-active");
+    this.shell.classList.add("countdown-active");
+    this.statsPanel.hidden = true;
+    this.timerPanel.hidden = true;
+    this.lineIndicator.hidden = true;
+    this.temporaryBanner.hidden = true;
+    this.menuOverlay.hidden = true;
+    this.completionOverlay.hidden = true;
+    this.gameplayExitButton.hidden = true;
+    this.countdownOverlay.hidden = false;
+    this.countdownValue.textContent = String(value);
+    this.exitConfirmOverlay.hidden = true;
+    this.removeZoomControls();
   }
 
   update(state: GameState | null, now: number): void {
     if (!state) {
+      this.shell.classList.remove("countdown-active");
       this.shell.classList.add("menu-active");
       this.statsPanel.hidden = true;
       this.timerPanel.hidden = true;
@@ -182,24 +261,29 @@ export class Hud {
       this.menuOverlay.hidden = false;
       this.completionOverlay.hidden = true;
       this.gameplayExitButton.hidden = true;
+      this.countdownOverlay.hidden = true;
+      this.exitConfirmOverlay.hidden = true;
       this.removeZoomControls();
       return;
     }
 
+    this.shell.classList.remove("countdown-active");
     this.shell.classList.remove("menu-active");
     this.statsPanel.hidden = false;
     this.timerPanel.hidden = false;
     this.lineIndicator.hidden = false;
     this.temporaryBanner.hidden = !this.network.temporary;
     this.menuOverlay.hidden = true;
+    this.countdownOverlay.hidden = true;
     this.gameplayExitButton.hidden = false;
 
     const startStation = getStation(this.network, state.startStationId);
     const destination = getStation(this.network, state.destinationStationId);
     const elapsed = getElapsedMilliseconds(state, now);
 
-    this.timerValue.textContent = formatMilliseconds(elapsed);
+    renderMilliseconds(this.timerValue, elapsed);
     this.moveValue.textContent = String(state.moveCount);
+    this.changeValue.textContent = String(state.changeCount);
     this.stationValue.textContent = startStation.name;
     this.destinationValue.textContent = destination.name;
 
@@ -212,9 +296,11 @@ export class Hud {
     this.completionOverlay.hidden = !state.completed || this.completionDismissed;
     if (state.completed) {
       this.completionTitle.textContent = "Run complete";
+      this.completionTime.classList.remove("time-value");
       this.completionTime.textContent = formatMilliseconds(elapsed);
       this.completionMoves.textContent = String(state.moveCount);
-      this.completionMeta.textContent = `Seed ${state.seed}`;
+      this.completionChanges.textContent = String(state.changeCount);
+      this.completionSeedText.textContent = state.seed;
       this.completionStats.hidden = false;
       this.completionCloseButton.hidden = false;
       this.overlayButton.textContent = "Menu";
@@ -339,6 +425,28 @@ function exitIcon(): SVGSVGElement {
   return svg;
 }
 
+async function copyTextToClipboard(text: string): Promise<boolean> {
+  if (text === "") {
+    return false;
+  }
+
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    const input = document.createElement("input");
+    input.value = text;
+    input.setAttribute("readonly", "true");
+    input.style.position = "fixed";
+    input.style.opacity = "0";
+    document.body.append(input);
+    input.select();
+    const copied = document.execCommand("copy");
+    input.remove();
+    return copied;
+  }
+}
+
 function zoomButton(label: string, ariaLabel: string, callback: () => void): HTMLButtonElement {
   const button = document.createElement("button");
   button.type = "button";
@@ -395,10 +503,38 @@ function completionStat(label: string, valueElement: HTMLSpanElement): HTMLDivEl
 }
 
 export function formatMilliseconds(milliseconds: number): string {
+  const { minutes, seconds, centiseconds } = getTimeParts(milliseconds);
+  return `${minutes}:${seconds}.${centiseconds}`;
+}
+
+function renderMilliseconds(element: HTMLElement, milliseconds: number): void {
+  const { minutes, seconds, centiseconds } = getTimeParts(milliseconds);
+  element.classList.add("time-value");
+  element.replaceChildren(
+    timePart(minutes, "time-minutes"),
+    timePart(":", "time-separator"),
+    timePart(seconds, "time-seconds"),
+    timePart(".", "time-separator"),
+    timePart(centiseconds, "time-centiseconds"),
+  );
+}
+
+function timePart(text: string, className: string): HTMLSpanElement {
+  const element = document.createElement("span");
+  element.className = className;
+  element.textContent = text;
+  return element;
+}
+
+function getTimeParts(milliseconds: number): { minutes: string; seconds: string; centiseconds: string } {
   const totalCentiseconds = Math.floor(milliseconds / 10);
   const minutes = Math.floor(totalCentiseconds / 6000);
   const seconds = Math.floor((totalCentiseconds % 6000) / 100);
   const centiseconds = totalCentiseconds % 100;
 
-  return `${minutes}:${seconds.toString().padStart(2, "0")}.${centiseconds.toString().padStart(2, "0")}`;
+  return {
+    minutes: String(minutes),
+    seconds: seconds.toString().padStart(2, "0"),
+    centiseconds: centiseconds.toString().padStart(2, "0"),
+  };
 }
