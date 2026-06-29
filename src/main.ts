@@ -197,7 +197,7 @@ function resetRunTransientState(): void {
 
 function render(now = performance.now()): void {
   if (results) {
-    renderer.renderMenuPreview(createMenuPreviewState());
+    renderer.renderMenuPreview(now);
     hud.showResults(results);
   } else if (state && runState) {
     renderer.render(
@@ -210,10 +210,10 @@ function render(now = performance.now()): void {
     );
     hud.update(state, now, runState);
   } else if (countdown) {
-    renderer.renderMenuPreview(createMenuPreviewState());
+    renderer.renderMenuPreview(now);
     hud.showCountdown(getCountdownValue(countdown, now));
   } else {
-    renderer.renderMenuPreview(createMenuPreviewState());
+    renderer.renderMenuPreview(now);
     hud.update(null, now);
   }
 }
@@ -257,6 +257,8 @@ function tick(): void {
     } else {
       hud.update(state, now, runState);
     }
+  } else if (results || !state) {
+    renderer.renderMenuPreview(now);
   }
   requestAnimationFrame(tick);
 }
@@ -556,21 +558,4 @@ function isStationVisible(
   );
 }
 
-function createMenuPreviewState(): GameState {
-  return {
-    seed: "menu-preview",
-    startStationId: "oxford-circus",
-    destinationStationId: "bond-street",
-    currentStationId: "oxford-circus",
-    selectedLineId: "central",
-    enteredStationLineId: "central",
-    revealedConnections: new Set(networkData.connections.map((connection) => connection.id)),
-    moveCount: 8,
-    changeCount: 2,
-    startTime: 0,
-    endTime: null,
-    completed: false,
-    rejectedMoveAt: null,
-  };
-}
 }

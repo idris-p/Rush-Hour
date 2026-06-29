@@ -82,6 +82,10 @@ svg text {
   display: none;
 }
 
+.tube-map-menu-preview .revealed-station-label {
+  opacity: 1;
+}
+
 .direction-stub {
   stroke-linecap: butt;
   opacity: 1;

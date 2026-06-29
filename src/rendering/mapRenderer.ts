@@ -38,6 +38,20 @@ const STUB_ARROW_LENGTH = 11;
 const STUB_ARROW_HALF_WIDTH = STUB_STROKE_WIDTH / 2;
 const STUB_ARROW_OVERLAP = 0.2;
 const MAP_PAN_PADDING = GRID_CELL_SIZE * 3;
+const MENU_PREVIEW_SECONDS_PER_ORBIT = 360;
+const MENU_PREVIEW_ORBIT_RADIUS_X = 360;
+const MENU_PREVIEW_ORBIT_RADIUS_Y = 250;
+const MENU_PREVIEW_FOCUS_STATIONS = [
+  "hammersmith-circle-and-hammersmith-and-city",
+  "baker-street",
+  "camden-town",
+  "king-s-cross-st-pancras",
+  "liverpool-street",
+  "bank",
+  "waterloo",
+  "westminster",
+  "oxford-circus",
+] as const;
 const CIRCLE_HAMMERSMITH_CITY_WEST_BRANCH = [
   "hammersmith-circle-and-hammersmith-and-city",
   "goldhawk-road",
@@ -96,6 +110,8 @@ export class MapRenderer {
 
   private renderedSeed: string | null = null;
 
+  private menuPreviewOrbitOffsetMs = 0;
+
   constructor(container: HTMLElement, network: NetworkData) {
     this.network = network;
     this.corridorLayout = new CorridorLayout(network);
@@ -116,11 +132,15 @@ export class MapRenderer {
     stationWipe: StationWipeAnimation | null = null,
     cameraPan: CameraPanAnimation | null = null,
   ): void {
+    const wasMenuPreview = this.svg.classList.contains("tube-map-menu-preview");
     if (this.renderedSeed !== state.seed) {
       this.renderedSeed = state.seed;
       this.completedCameraCenter = null;
     }
     this.svg.classList.remove("tube-map-menu-preview");
+    if (wasMenuPreview) {
+      this.menuPreviewOrbitOffsetMs = 0;
+    }
     this.svg.classList.toggle("tube-map-running", !state.completed);
     this.svg.classList.toggle("tube-map-completed", state.completed);
     const hiddenCurrentStationId = lineReveal?.hiddenCurrentStationId ?? null;
@@ -257,8 +277,12 @@ export class MapRenderer {
   }
 
   renderIdle(): void {
+    const wasMenuPreview = this.svg.classList.contains("tube-map-menu-preview");
     this.svg.classList.remove("tube-map-running");
     this.svg.classList.remove("tube-map-completed", "tube-map-panning", "tube-map-menu-preview");
+    if (wasMenuPreview) {
+      this.menuPreviewOrbitOffsetMs = 0;
+    }
     this.completedCameraCenter = null;
     this.renderedSeed = null;
     const viewBoxSize = this.getViewBoxSize();
@@ -275,8 +299,74 @@ export class MapRenderer {
     renderRiverThames(this.svg, viewBox);
   }
 
-  renderMenuPreview(state: GameState): void {
-    this.render(state, null, "east");
+  renderMenuPreview(now = performance.now()): void {
+    const wasMenuPreview = this.svg.classList.contains("tube-map-menu-preview");
+    const orbitDurationMs = MENU_PREVIEW_SECONDS_PER_ORBIT * 1_000;
+    if (!wasMenuPreview) {
+      this.menuPreviewOrbitOffsetMs = Math.random() * orbitDurationMs;
+    }
+    this.svg.classList.remove("tube-map-running", "tube-map-completed", "tube-map-panning");
+    this.svg.classList.add("tube-map-menu-preview");
+    this.completedCameraCenter = null;
+    this.renderedSeed = null;
+
+    const viewBoxSize = this.getMenuPreviewViewBoxSize();
+    const cameraCenter = clampViewCenter(
+      this.getMenuPreviewCameraCenter(now + this.menuPreviewOrbitOffsetMs),
+      viewBoxSize,
+      this.mapBounds,
+      MAP_PAN_PADDING,
+    );
+    const viewBox = {
+      x: cameraCenter.x - viewBoxSize.width / 2,
+      y: cameraCenter.y - viewBoxSize.height / 2,
+      width: viewBoxSize.width,
+      height: viewBoxSize.height,
+    };
+    this.svg.setAttribute("viewBox", `${viewBox.x} ${viewBox.y} ${viewBox.width} ${viewBox.height}`);
+    this.svg.replaceChildren();
+
+    this.renderGrid(viewBox);
+    renderRiverThames(this.svg, viewBox);
+
+    const allConnectionIds = new Set(this.network.connections.map((connection) => connection.id));
+    const visibleConnectionPaths = this.network.connections.map((connection) => ({
+      connection,
+      points: this.corridorLayout.getConnectionRenderPoints(connection, allConnectionIds),
+      cameraPoints: this.corridorLayout.getConnectionCameraPoints(connection),
+    }));
+    const revealedLayer = document.createElementNS(SVG_NS, "g");
+    revealedLayer.setAttribute("class", "revealed-lines");
+    this.svg.append(revealedLayer);
+    for (const group of groupConnectionsByRenderedPath(visibleConnectionPaths)) {
+      group.forEach(({ connection, points }, index) => {
+        renderRevealedLine(
+          revealedLayer,
+          connection,
+          this.network,
+          getCenteredOffset(index, group.length, PARALLEL_LINE_SPACING),
+          points,
+        );
+      });
+    }
+
+    const stationLayer = document.createElementNS(SVG_NS, "g");
+    stationLayer.setAttribute("class", "stations");
+    this.svg.append(stationLayer);
+    for (const station of this.network.stations) {
+      if (station.lines.length === 0) {
+        continue;
+      }
+      renderStationMarker(
+        stationLayer,
+        station,
+        this.network,
+        station.lines[0],
+        false,
+        this.corridorLayout.getStationMarkerGroups(station.id),
+      );
+    }
+
     this.svg.classList.remove("tube-map-running", "tube-map-completed", "tube-map-panning");
     this.svg.classList.add("tube-map-menu-preview");
   }
@@ -421,6 +511,29 @@ export class MapRenderer {
     return {
       width: baseSize.width / this.zoom,
       height: baseSize.height / this.zoom,
+    };
+  }
+
+  private getMenuPreviewViewBoxSize(): { width: number; height: number } {
+    return this.getBaseViewBoxSize();
+  }
+
+  private getMenuPreviewCameraCenter(now: number): Point {
+    const centralPoints = MENU_PREVIEW_FOCUS_STATIONS.flatMap((stationId) => {
+      const station = this.network.stations.find((candidate) => candidate.id === stationId);
+      return station ? [gridPointToSvgPoint(station)] : [];
+    });
+    const baseCenter = centralPoints.length === 0
+      ? { x: (this.mapBounds.minX + this.mapBounds.maxX) / 2, y: (this.mapBounds.minY + this.mapBounds.maxY) / 2 }
+      : {
+          x: centralPoints.reduce((sum, point) => sum + point.x, 0) / centralPoints.length,
+          y: centralPoints.reduce((sum, point) => sum + point.y, 0) / centralPoints.length,
+        };
+    const orbitDurationMs = MENU_PREVIEW_SECONDS_PER_ORBIT * 1_000;
+    const radians = ((now % orbitDurationMs) / orbitDurationMs) * Math.PI * 2;
+    return {
+      x: baseCenter.x + Math.cos(radians) * MENU_PREVIEW_ORBIT_RADIUS_X,
+      y: baseCenter.y + Math.sin(radians) * MENU_PREVIEW_ORBIT_RADIUS_Y,
     };
   }
 
