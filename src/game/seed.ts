@@ -1,4 +1,5 @@
 import type { NetworkData } from "../data/types";
+import { ROUND_COUNT, type RoundConfig } from "./RunState";
 
 export function generateSeed(): string {
   const randomPart = Math.random().toString(36).slice(2, 8);
@@ -26,6 +27,15 @@ export function pickStartAndDestination(seed: string, network: NetworkData): {
   destinationStationId: string;
 } {
   const random = createSeededRandom(seed.trim() === "" ? "tube-speedrun" : seed.trim());
+  return pickStartAndDestinationWithRandom(random, network);
+}
+
+export function generateRoundConfigs(seed: string, network: NetworkData, count = ROUND_COUNT): RoundConfig[] {
+  const random = createSeededRandom(seed.trim() === "" ? "tube-speedrun" : seed.trim());
+  return Array.from({ length: count }, () => pickStartAndDestinationWithRandom(random, network));
+}
+
+function pickStartAndDestinationWithRandom(random: () => number, network: NetworkData): RoundConfig {
   const stations = network.stations.filter((station) => station.lines.length > 0);
   if (stations.length < 2) {
     throw new Error("Network must contain at least two playable stations.");
@@ -93,4 +103,3 @@ export function getNetworkDistance(network: NetworkData, from: string, to: strin
 
   return Number.POSITIVE_INFINITY;
 }
-

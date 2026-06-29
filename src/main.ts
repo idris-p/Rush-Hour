@@ -1,8 +1,9 @@
 import "./style.css";
 import { createConnectionId, networkData } from "./data/network";
 import { validateNetworkData } from "./data/validation";
-import { createGameState, type GameState } from "./game/GameState";
-import { generateSeed } from "./game/seed";
+import { createGameStateForRound, getElapsedMilliseconds, type GameState } from "./game/GameState";
+import { generateRoundConfigs, generateSeed } from "./game/seed";
+import { ROUND_COUNT, type RoundStats, type RunResults, type RunState } from "./game/RunState";
 import { cycleSelectedLine } from "./game/lineSelection";
 import { attemptMoveInDirection, type MovementDirection } from "./game/movement";
 import { bindKeyboardControls } from "./input/keyboard";
@@ -48,7 +49,9 @@ startGame();
 
 function startGame(): void {
 let state: GameState | null = null;
-let countdown: { seed: string; startedAt: number } | null = null;
+let runState: RunState | null = null;
+let results: RunResults | null = null;
+let countdown: { run: RunState; startedAt: number } | null = null;
 let pointerPoint: Point | null = null;
 let mouseIntent = createMouseIntentState();
 let activeMovePointerId: number | null = null;
@@ -77,15 +80,27 @@ let cameraPanAnimation: {
 } | null = null;
 
 const hud = new Hud(appRoot, networkData, {
-  onStartRandomSeed: () => startRun(generateSeed()),
-  onStartSeed: (seed) => startRun(seed),
+  onStartRandomSeed: () => startRun(generateSeed(), "random"),
+  onStartSeed: (seed) => startRun(seed, "set"),
   onReturnToMenu: () => {
     state = null;
+    runState = null;
+    results = null;
     countdown = null;
     resetRunTransientState();
     hud.showMenu();
     render();
   },
+  onPlayAgain: () => {
+    state = null;
+    runState = null;
+    results = null;
+    countdown = null;
+    resetRunTransientState();
+    hud.showSeedChoiceMenu();
+    render();
+  },
+  onAdvanceRound: () => advanceFromCompletedRound(),
   onZoomIn: () => {
     if (!state?.completed) {
       return;
@@ -104,18 +119,65 @@ const hud = new Hud(appRoot, networkData, {
 
 const renderer = new MapRenderer(hud.mapHost, networkData);
 
-function startRun(seed: string): void {
+function startRun(seed: string, seedSource: RunState["seedSource"]): void {
+  runState = {
+    seed,
+    seedSource,
+    rounds: generateRoundConfigs(seed, networkData),
+    currentRoundIndex: 0,
+    completedRoundStats: [],
+  };
+  results = null;
   state = null;
-  countdown = { seed, startedAt: performance.now() };
+  countdown = { run: runState, startedAt: performance.now() };
   resetRunTransientState();
   render();
 }
 
-function completeCountdown(seed: string, now: number): void {
+function completeCountdown(activeRun: RunState, now: number): void {
   countdown = null;
-  state = createGameState(seed, networkData, now);
+  runState = activeRun;
+  state = createGameStateForRound(
+    activeRun.seed,
+    activeRun.rounds[activeRun.currentRoundIndex],
+    networkData,
+    now,
+  );
   resetRunTransientState();
   render(now);
+}
+
+function advanceFromCompletedRound(): void {
+  if (!state?.completed || !runState) {
+    return;
+  }
+
+  const stats = getCurrentRoundStats(state);
+  const completedRoundStats = upsertRoundStats(runState.completedRoundStats, stats);
+  if (runState.currentRoundIndex >= ROUND_COUNT - 1) {
+    results = {
+      seed: runState.seed,
+      seedSource: runState.seedSource,
+      rounds: runState.rounds,
+      roundStats: completedRoundStats,
+    };
+    state = null;
+    runState = null;
+    countdown = null;
+    resetRunTransientState();
+    render();
+    return;
+  }
+
+  runState = {
+    ...runState,
+    currentRoundIndex: runState.currentRoundIndex + 1,
+    completedRoundStats,
+  };
+  state = null;
+  countdown = { run: runState, startedAt: performance.now() };
+  resetRunTransientState();
+  render();
 }
 
 function resetRunTransientState(): void {
@@ -134,7 +196,10 @@ function resetRunTransientState(): void {
 }
 
 function render(now = performance.now()): void {
-  if (state) {
+  if (results) {
+    renderer.renderMenuPreview(createMenuPreviewState());
+    hud.showResults(results);
+  } else if (state && runState) {
     renderer.render(
       state,
       pointerPoint,
@@ -143,7 +208,7 @@ function render(now = performance.now()): void {
       getActiveStationWipeAnimation(now),
       getActiveCameraPanAnimation(now),
     );
-    hud.update(state, now);
+    hud.update(state, now, runState);
   } else if (countdown) {
     renderer.renderMenuPreview(createMenuPreviewState());
     hud.showCountdown(getCountdownValue(countdown, now));
@@ -157,11 +222,11 @@ function tick(): void {
   const now = performance.now();
   if (countdown) {
     if (now - countdown.startedAt >= COUNTDOWN_STEP_MS * COUNTDOWN_START_VALUE) {
-      completeCountdown(countdown.seed, now);
+      completeCountdown(countdown.run, now);
     } else {
       render(now);
     }
-  } else if (state) {
+  } else if (state && runState) {
     const hadLineRevealAnimation = lineRevealAnimation !== null;
     const hadStationWipeAnimation = stationWipeAnimation !== null;
     const hadCameraPanAnimation = cameraPanAnimation !== null;
@@ -190,7 +255,7 @@ function tick(): void {
     if (hadLineRevealAnimation || hadStationWipeAnimation || hadCameraPanAnimation) {
       render(now);
     } else {
-      hud.update(state, now);
+      hud.update(state, now, runState);
     }
   }
   requestAnimationFrame(tick);
@@ -199,6 +264,28 @@ function tick(): void {
 function getCountdownValue(activeCountdown: NonNullable<typeof countdown>, now: number): number {
   const elapsedSteps = Math.floor((now - activeCountdown.startedAt) / COUNTDOWN_STEP_MS);
   return Math.max(1, COUNTDOWN_START_VALUE - elapsedSteps);
+}
+
+function getCurrentRoundStats(completedState: GameState): RoundStats {
+  if (!runState) {
+    throw new Error("Cannot collect round stats without a run state.");
+  }
+
+  return {
+    roundNumber: runState.currentRoundIndex + 1,
+    timeMs: getElapsedMilliseconds(completedState, completedState.endTime ?? performance.now()),
+    moves: completedState.moveCount,
+    lineChanges: completedState.changeCount,
+  };
+}
+
+function upsertRoundStats(stats: RoundStats[], next: RoundStats): RoundStats[] {
+  const existingIndex = stats.findIndex((candidate) => candidate.roundNumber === next.roundNumber);
+  if (existingIndex < 0) {
+    return [...stats, next];
+  }
+
+  return stats.map((candidate, index) => index === existingIndex ? next : candidate);
 }
 
 function getActiveLineRevealAnimation(now: number) {

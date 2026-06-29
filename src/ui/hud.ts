@@ -4,11 +4,14 @@ import type { GameState } from "../game/GameState";
 import { getElapsedMilliseconds } from "../game/GameState";
 import { getLineCyclePreview } from "../game/lineSelection";
 import { getStation } from "../game/movement";
+import { ROUND_COUNT, type RunResults, type RunState } from "../game/RunState";
 
 export type HudCallbacks = {
   onStartRandomSeed: () => void;
   onStartSeed: (seed: string) => void;
   onReturnToMenu: () => void;
+  onPlayAgain: () => void;
+  onAdvanceRound: () => void;
   onZoomIn: () => void;
   onZoomOut: () => void;
 };
@@ -39,8 +42,18 @@ export class Hud {
   private readonly completionChanges: HTMLSpanElement;
   private readonly completionStats: HTMLDivElement;
   private readonly completionCloseButton: HTMLButtonElement;
+  private readonly completionQuitButton: HTMLButtonElement;
+  private readonly dismissedRoundActionButton: HTMLButtonElement;
   private readonly gameplayExitButton: HTMLButtonElement;
   private readonly exitConfirmOverlay: HTMLDivElement;
+  private readonly resultsOverlay: HTMLDivElement;
+  private readonly resultsSeedLabel: HTMLSpanElement;
+  private readonly resultsSeedText: HTMLSpanElement;
+  private readonly resultsSeedCopyButton: HTMLButtonElement;
+  private readonly resultsTableBody: HTMLTableSectionElement;
+  private readonly resultsTotalTime: HTMLSpanElement;
+  private readonly resultsTotalChanges: HTMLSpanElement;
+  private readonly resultsTotalMoves: HTMLSpanElement;
   private readonly countdownOverlay: HTMLDivElement;
   private readonly countdownValue: HTMLDivElement;
   private readonly temporaryBanner: HTMLDivElement;
@@ -166,7 +179,18 @@ export class Hud {
     this.completionCloseButton.addEventListener("click", () => {
       this.completionDismissed = true;
       this.completionOverlay.hidden = true;
+      this.dismissedRoundActionButton.hidden = false;
     });
+    this.completionQuitButton = document.createElement("button");
+    this.completionQuitButton.type = "button";
+    this.completionQuitButton.className = "completion-action completion-action-secondary";
+    this.completionQuitButton.textContent = "Quit";
+    this.completionQuitButton.addEventListener("click", callbacks.onReturnToMenu);
+    this.dismissedRoundActionButton = document.createElement("button");
+    this.dismissedRoundActionButton.type = "button";
+    this.dismissedRoundActionButton.className = "dismissed-round-action";
+    this.dismissedRoundActionButton.hidden = true;
+    this.dismissedRoundActionButton.addEventListener("click", callbacks.onAdvanceRound);
     this.gameplayExitButton = document.createElement("button");
     this.gameplayExitButton.type = "button";
     this.gameplayExitButton.className = "gameplay-exit-button";
@@ -204,15 +228,85 @@ export class Hud {
     this.overlayButton = document.createElement("button");
     this.overlayButton.type = "button";
     this.overlayButton.className = "completion-action";
-    this.overlayButton.textContent = "Menu";
-    this.overlayButton.addEventListener("click", callbacks.onReturnToMenu);
+    this.overlayButton.addEventListener("click", callbacks.onAdvanceRound);
+    const completionActions = document.createElement("div");
+    completionActions.className = "completion-actions";
+    completionActions.append(this.completionQuitButton, this.overlayButton);
     this.completionOverlay.append(
       this.completionCloseButton,
       this.completionTitle,
       this.completionStats,
       this.completionMeta,
-      this.overlayButton,
+      completionActions,
     );
+
+    this.resultsOverlay = document.createElement("div");
+    this.resultsOverlay.className = "results-overlay";
+    this.resultsOverlay.hidden = true;
+    const resultsExit = document.createElement("button");
+    resultsExit.type = "button";
+    resultsExit.className = "results-nav-button results-exit";
+    resultsExit.textContent = "Exit";
+    resultsExit.addEventListener("click", callbacks.onReturnToMenu);
+    const resultsPlayAgain = document.createElement("button");
+    resultsPlayAgain.type = "button";
+    resultsPlayAgain.className = "results-nav-button results-play-again";
+    resultsPlayAgain.textContent = "Play Again";
+    resultsPlayAgain.addEventListener("click", callbacks.onPlayAgain);
+    const resultsPanel = document.createElement("div");
+    resultsPanel.className = "results-panel";
+    const resultsTitle = document.createElement("h1");
+    resultsTitle.textContent = "Results";
+    const resultsSeed = document.createElement("div");
+    resultsSeed.className = "results-seed";
+    this.resultsSeedLabel = document.createElement("span");
+    this.resultsSeedLabel.className = "results-seed-label";
+    this.resultsSeedText = document.createElement("span");
+    this.resultsSeedText.className = "results-seed-value";
+    this.resultsSeedCopyButton = document.createElement("button");
+    this.resultsSeedCopyButton.type = "button";
+    this.resultsSeedCopyButton.textContent = "Copy";
+    this.resultsSeedCopyButton.addEventListener("click", () => {
+      void copyTextToClipboard(this.resultsSeedText.textContent ?? "").then((copied) => {
+        const originalText = this.resultsSeedCopyButton.textContent;
+        this.resultsSeedCopyButton.textContent = copied ? "Copied" : "Copy failed";
+        window.setTimeout(() => {
+          this.resultsSeedCopyButton.textContent = originalText;
+        }, 1200);
+      });
+    });
+    resultsSeed.append(this.resultsSeedLabel, this.resultsSeedText, this.resultsSeedCopyButton);
+    const resultsTable = document.createElement("table");
+    resultsTable.className = "results-table";
+    const resultsTableHead = document.createElement("thead");
+    const headingRow = document.createElement("tr");
+    headingRow.append(
+      tableCell("Round", "th"),
+      tableCell("Start", "th"),
+      tableCell("Target", "th"),
+      tableCell("Time", "th"),
+      tableCell("Changes", "th"),
+      tableCell("Moves", "th"),
+    );
+    resultsTableHead.append(headingRow);
+    this.resultsTableBody = document.createElement("tbody");
+    const resultsTableFoot = document.createElement("tfoot");
+    const totalRow = document.createElement("tr");
+    this.resultsTotalTime = document.createElement("span");
+    this.resultsTotalChanges = document.createElement("span");
+    this.resultsTotalMoves = document.createElement("span");
+    const totalLabel = tableCell("Total", "th");
+    totalLabel.colSpan = 3;
+    totalRow.append(
+      totalLabel,
+      tableCell(this.resultsTotalTime),
+      tableCell(this.resultsTotalChanges),
+      tableCell(this.resultsTotalMoves),
+    );
+    resultsTableFoot.append(totalRow);
+    resultsTable.append(resultsTableHead, this.resultsTableBody, resultsTableFoot);
+    resultsPanel.append(resultsTitle, resultsSeed, resultsTable);
+    this.resultsOverlay.append(resultsExit, resultsPlayAgain, resultsPanel);
 
     root.append(
       this.mapHost,
@@ -225,13 +319,74 @@ export class Hud {
       this.completionOverlay,
       this.exitConfirmOverlay,
       this.gameplayExitButton,
+      this.dismissedRoundActionButton,
+      this.resultsOverlay,
     );
   }
 
   showMenu(): void {
     this.completionDismissed = false;
     this.exitConfirmOverlay.hidden = true;
+    this.resultsOverlay.hidden = true;
+    this.dismissedRoundActionButton.hidden = true;
     this.setMenuMode("home");
+  }
+
+  showSeedChoiceMenu(): void {
+    this.completionDismissed = false;
+    this.exitConfirmOverlay.hidden = true;
+    this.resultsOverlay.hidden = true;
+    this.dismissedRoundActionButton.hidden = true;
+    this.setMenuMode("seed-choice");
+  }
+
+  showResults(results: RunResults): void {
+    this.shell.classList.remove("countdown-active");
+    this.shell.classList.add("menu-active");
+    this.statsPanel.hidden = true;
+    this.timerPanel.hidden = true;
+    this.lineIndicator.hidden = true;
+    this.temporaryBanner.hidden = true;
+    this.menuOverlay.hidden = true;
+    this.completionOverlay.hidden = true;
+    this.gameplayExitButton.hidden = true;
+    this.countdownOverlay.hidden = true;
+    this.exitConfirmOverlay.hidden = true;
+    this.dismissedRoundActionButton.hidden = true;
+    this.resultsOverlay.hidden = false;
+    this.resultsSeedLabel.textContent = results.seedSource === "set" ? "Set Seed:" : "Seed:";
+    this.resultsSeedText.textContent = results.seed;
+    this.resultsSeedCopyButton.hidden = results.seedSource === "set";
+    const orderedStats = [...results.roundStats].sort((left, right) => left.roundNumber - right.roundNumber);
+    this.resultsTableBody.replaceChildren(
+      ...orderedStats.map((stats) => {
+        const round = results.rounds[stats.roundNumber - 1];
+        const startStation = getStation(this.network, round.startStationId);
+        const targetStation = getStation(this.network, round.destinationStationId);
+        const row = document.createElement("tr");
+        row.append(
+          tableCell(String(stats.roundNumber), "th"),
+          tableCell(startStation.name),
+          tableCell(targetStation.name),
+          tableCell(formatMilliseconds(stats.timeMs)),
+          tableCell(String(stats.lineChanges)),
+          tableCell(String(stats.moves)),
+        );
+        return row;
+      }),
+    );
+    const totals = orderedStats.reduce(
+      (total, stats) => ({
+        timeMs: total.timeMs + stats.timeMs,
+        lineChanges: total.lineChanges + stats.lineChanges,
+        moves: total.moves + stats.moves,
+      }),
+      { timeMs: 0, lineChanges: 0, moves: 0 },
+    );
+    this.resultsTotalTime.textContent = formatMilliseconds(totals.timeMs);
+    this.resultsTotalChanges.textContent = String(totals.lineChanges);
+    this.resultsTotalMoves.textContent = String(totals.moves);
+    this.removeZoomControls();
   }
 
   showCountdown(value: number): void {
@@ -247,10 +402,12 @@ export class Hud {
     this.countdownOverlay.hidden = false;
     this.countdownValue.textContent = String(value);
     this.exitConfirmOverlay.hidden = true;
+    this.resultsOverlay.hidden = true;
+    this.dismissedRoundActionButton.hidden = true;
     this.removeZoomControls();
   }
 
-  update(state: GameState | null, now: number): void {
+  update(state: GameState | null, now: number, runState: RunState | null = null): void {
     if (!state) {
       this.shell.classList.remove("countdown-active");
       this.shell.classList.add("menu-active");
@@ -263,6 +420,8 @@ export class Hud {
       this.gameplayExitButton.hidden = true;
       this.countdownOverlay.hidden = true;
       this.exitConfirmOverlay.hidden = true;
+      this.resultsOverlay.hidden = true;
+      this.dismissedRoundActionButton.hidden = true;
       this.removeZoomControls();
       return;
     }
@@ -275,6 +434,7 @@ export class Hud {
     this.temporaryBanner.hidden = !this.network.temporary;
     this.menuOverlay.hidden = true;
     this.countdownOverlay.hidden = true;
+    this.resultsOverlay.hidden = true;
     this.gameplayExitButton.hidden = false;
 
     const startStation = getStation(this.network, state.startStationId);
@@ -291,19 +451,23 @@ export class Hud {
 
     if (!state.completed) {
       this.completionDismissed = false;
+      this.dismissedRoundActionButton.hidden = true;
       this.removeZoomControls();
     }
     this.completionOverlay.hidden = !state.completed || this.completionDismissed;
-    if (state.completed) {
-      this.completionTitle.textContent = "Run complete";
+    this.dismissedRoundActionButton.hidden = !state.completed || !this.completionDismissed;
+    if (state.completed && runState) {
+      const actionLabel = runState.currentRoundIndex >= ROUND_COUNT - 1 ? "Finish" : "Next Round";
+      this.completionTitle.textContent = `Round ${runState.currentRoundIndex + 1} Complete`;
       this.completionTime.classList.remove("time-value");
       this.completionTime.textContent = formatMilliseconds(elapsed);
       this.completionMoves.textContent = String(state.moveCount);
       this.completionChanges.textContent = String(state.changeCount);
-      this.completionSeedText.textContent = state.seed;
+      this.completionMeta.hidden = true;
       this.completionStats.hidden = false;
       this.completionCloseButton.hidden = false;
-      this.overlayButton.textContent = "Menu";
+      this.overlayButton.textContent = actionLabel;
+      this.dismissedRoundActionButton.textContent = actionLabel;
       this.ensureZoomControls();
     }
   }
@@ -500,6 +664,16 @@ function completionStat(label: string, valueElement: HTMLSpanElement): HTMLDivEl
   valueElement.className = "completion-stat-value";
   wrapper.append(labelElement, valueElement);
   return wrapper;
+}
+
+function tableCell(content: string | HTMLElement, tag: "td" | "th" = "td"): HTMLTableCellElement {
+  const cell = document.createElement(tag);
+  if (typeof content === "string") {
+    cell.textContent = content;
+  } else {
+    cell.append(content);
+  }
+  return cell;
 }
 
 export function formatMilliseconds(milliseconds: number): string {

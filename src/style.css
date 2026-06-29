@@ -426,6 +426,10 @@ svg text {
   font-weight: 400;
 }
 
+.completion-meta[hidden] {
+  display: none;
+}
+
 .completion-meta span {
   min-width: 0;
   max-width: 100%;
@@ -486,13 +490,52 @@ svg text {
 
 .completion-action {
   height: 42px;
-  margin-top: 18px;
   border: 2px solid #111111;
   border-radius: 6px;
   padding: 0 18px;
   background: #111111;
   color: #ffffff;
   font-weight: 850;
+}
+
+.completion-actions {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  margin-top: 18px;
+}
+
+.completion-actions .completion-action:not(.completion-action-secondary) {
+  margin-left: auto;
+}
+
+.completion-action-secondary {
+  background: #ffffff;
+  color: #111111;
+}
+
+.dismissed-round-action {
+  position: absolute;
+  z-index: 22;
+  top: 18px;
+  right: 18px;
+  height: 46px;
+  border: 2px solid #111111;
+  border-radius: 8px;
+  padding: 0 18px;
+  background: #111111;
+  color: #ffffff;
+  font-weight: 850;
+  box-shadow: 0 4px 0 #111111;
+}
+
+.dismissed-round-action[hidden] {
+  display: none;
+}
+
+.dismissed-round-action:active {
+  transform: translateY(4px);
+  box-shadow: none;
 }
 
 .gameplay-exit-button {
@@ -587,6 +630,136 @@ svg text {
   box-shadow: none;
 }
 
+.results-overlay {
+  position: absolute;
+  z-index: 35;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 74px 24px 24px;
+}
+
+.results-overlay[hidden] {
+  display: none;
+}
+
+.results-panel {
+  width: min(760px, calc(100vw - 48px));
+  margin: 0 auto;
+  border: 3px solid #111111;
+  border-radius: 8px;
+  padding: 28px;
+  background: rgba(255, 255, 255, 0.98);
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.24);
+}
+
+.results-panel h1 {
+  margin: 0 0 20px;
+  font-size: 42px;
+  line-height: 1;
+}
+
+.results-seed {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 18px;
+  border: 2px solid #111111;
+  border-radius: 7px;
+  padding: 12px;
+  background: #f7f2e5;
+  font-size: 18px;
+}
+
+.results-seed-label {
+  flex: 0 0 auto;
+  font-weight: 700;
+}
+
+.results-seed-value {
+  min-width: 0;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  font-weight: 850;
+}
+
+.results-seed button {
+  margin-left: auto;
+  flex: 0 0 auto;
+}
+
+.results-seed button,
+.results-nav-button {
+  height: 40px;
+  border: 2px solid #111111;
+  border-radius: 6px;
+  padding: 0 14px;
+  background: #ffffff;
+  color: #111111;
+  font-weight: 850;
+  box-shadow: 0 3px 0 #111111;
+}
+
+.results-nav-button {
+  position: absolute;
+  top: 18px;
+  z-index: 36;
+}
+
+.results-exit {
+  left: 18px;
+}
+
+.results-play-again {
+  right: 18px;
+}
+
+.results-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 18px;
+}
+
+.results-table th,
+.results-table td {
+  border-bottom: 2px solid rgba(17, 17, 17, 0.18);
+  padding: 10px 8px;
+  text-align: right;
+  vertical-align: top;
+}
+
+.results-table thead th:first-child,
+.results-table thead th:nth-child(2),
+.results-table thead th:nth-child(3),
+.results-table tbody th:first-child,
+.results-table tbody td:first-child,
+.results-table tbody td:nth-child(2),
+.results-table tbody td:nth-child(3),
+.results-table tfoot th:first-child {
+  text-align: left;
+}
+
+.results-table thead th {
+  color: #555555;
+  font-size: 12px;
+  text-transform: uppercase;
+}
+
+.results-table tfoot th,
+.results-table tfoot td {
+  border-bottom: 0;
+  padding-top: 16px;
+  font-size: 22px;
+  font-weight: 900;
+}
+
+.results-seed button:active,
+.results-nav-button:active {
+  transform: translateY(3px);
+  box-shadow: none;
+}
+
 .countdown-overlay {
   position: absolute;
   z-index: 30;
@@ -639,6 +812,7 @@ svg text {
   margin: 0;
   color: #ffffff;
   font-size: 112px;
+  font-style: italic;
   font-weight: 900;
   line-height: 0.9;
   text-align: center;

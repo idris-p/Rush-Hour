@@ -1,4 +1,5 @@
 import type { LineId, NetworkData } from "../data/types";
+import type { RoundConfig } from "./RunState";
 import { pickStartAndDestination } from "./seed";
 
 export type GameState = {
@@ -19,6 +20,15 @@ export type GameState = {
 
 export function createGameState(seed: string, network: NetworkData, now: number): GameState {
   const selection = pickStartAndDestination(seed, network);
+  return createGameStateForRound(seed, selection, network, now);
+}
+
+export function createGameStateForRound(
+  seed: string,
+  selection: RoundConfig,
+  network: NetworkData,
+  now: number,
+): GameState {
   const startStation = network.stations.find((station) => station.id === selection.startStationId);
 
   if (!startStation || startStation.lines.length === 0) {
