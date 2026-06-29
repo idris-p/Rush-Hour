@@ -17,6 +17,13 @@ export type HudCallbacks = {
 };
 
 type MenuMode = "home" | "seed-choice" | "seed-entry";
+type SocialLinkId = "github" | "reddit" | "x";
+
+const SOCIAL_LINKS: { id: SocialLinkId; label: string; href: string }[] = [
+  { id: "github", label: "GitHub", href: "https://github.com/idris-p" },
+  { id: "reddit", label: "Reddit", href: "https://www.reddit.com/user/idris--p/" },
+  { id: "x", label: "X", href: "https://x.com/idris__p" },
+];
 
 export class Hud {
   readonly mapHost: HTMLDivElement;
@@ -25,6 +32,7 @@ export class Hud {
   private readonly statsPanel: HTMLDivElement;
   private readonly timerPanel: HTMLDivElement;
   private readonly timerValue: HTMLSpanElement;
+  private readonly roundValue: HTMLSpanElement;
   private readonly moveValue: HTMLSpanElement;
   private readonly changeValue: HTMLSpanElement;
   private readonly stationValue: HTMLSpanElement;
@@ -50,6 +58,7 @@ export class Hud {
   private readonly resultsSeedLabel: HTMLSpanElement;
   private readonly resultsSeedText: HTMLSpanElement;
   private readonly resultsSeedCopyButton: HTMLButtonElement;
+  private readonly resultsSeedMessage: HTMLParagraphElement;
   private readonly resultsTableBody: HTMLTableSectionElement;
   private readonly resultsTotalTime: HTMLSpanElement;
   private readonly resultsTotalChanges: HTMLSpanElement;
@@ -80,18 +89,20 @@ export class Hud {
     this.timerPanel.className = "hud-panel hud-timer";
 
     this.timerValue = document.createElement("span");
+    this.roundValue = document.createElement("span");
     this.moveValue = document.createElement("span");
     this.changeValue = document.createElement("span");
     this.stationValue = document.createElement("span");
     this.destinationValue = document.createElement("span");
     this.timerPanel.append(
       metric("Time", this.timerValue),
-    );
-    this.statsPanel.append(
-      metric("Start", this.stationValue),
-      metric("Target", this.destinationValue),
       metric("Changes", this.changeValue),
       metric("Moves", this.moveValue),
+    );
+    this.statsPanel.append(
+      metric("Round", this.roundValue),
+      metric("Start", this.stationValue),
+      metric("Target", this.destinationValue),
     );
 
     this.lineIndicator = document.createElement("div");
@@ -119,6 +130,7 @@ export class Hud {
     menuTitle.textContent = "Rush Hour";
     this.menuActions = document.createElement("div");
     this.menuActions.className = "main-menu-actions";
+    const socialLinks = createSocialLinks();
 
     this.menuSeedInput = document.createElement("input");
     this.menuSeedInput.type = "text";
@@ -130,7 +142,7 @@ export class Hud {
     this.menuSeedInput.ariaLabel = "Seed";
 
     menuContent.append(menuTitle, this.menuActions);
-    this.menuOverlay.append(this.menuBackButton, menuContent);
+    this.menuOverlay.append(this.menuBackButton, menuContent, socialLinks);
     this.setMenuMode("home");
 
     this.countdownOverlay = document.createElement("div");
@@ -275,6 +287,9 @@ export class Hud {
         }, 1200);
       });
     });
+    this.resultsSeedMessage = document.createElement("p");
+    this.resultsSeedMessage.className = "results-seed-message";
+    this.resultsSeedMessage.textContent = "Challenge a friend by sharing this seed.";
     resultsSeed.append(this.resultsSeedLabel, this.resultsSeedText, this.resultsSeedCopyButton);
     const resultsTable = document.createElement("table");
     resultsTable.className = "results-table";
@@ -305,7 +320,7 @@ export class Hud {
     );
     resultsTableFoot.append(totalRow);
     resultsTable.append(resultsTableHead, this.resultsTableBody, resultsTableFoot);
-    resultsPanel.append(resultsTitle, resultsSeed, resultsTable);
+    resultsPanel.append(resultsTitle, resultsSeed, this.resultsSeedMessage, resultsTable);
     this.resultsOverlay.append(resultsExit, resultsPlayAgain, resultsPanel);
 
     root.append(
@@ -357,6 +372,7 @@ export class Hud {
     this.resultsSeedLabel.textContent = results.seedSource === "set" ? "Set Seed:" : "Seed:";
     this.resultsSeedText.textContent = results.seed;
     this.resultsSeedCopyButton.hidden = results.seedSource === "set";
+    this.resultsSeedMessage.hidden = results.seedSource !== "random";
     const orderedStats = [...results.roundStats].sort((left, right) => left.roundNumber - right.roundNumber);
     this.resultsTableBody.replaceChildren(
       ...orderedStats.map((stats) => {
@@ -442,6 +458,7 @@ export class Hud {
     const elapsed = getElapsedMilliseconds(state, now);
 
     renderMilliseconds(this.timerValue, elapsed);
+    this.roundValue.textContent = runState ? String(runState.currentRoundIndex + 1) : "-";
     this.moveValue.textContent = String(state.moveCount);
     this.changeValue.textContent = String(state.changeCount);
     this.stationValue.textContent = startStation.name;
@@ -571,6 +588,81 @@ function getPreviousMenuMode(mode: MenuMode): MenuMode {
     return "seed-choice";
   }
   return "home";
+}
+
+function createSocialLinks(): HTMLDivElement {
+  const links = document.createElement("div");
+  links.className = "main-menu-social-links";
+  links.append(...SOCIAL_LINKS.map((socialLink) => createSocialLink(socialLink)));
+  return links;
+}
+
+function createSocialLink({ id, label, href }: { id: SocialLinkId; label: string; href: string }): HTMLAnchorElement {
+  const link = document.createElement("a");
+  link.className = "main-menu-social-link";
+  link.href = href;
+  link.ariaLabel = label;
+  link.title = label;
+  if (href === "#") {
+    link.addEventListener("click", (event) => event.preventDefault());
+  } else {
+    link.target = "_blank";
+    link.rel = "noreferrer";
+  }
+  link.append(socialIcon(id));
+  return link;
+}
+
+function socialIcon(id: SocialLinkId): SVGSVGElement {
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("viewBox", "0 0 24 24");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("class", "social-icon");
+
+  if (id === "github") {
+    svg.append(svgPath("M 12 3.7 C 7.3 3.7 3.5 7.5 3.5 12.1 C 3.5 15.8 5.9 18.9 9.2 20 C 9.6 20.1 9.8 19.8 9.8 19.6 V 18 C 7.5 18.5 7 17 7 17 C 6.6 16 6 15.7 6 15.7 C 5.2 15.1 6.1 15.1 6.1 15.1 C 7 15.2 7.5 16 7.5 16 C 8.3 17.4 9.6 17 9.8 16.8 C 9.9 16.2 10.1 15.8 10.4 15.5 C 8.5 15.3 6.6 14.6 6.6 11.4 C 6.6 10.5 6.9 9.8 7.5 9.2 C 7.4 9 7.1 8.1 7.6 7 C 7.6 7 8.4 6.8 9.9 7.9 C 10.6 7.7 11.3 7.6 12 7.6 C 12.7 7.6 13.4 7.7 14.1 7.9 C 15.6 6.8 16.4 7 16.4 7 C 16.9 8.1 16.6 9 16.5 9.2 C 17.1 9.8 17.4 10.5 17.4 11.4 C 17.4 14.6 15.5 15.3 13.6 15.5 C 13.9 15.8 14.2 16.4 14.2 17.3 V 19.6 C 14.2 19.8 14.4 20.1 14.8 20 C 18.1 18.9 20.5 15.8 20.5 12.1 C 20.5 7.5 16.7 3.7 12 3.7 Z"));
+    return svg;
+  }
+
+  if (id === "reddit") {
+    const antenna = svgPath("M 14 7 L 15.2 4.7 L 18 5.3");
+    antenna.setAttribute("fill", "none");
+    antenna.setAttribute("stroke", "currentColor");
+    antenna.setAttribute("stroke-width", "1.8");
+    antenna.setAttribute("stroke-linecap", "round");
+    antenna.setAttribute("stroke-linejoin", "round");
+    svg.append(
+      antenna,
+      svgPath("M 19.3 8.3 C 20.3 8.3 21.1 9.1 21.1 10.1 C 21.1 10.8 20.7 11.4 20.2 11.7 C 20.2 11.9 20.2 12 20.2 12.2 C 20.2 15.3 16.5 17.8 12 17.8 C 7.5 17.8 3.8 15.3 3.8 12.2 C 3.8 12 3.8 11.9 3.8 11.7 C 3.3 11.4 2.9 10.8 2.9 10.1 C 2.9 9.1 3.7 8.3 4.7 8.3 C 5.2 8.3 5.7 8.5 6 8.8 C 7.5 7.8 9.6 7.2 12 7.2 C 14.4 7.2 16.5 7.8 18 8.8 C 18.3 8.5 18.8 8.3 19.3 8.3 Z"),
+      svgCircle(9.1, 11.7, 1.1),
+      svgCircle(14.9, 11.7, 1.1),
+    );
+    const smile = svgPath("M 8.9 14.2 C 10.5 15.3 13.5 15.3 15.1 14.2");
+    smile.setAttribute("fill", "none");
+    smile.setAttribute("stroke", "#ffffff");
+    smile.setAttribute("stroke-width", "1.5");
+    smile.setAttribute("stroke-linecap", "round");
+    svg.append(smile);
+    return svg;
+  }
+
+  svg.append(svgPath("M 4.2 4.8 H 8.1 L 12.7 10.8 L 17.7 4.8 H 20.2 L 13.9 12.2 L 20.6 19.2 H 16.6 L 11.8 12.9 L 6.4 19.2 H 3.9 L 10.6 11.3 Z M 7.2 6.5 L 17.3 17.5 H 17.8 L 7.7 6.5 Z"));
+  return svg;
+}
+
+function svgPath(d: string): SVGPathElement {
+  const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+  path.setAttribute("d", d);
+  return path;
+}
+
+function svgCircle(cx: number, cy: number, r: number): SVGCircleElement {
+  const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+  circle.setAttribute("cx", String(cx));
+  circle.setAttribute("cy", String(cy));
+  circle.setAttribute("r", String(r));
+  circle.setAttribute("fill", "#ffffff");
+  return circle;
 }
 
 function exitIcon(): SVGSVGElement {

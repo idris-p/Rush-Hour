@@ -13,6 +13,7 @@
   font-weight: 700;
   font-synthesis: weight;
   text-rendering: optimizeLegibility;
+  --gameplay-hud-height: 72px;
 }
 
 * {
@@ -169,19 +170,31 @@ svg text {
   bottom: 18px;
   display: grid;
   grid-template-columns:
-    minmax(150px, max-content)
-    minmax(150px, max-content)
-    minmax(84px, max-content)
-    minmax(76px, max-content);
+    minmax(74px, max-content)
+    repeat(2, minmax(150px, max-content));
   gap: 10px 18px;
-  max-width: min(840px, calc(100vw - 36px));
+  align-items: center;
+  width: max-content;
+  max-width: calc(100vw - 36px);
+  min-height: var(--gameplay-hud-height);
   padding: 12px 14px;
+}
+
+.hud-left .metric-value {
+  max-width: none;
 }
 
 .hud-timer {
   right: 18px;
   bottom: 18px;
-  width: min(190px, calc(100vw - 36px));
+  display: grid;
+  grid-template-columns:
+    minmax(150px, max-content)
+    minmax(84px, max-content)
+    minmax(76px, max-content);
+  gap: 10px 18px;
+  width: min(390px, calc(100vw - 36px));
+  min-height: var(--gameplay-hud-height);
   padding: 12px 14px;
   text-align: right;
 }
@@ -190,6 +203,18 @@ svg text {
   max-width: none;
   font-size: 30px;
   line-height: 1;
+}
+
+.hud-left,
+.hud-timer,
+.line-indicator {
+  transition: opacity 140ms ease;
+}
+
+.hud-left:hover,
+.hud-timer:hover,
+.line-indicator:hover {
+  opacity: 0.34;
 }
 
 .metric {
@@ -640,7 +665,7 @@ svg text {
   inset: 0;
   display: grid;
   place-items: center;
-  padding: 74px 24px 24px;
+  padding: 24px;
 }
 
 .results-overlay[hidden] {
@@ -648,7 +673,7 @@ svg text {
 }
 
 .results-panel {
-  width: min(760px, calc(100vw - 48px));
+  width: min(900px, calc(100vw - 48px));
   margin: 0 auto;
   border: 3px solid #111111;
   border-radius: 8px;
@@ -661,6 +686,7 @@ svg text {
   margin: 0 0 20px;
   font-size: 42px;
   line-height: 1;
+  text-align: center;
 }
 
 .results-seed {
@@ -668,7 +694,7 @@ svg text {
   flex-wrap: wrap;
   gap: 10px;
   align-items: center;
-  margin-bottom: 18px;
+  margin-bottom: 8px;
   border: 2px solid #111111;
   border-radius: 7px;
   padding: 12px;
@@ -691,6 +717,21 @@ svg text {
 .results-seed button {
   margin-left: auto;
   flex: 0 0 auto;
+}
+
+.results-seed-message {
+  margin: 0 0 18px 6px;
+  color: #3f3f3f;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.results-seed:has(+ .results-seed-message[hidden]) {
+  margin-bottom: 18px;
+}
+
+.results-seed-message[hidden] {
+  display: none;
 }
 
 .results-seed button,
@@ -723,6 +764,20 @@ svg text {
   width: 100%;
   border-collapse: collapse;
   font-size: 18px;
+  table-layout: fixed;
+}
+
+.results-table th:first-child,
+.results-table td:first-child {
+  width: 72px;
+}
+
+.results-table th:nth-child(2),
+.results-table td:nth-child(2),
+.results-table th:nth-child(3),
+.results-table td:nth-child(3) {
+  width: 28%;
+  overflow-wrap: anywhere;
 }
 
 .results-table th,
@@ -832,6 +887,47 @@ svg text {
   display: grid;
   gap: 14px;
   width: min(300px, 100%);
+}
+
+.main-menu-social-links {
+  position: absolute;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  gap: 10px;
+  pointer-events: auto;
+}
+
+.main-menu:not([data-menu-mode="home"]) .main-menu-social-links {
+  display: none;
+}
+
+.main-menu-social-link {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 2px solid #111111;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 4px 0 #111111;
+}
+
+.main-menu-social-link:active {
+  transform: translateY(4px);
+  box-shadow: none;
+}
+
+.main-menu-social-link:focus-visible {
+  outline: 4px solid #005eb8;
+  outline-offset: 3px;
+}
+
+.main-menu-social-link .social-icon {
+  width: 25px;
+  height: 25px;
+  fill: currentColor;
 }
 
 .menu-back,
@@ -1040,13 +1136,28 @@ svg text {
     -webkit-text-stroke-width: 4px;
   }
 
+  .main-menu-social-links {
+    right: 18px;
+    bottom: 18px;
+  }
+
+  .main-menu-social-link {
+    width: 42px;
+    height: 42px;
+  }
+
   .completion-stats {
     grid-template-columns: 1fr;
   }
 
   .hud-left {
-    bottom: 18px;
-    grid-template-columns: repeat(4, minmax(0, 1fr));
+    bottom: 94px;
+    grid-template-columns: minmax(58px, 0.55fr) repeat(2, minmax(0, 1fr));
+    width: calc(100vw - 36px);
+  }
+
+  .hud-timer {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     width: calc(100vw - 36px);
   }
 
@@ -1108,6 +1219,20 @@ svg text {
   .main-menu-button {
     height: 52px;
     font-size: 20px;
+  }
+
+  .main-menu-social-links {
+    gap: 8px;
+  }
+
+  .main-menu-social-link {
+    width: 38px;
+    height: 38px;
+  }
+
+  .main-menu-social-link .social-icon {
+    width: 22px;
+    height: 22px;
   }
 
   .seed-controls {
