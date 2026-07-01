@@ -538,13 +538,13 @@ describe("shared corridor layout", () => {
       .toEqual(["1,-1", "1,0", "1,-1"]);
     expect(points).toEqual([
       { x: 119, y: -13 },
-      { x: 124, y: -18 },
-      { x: 138, y: -18 },
+      { x: 128, y: -22 },
+      { x: 142, y: -22 },
       { x: 150, y: -30 },
     ]);
     expect(points.slice(1).some((point, index) => {
       const previous = points[index];
-      return previous.y === -18 && point.y === -18 && previous.x <= 130 && point.x >= 130;
+      return previous.y === -22 && point.y === -22 && previous.x <= 130 && point.x >= 130;
     })).toBe(true);
   });
 
@@ -1147,6 +1147,10 @@ describe("shared corridor layout", () => {
     expect(segmentDelta(layout, piccadillyT5, t5Pair, 0).y).toBeGreaterThan(0);
     expect(segmentDelta(layout, piccadillyT5, t5Pair, 1).x).toBeGreaterThan(0);
     expect(segmentDelta(layout, piccadillyT5, t5Pair, 1).y).toBeGreaterThan(0);
+    expect(segmentMidpointDistance(layout, elizabethT5, piccadillyT5, t5Pair, 0))
+      .toBeLessThan(LINE_STROKE_WIDTH);
+    expect(segmentMidpointDistance(layout, elizabethT5, piccadillyT5, t5Pair, 0))
+      .toBeGreaterThan(LINE_STROKE_WIDTH - 2.5);
 
     const elizabethAndT4 = new Set([elizabethT5.id, piccadillyT4.id]);
     expect(segmentDelta(layout, elizabethT5, elizabethAndT4, 0).x).toBeLessThan(0);
@@ -1174,6 +1178,8 @@ describe("shared corridor layout", () => {
     expect(segmentDelta(layout, elizabethT5, allLoop, 0).y).toBeLessThan(0);
     expect(segmentDelta(layout, piccadillyT5, allLoop, 0).x).toBeGreaterThan(0);
     expect(segmentDelta(layout, piccadillyT5, allLoop, 0).y).toBeGreaterThan(0);
+    expect(segmentMidpointDistance(layout, elizabethT5, piccadillyT5, allLoop, 0))
+      .toBeLessThan(LINE_STROKE_WIDTH);
     expect(segmentDelta(layout, piccadillyT4, allLoop, 0).x).toBeCloseTo(0);
     expect(segmentDelta(layout, piccadillyT4, allLoop, 0).y).toBeCloseTo(0);
     expect(layout.getConnectionRenderPoints(piccadillyT4, allLoop))
@@ -1280,6 +1286,20 @@ function segmentDelta(
     x: renderedMidpoint.x - centredMidpoint.x,
     y: renderedMidpoint.y - centredMidpoint.y,
   };
+}
+
+function segmentMidpointDistance(
+  layout: CorridorLayout,
+  firstConnection: ReturnType<typeof findConnection>,
+  secondConnection: ReturnType<typeof findConnection>,
+  visibleConnectionIds: ReadonlySet<string>,
+  segmentIndex: number,
+) {
+  const first = layout.getConnectionRenderPoints(firstConnection, visibleConnectionIds);
+  const second = layout.getConnectionRenderPoints(secondConnection, visibleConnectionIds);
+  const firstMidpoint = midpoint(first[segmentIndex], first[segmentIndex + 1]);
+  const secondMidpoint = midpoint(second[segmentIndex], second[segmentIndex + 1]);
+  return Math.hypot(firstMidpoint.x - secondMidpoint.x, firstMidpoint.y - secondMidpoint.y);
 }
 
 function midpoint(first: { x: number; y: number }, second: { x: number; y: number }) {

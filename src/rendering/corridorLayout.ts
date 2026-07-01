@@ -7,6 +7,7 @@ import { simplifyPolylinePoints } from "./roundedPath";
 
 const POINT_TOLERANCE = 0.01;
 const CONDITIONAL_VERTICAL_SPLIT = LINE_STROKE_WIDTH / 2;
+const HEATHROW_T5_PARALLEL_SPLIT = CONDITIONAL_VERTICAL_SPLIT - 1;
 const BAKER_STREET_SUBSURFACE_LINES = ["hammersmith-city", "circle", "metropolitan"] as const;
 const HAMMERSMITH_CITY_LIVERPOOL_STREET_ALDGATE_EAST = "hammersmith-city:aldgate-east:liverpool-street";
 const CIRCLE_LIVERPOOL_STREET_ALDGATE = "circle:aldgate:liverpool-street";
@@ -133,7 +134,7 @@ const CONNECTION_POINT_OVERRIDES = new Map<string, GridPoint[]>([
   ["jubilee:kingsbury:wembley-park", [{ x: 15, y: -53 }, { x: 13, y: -55 }, { x: 13, y: -59 }]],
   ["elizabeth:canary-wharf-elizabeth-line:whitechapel", [{ x: 119, y: -13 }, { x: 142, y: 10 }]],
   ["elizabeth:liverpool-street:whitechapel", [{ x: 119, y: -13 }, { x: 92, y: -13 }]],
-  ["elizabeth:stratford:whitechapel", [{ x: 150, y: -30 }, { x: 138, y: -18 }, { x: 124, y: -18 }, { x: 119, y: -13 }]],
+  ["elizabeth:stratford:whitechapel", [{ x: 150, y: -30 }, { x: 142, y: -22 }, { x: 128, y: -22 }, { x: 119, y: -13 }]],
   ["victoria:euston:warren-street", [{ x: 62, y: -20 }, { x: 67, y: -25 }]],
   ["victoria:euston:king-s-cross-st-pancras", [{ x: 67, y: -25 }, { x: 77, y: -25 }]],
   ["northern:bank:moorgate", [{ x: 90, y: -6 }, { x: 90, y: -8 }, { x: 88, y: -10 }, { x: 88, y: -12 }]],
@@ -473,7 +474,7 @@ export class CorridorLayout {
 
     if (connection.id === HEATHROW_ELIZABETH_T5) {
       if (hasPiccadillyT5) {
-        offsets.fill(CONDITIONAL_VERTICAL_SPLIT);
+        offsets.fill(HEATHROW_T5_PARALLEL_SPLIT);
       } else if (hasPiccadillyT4) {
         return offsetOnlyPathSegments(points, new Set([0]), CONDITIONAL_VERTICAL_SPLIT);
       } else {
@@ -481,7 +482,7 @@ export class CorridorLayout {
       }
     } else if (connection.id === HEATHROW_PICCADILLY_T5) {
       if (hasElizabethT5) {
-        offsets.fill(-CONDITIONAL_VERTICAL_SPLIT);
+        offsets.fill(-HEATHROW_T5_PARALLEL_SPLIT);
       } else {
         return null;
       }
