@@ -8,7 +8,7 @@ A speedrunning game where you traverse the London Underground (and Elizabeth lin
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/398e1c9e-a606-4edd-a5bd-0e93d68fecaf" />
 
-<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/e9735c24-c6d3-4b4c-9f46-7e59ebf852a6" />
+<img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f849125a-8749-48ef-abfa-51bef1314db8" />
 
 <img width="1920" height="1080" alt="image" src="https://github.com/user-attachments/assets/f0f945e5-4ffb-47f8-bf77-d31b15ab02e3" />
 

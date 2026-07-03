@@ -101,13 +101,13 @@ svg text {
 }
 
 .grid-line {
-  stroke: rgba(17, 17, 17, 0.11);
+  stroke: rgba(17, 17, 17, 0.05);
   stroke-width: 1;
   vector-effect: non-scaling-stroke;
 }
 
 .grid-line-major {
-  stroke: rgba(17, 17, 17, 0.18);
+  stroke: rgba(17, 17, 17, 0.05);
 }
 
 .station {
